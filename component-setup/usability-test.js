@@ -10,11 +10,9 @@
 (function () {
   "use strict";
 
-  // Paused: the work-account Google Sheet link is blocked for anonymous (public)
-  // submissions by the inspectpoint.com Workspace policy. Re-add the /exec URL here
-  // once IT allows anonymous access — or swap in a form-service endpoint. Until then,
-  // results save in the browser and are offered as a download on the thank-you screen.
-  var RESULTS_ENDPOINT = ""; // was: https://script.google.com/macros/s/AKfycbz7Ci-gM2a7Iq9M8rux3hVgtjvkw8VxrMwx4D_pTFaGHyJ2Jwtw7tiUpVWTWXvBhw/exec
+  // Results post to our internal Fly.io results server; the internal dashboard reads them.
+  var RESULTS_ENDPOINT = "https://inspectpoint-usability-results.fly.dev/api/results";
+  var TEST_NAME = "Component Setup"; // labels every result row so the dashboard groups this test
 
   var PURPLE = "#3D1B9D";
   var CORAL = "#EA6952";
@@ -42,6 +40,7 @@
 
   // ── Session state (one row of results per participant) ───────────────────────
   var session = {
+    test: TEST_NAME,
     participant: "p-" + Date.now() + "-" + Math.floor(Math.random() * 1e6),
     startedAt: new Date().toISOString(),
     finishedAt: null,
