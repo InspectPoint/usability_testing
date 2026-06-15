@@ -1,311 +1,262 @@
-/* usability-test.js — self-contained unmoderated usability-test harness.
-   Layers a task panel, click/time/success logging, and an end survey on top of
-   the Component Setup prototype WITHOUT modifying any of the prototype's code.
-   It detects task success by watching for the prototype's own success toast
-   ("Component type created" / "Component type updated").
+/* usability-test.js — self-contained unmoderated usability-test harness (TEMPLATE).
+   Layers a task panel, click/time/success logging, and an end survey on TOP of an
+   existing interactive prototype WITHOUT modifying the prototype's own code.
 
-   TO MAKE RESULTS SAVE TO A GOOGLE SHEET: paste your Apps Script Web App URL
-   into RESULTS_ENDPOINT below. Until then, results are saved in the browser and
-   offered as a download at the end. */
+   IDENTITY + ABANDONMENT
+   ----------------------
+   - Each participant gets a unique link with ?pid=<their-id> — the harness records it so
+     you can map a result back to the person you sent that link to.
+   - The intro also asks for a name (set COLLECT_NAME=false to skip).
+   - Progress is reported as it happens (start → each task → finish) PLUS a "leaving" beacon
+     if they close the tab, so abandoned sessions are captured with a status and the last
+     task they reached — not lost. The server keeps the latest state per session.
+
+   HOW TO USE: edit the CONFIG block (RESULTS_ENDPOINT, TEST_NAME, BRAND, TASKS, SURVEY),
+   then add <script src="usability-test.js"></script> as the LAST script in a COPY of the
+   prototype's HTML named "<Prototype> — Test.html". Never edit the original prototype. */
 (function () {
   "use strict";
 
-  // Results post to our internal Fly.io results server; the internal dashboard reads them.
+  /* ─────────────────────────── CONFIG — EDIT THIS ─────────────────────────── */
+
   var RESULTS_ENDPOINT = "https://inspectpoint-usability-results.fly.dev/api/results";
-  var TEST_NAME = "Component Setup"; // labels every result row so the dashboard groups this test
+  var TEST_NAME = "Component Setup";  // labels every result row; keep stable across reruns
+  var COLLECT_NAME = true;           // ask the participant's name on the intro screen
+  var BRAND = { primary: "#3D1B9D", accent: "#EA6952", appName: "Inspect Point" };
+  var SUCCESS_TOAST_SELECTOR = ".qmb-ui-toast--success"; // for success type "toast"
 
-  var PURPLE = "#3D1B9D";
-  var CORAL = "#EA6952";
-
-  // ── Tasks ──────────────────────────────────────────────────────────────────
-  // successWhen() is tested against the prototype's success-toast message text.
   var TASKS = [
-    {
-      id: "create",
-      label: "Task 1 of 2",
-      scenario:
-        "Your company just landed a contract that requires inspecting <b>tamper switches</b> — a component type you don’t track yet. Set up a brand-new component type called <b>“Tamper Switch”</b> so your inspectors can start logging it.",
+    { id: "create", label: "Task 1 of 2",
+      scenario: "Your company just landed a contract that requires inspecting <b>tamper switches</b> — a component type you don’t track yet. Set up a brand-new component type called <b>“Tamper Switch”</b> so your inspectors can start logging it.",
       hint: "Everything you need is on this Settings screen.",
-      successWhen: function (m) { return /created|add another/i.test(m); }
-    },
-    {
-      id: "edit",
-      label: "Task 2 of 2",
-      scenario:
-        "An inspector tells you the inspection questions for <b>sprinkler heads</b> need a tweak. Open the existing <b>Sprinkler head</b> component type, look at the questions attached to it, make any change you think makes sense, and save.",
+      success: { type: "toast", match: /created|add another/i } },
+    { id: "edit", label: "Task 2 of 2",
+      scenario: "An inspector tells you the inspection questions for <b>sprinkler heads</b> need a tweak. Open the existing <b>Sprinkler head</b> component type, look at the questions attached to it, make any change you think makes sense, and save.",
       hint: "Start from the list of component types.",
-      successWhen: function (m) { return /updated/i.test(m); }
-    }
+      success: { type: "toast", match: /updated/i } }
   ];
 
-  // ── Session state (one row of results per participant) ───────────────────────
+  var SURVEY = [
+    { name: "ease", type: "scale", label: "Overall, how easy or hard was it to set up and edit a component type?", low: "Very hard", high: "Very easy" },
+    { name: "relationship", type: "text", label: "In your own words, how would you describe the relationship between a component type and its questions?" },
+    { name: "unexpected", type: "text", label: "Did anything work differently than you expected? If so, what?" },
+    { name: "confidence", type: "scale", label: "How confident are you that you set things up correctly?", low: "Not at all", high: "Very confident" }
+  ];
+
+  /* ──────────────────────── END CONFIG — engine below ─────────────────────── */
+
+  var PURPLE = BRAND.primary, CORAL = BRAND.accent;
+  function qparam(k) { try { return new URLSearchParams(window.location.search).get(k) || ""; } catch (e) { return ""; } }
+
   var session = {
+    sessionId: "s-" + Date.now() + "-" + Math.floor(Math.random() * 1e6),
+    pid: qparam("pid"),
+    participantName: "",
     test: TEST_NAME,
-    participant: "p-" + Date.now() + "-" + Math.floor(Math.random() * 1e6),
+    status: "in-progress",
+    lastTaskReached: "",
     startedAt: new Date().toISOString(),
     finishedAt: null,
     userAgent: navigator.userAgent,
     tasks: [],
     survey: {}
   };
-  var current = -1;
-  var taskStart = 0;
+  var current = -1, taskStart = 0, finished = false;
+  function rec() { return session.tasks[current]; }
 
-  function curTaskRecord() { return session.tasks[current]; }
+  // ── send current snapshot to the server ──
+  function send(status, useBeacon) {
+    if (!RESULTS_ENDPOINT) return;
+    session.status = status;
+    var body = JSON.stringify(session);
+    try {
+      if (useBeacon && navigator.sendBeacon) {
+        navigator.sendBeacon(RESULTS_ENDPOINT, new Blob([body], { type: "text/plain;charset=utf-8" }));
+      } else {
+        fetch(RESULTS_ENDPOINT, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: body, keepalive: true });
+      }
+    } catch (e) {}
+  }
+  // if they leave before finishing, record it as abandoned with how far they got
+  function onLeave() { if (!finished && current >= 0) send("abandoned", true); }
+  window.addEventListener("pagehide", onLeave);
+  window.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") onLeave(); });
 
-  // ── Click + interaction logging ─────────────────────────────────────────────
+  // ── click logging ──
   function labelFor(el) {
-    var node = el.closest(
-      "button, a, [role=button], .qmb-ui-tabs__option, .cfg-toc__item, .cfg-tab, .qmb-ui-inline-edit, input, select, textarea, li"
-    );
+    var node = el.closest("button, a, [role=button], [class*=tab], [class*=inline-edit], input, select, textarea, li");
     if (!node) return null;
-    var txt = (node.getAttribute("aria-label") || node.textContent || node.value || "").trim();
-    txt = txt.replace(/\s+/g, " ").slice(0, 60);
+    var txt = (node.getAttribute("aria-label") || node.textContent || node.value || "").trim().replace(/\s+/g, " ").slice(0, 60);
     return txt || node.tagName.toLowerCase();
   }
-  document.addEventListener(
-    "click",
-    function (e) {
-      if (e.target.closest("#iput-root")) return; // ignore clicks on our own UI
-      var rec = curTaskRecord();
-      if (!rec || rec.done) return;
-      var lbl = labelFor(e.target);
-      rec.clicks++;
-      if (lbl) rec.path.push(lbl);
-    },
-    true
-  );
+  document.addEventListener("click", function (e) {
+    if (e.target.closest("#iput-root")) return;
+    var r = rec(); if (!r || r.done) return;
+    var l = labelFor(e.target); r.clicks++; if (l) r.path.push(l);
+  }, true);
 
-  // ── Success detection: watch the prototype's success toast ───────────────────
+  // ── success detection ──
+  function matches(rule, node) {
+    if (!rule) return false;
+    if (rule.type === "toast") {
+      var t = node.matches && node.matches(SUCCESS_TOAST_SELECTOR) ? node : node.querySelector && node.querySelector(SUCCESS_TOAST_SELECTOR);
+      if (!t) return false;
+      return rule.match ? rule.match.test((t.textContent || "").trim()) : true;
+    }
+    if (rule.type === "selector") return (node.matches && node.matches(rule.match)) || (node.querySelector && !!node.querySelector(rule.match));
+    if (rule.type === "text") return (document.body.innerText || "").indexOf(rule.match) !== -1;
+    return false;
+  }
   var observer = new MutationObserver(function (muts) {
-    var rec = curTaskRecord();
-    if (!rec || rec.done) return;
-    for (var i = 0; i < muts.length; i++) {
-      var added = muts[i].addedNodes;
-      for (var j = 0; j < added.length; j++) {
-        var n = added[j];
-        if (n.nodeType !== 1) continue;
-        var toast = n.matches && n.matches(".qmb-ui-toast--success")
-          ? n
-          : n.querySelector && n.querySelector(".qmb-ui-toast--success");
-        if (!toast) continue;
-        var msgEl = toast.querySelector(".notification__message");
-        var msg = (msgEl ? msgEl.textContent : toast.textContent || "").trim();
-        if (TASKS[current].successWhen(msg)) completeTask(true, msg);
-      }
+    var r = rec(); if (!r || r.done) return;
+    var rule = TASKS[current].success; if (rule.type === "manual") return;
+    for (var i = 0; i < muts.length; i++) for (var j = 0; j < muts[i].addedNodes.length; j++) {
+      var n = muts[i].addedNodes[j];
+      if (n.nodeType === 1 && matches(rule, n)) { completeTask(true, rule.type); return; }
     }
   });
 
-  // ── UI helpers ───────────────────────────────────────────────────────────────
-  function el(tag, attrs, html) {
-    var n = document.createElement(tag);
-    if (attrs) for (var k in attrs) n.setAttribute(k, attrs[k]);
-    if (html != null) n.innerHTML = html;
-    return n;
-  }
-  function root() {
-    var r = document.getElementById("iput-root");
-    if (!r) { r = el("div", { id: "iput-root" }); document.body.appendChild(r); }
-    return r;
-  }
-  function clearOverlay() {
-    var o = document.getElementById("iput-overlay");
-    if (o) o.remove();
-  }
-  function overlay(inner) {
-    clearOverlay();
-    var o = el("div", { id: "iput-overlay", class: "iput-overlay" });
-    var card = el("div", { class: "iput-card" });
-    card.appendChild(inner);
-    o.appendChild(card);
-    root().appendChild(o);
-    return o;
-  }
+  // ── DOM helpers ──
+  function el(tag, attrs, html) { var n = document.createElement(tag); if (attrs) for (var k in attrs) n.setAttribute(k, attrs[k]); if (html != null) n.innerHTML = html; return n; }
+  function root() { var r = document.getElementById("iput-root"); if (!r) { r = el("div", { id: "iput-root" }); document.body.appendChild(r); } return r; }
+  function clearOverlay() { var o = document.getElementById("iput-overlay"); if (o) o.remove(); }
+  function overlay(inner) { clearOverlay(); var o = el("div", { id: "iput-overlay", class: "iput-overlay" }); var c = el("div", { class: "iput-card" }); c.appendChild(inner); o.appendChild(c); root().appendChild(o); return o; }
 
-  // ── Task banner (fixed, bottom) ──────────────────────────────────────────────
+  // ── task banner ──
   var banner;
   function showBanner() {
     if (banner) banner.remove();
-    var t = TASKS[current];
+    var t = TASKS[current], manual = t.success.type === "manual";
     banner = el("div", { id: "iput-banner", class: "iput-banner" });
     banner.innerHTML =
       '<div class="iput-banner__tag">' + t.label + "</div>" +
-      '<div class="iput-banner__body">' +
-        '<div class="iput-banner__scenario">' + t.scenario + "</div>" +
-        '<div class="iput-banner__hint"><i class="fa-light fa-circle-info"></i> ' + t.hint + "</div>" +
-      "</div>" +
+      '<div class="iput-banner__body"><div class="iput-banner__scenario">' + t.scenario + "</div>" +
+      (t.hint ? '<div class="iput-banner__hint">' + t.hint + "</div>" : "") + "</div>" +
+      (manual ? '<button class="iput-banner__done" id="iput-done">I’ve finished this step</button>' : "") +
       '<button class="iput-banner__skip" id="iput-skip">I can’t&nbsp;complete&nbsp;this</button>';
     root().appendChild(banner);
-    document.getElementById("iput-skip").onclick = function () {
-      if (confirm("Mark this task as not completed and move on?")) completeTask(false, "skipped");
-    };
+    if (manual) document.getElementById("iput-done").onclick = function () { completeTask(true, "manual"); };
+    document.getElementById("iput-skip").onclick = function () { if (confirm("Mark this task as not completed and move on?")) completeTask(false, "skipped"); };
   }
 
-  // ── Flow ─────────────────────────────────────────────────────────────────────
+  // ── flow ──
   function startTask(i) {
-    current = i;
-    taskStart = Date.now();
+    current = i; taskStart = Date.now();
     session.tasks[i] = { id: TASKS[i].id, completed: false, done: false, skipped: false, seconds: 0, clicks: 0, path: [] };
-    clearOverlay();
-    showBanner();
+    session.lastTaskReached = TASKS[i].label;
+    send("in-progress");
+    clearOverlay(); showBanner();
   }
-
-  function completeTask(success, msg) {
-    var rec = curTaskRecord();
-    if (!rec || rec.done) return;
-    rec.done = true;
-    rec.completed = success;
-    rec.skipped = !success;
-    rec.seconds = Math.max(1, Math.round((Date.now() - taskStart) / 1000));
-    rec.endMessage = msg || "";
+  function completeTask(success, how) {
+    var r = rec(); if (!r || r.done) return;
+    r.done = true; r.completed = success; r.skipped = !success;
+    r.seconds = Math.max(1, Math.round((Date.now() - taskStart) / 1000)); r.endVia = how || "";
+    send("in-progress");
     if (banner) banner.remove();
-    // brief interstitial, then advance
     var inner = el("div", { class: "iput-interstitial" });
-    inner.innerHTML =
-      '<div class="iput-check ' + (success ? "ok" : "skip") + '">' +
-        '<i class="fa-solid fa-' + (success ? "circle-check" : "circle-arrow-right") + '"></i></div>' +
+    inner.innerHTML = '<div class="iput-check ' + (success ? "ok" : "skip") + '">' + (success ? "✓" : "→") + "</div>" +
       "<h2>" + (success ? "Nice — task complete" : "No problem — moving on") + "</h2>" +
       "<p>" + (current + 1 < TASKS.length ? "Here comes the next task." : "Just a couple of quick questions to finish.") + "</p>";
     overlay(inner);
-    setTimeout(function () {
-      if (current + 1 < TASKS.length) startTask(current + 1);
-      else showSurvey();
-    }, 1500);
+    setTimeout(function () { if (current + 1 < TASKS.length) startTask(current + 1); else showSurvey(); }, 1500);
   }
 
-  // ── Intro ─────────────────────────────────────────────────────────────────────
+  // ── intro ──
   function showIntro() {
     var inner = el("div");
     inner.innerHTML =
-      '<div class="iput-brand"><i class="fa-solid fa-fire"></i> Inspect Point</div>' +
+      '<div class="iput-brand">🔥 ' + BRAND.appName + "</div>" +
       "<h1>Thanks for helping us test</h1>" +
-      "<p>You’ll see a real settings screen and <b>2 short tasks</b>, one at a time. There are no right or wrong answers — we’re testing the design, not you.</p>" +
-      "<p>Please try each task the way you naturally would. If you get stuck, that’s useful for us to know — you can mark a task as “can’t complete” and move on.</p>" +
-      '<p class="iput-muted">Your clicks and the time you take are recorded so we can learn where the design works and where it doesn’t. Nothing else about you is collected.</p>' +
-      '<button class="iput-btn iput-btn--primary" id="iput-begin">Start the first task</button>';
+      "<p>You’ll see a real screen and <b>" + TASKS.length + " short tasks</b>, one at a time. There are no right or wrong answers — we’re testing the design, not you.</p>" +
+      (COLLECT_NAME ? '<label class="iput-lbl" for="iput-name">Your name</label><input id="iput-name" class="iput-name" type="text" placeholder="First and last name" />' : "") +
+      '<p class="iput-muted">Your clicks and timing are recorded so we can learn where the design works. Nothing else about you is collected.</p>' +
+      '<button class="iput-btn iput-btn--primary" id="iput-begin">Start the first task</button>' +
+      '<div class="iput-err" id="iput-name-err"></div>';
     overlay(inner);
     document.getElementById("iput-begin").onclick = function () {
+      if (COLLECT_NAME) {
+        var v = (document.getElementById("iput-name").value || "").trim();
+        if (!v) { document.getElementById("iput-name-err").textContent = "Please enter your name to begin."; return; }
+        session.participantName = v;
+      }
       observer.observe(document.body, { childList: true, subtree: true });
       startTask(0);
     };
   }
 
-  // ── Survey ─────────────────────────────────────────────────────────────────────
-  function scale(name, lowLabel, highLabel) {
-    var s = '<div class="iput-scale" data-name="' + name + '">';
+  // ── survey ──
+  function scale(item) {
+    var s = '<div class="iput-scale" data-name="' + item.name + '">';
     for (var i = 1; i <= 5; i++) s += '<button type="button" data-v="' + i + '">' + i + "</button>";
-    s += '</div><div class="iput-scale-labels"><span>' + lowLabel + "</span><span>" + highLabel + "</span></div>";
-    return s;
+    return s + '</div><div class="iput-scale-labels"><span>' + item.low + "</span><span>" + item.high + "</span></div>";
   }
   function showSurvey() {
     var inner = el("div", { class: "iput-survey" });
-    inner.innerHTML =
-      "<h1>A few quick questions</h1>" +
-      '<div class="iput-q"><label>Overall, how easy or hard was it to set up and edit a component type?</label>' +
-        scale("ease", "Very hard", "Very easy") + "</div>" +
-      '<div class="iput-q"><label>In your own words, how would you describe the relationship between a component type and its questions?</label>' +
-        '<textarea data-name="relationship" rows="3" placeholder="Type your answer…"></textarea></div>' +
-      '<div class="iput-q"><label>Did anything work differently than you expected? If so, what?</label>' +
-        '<textarea data-name="unexpected" rows="3" placeholder="Type your answer…"></textarea></div>' +
-      '<div class="iput-q"><label>How confident are you that you set things up correctly?</label>' +
-        scale("confidence", "Not at all", "Very confident") + "</div>" +
-      '<button class="iput-btn iput-btn--primary" id="iput-finish">Finish</button>';
-    overlay(inner);
-
+    var html = "<h1>A few quick questions</h1>";
+    SURVEY.forEach(function (q) {
+      html += '<div class="iput-q"><label>' + q.label + "</label>";
+      html += q.type === "scale" ? scale(q) : '<textarea data-name="' + q.name + '" rows="3" placeholder="Type your answer…"></textarea>';
+      html += "</div>";
+    });
+    html += '<button class="iput-btn iput-btn--primary" id="iput-finish">Finish</button>';
+    inner.innerHTML = html; overlay(inner);
     inner.querySelectorAll(".iput-scale").forEach(function (sc) {
       sc.querySelectorAll("button").forEach(function (b) {
-        b.onclick = function () {
-          sc.querySelectorAll("button").forEach(function (x) { x.classList.remove("sel"); });
-          b.classList.add("sel");
-          session.survey[sc.getAttribute("data-name")] = parseInt(b.getAttribute("data-v"), 10);
-        };
+        b.onclick = function () { sc.querySelectorAll("button").forEach(function (x) { x.classList.remove("sel"); }); b.classList.add("sel"); session.survey[sc.getAttribute("data-name")] = parseInt(b.getAttribute("data-v"), 10); };
       });
     });
     document.getElementById("iput-finish").onclick = function () {
-      inner.querySelectorAll("textarea").forEach(function (t) {
-        session.survey[t.getAttribute("data-name")] = t.value.trim();
-      });
+      inner.querySelectorAll("textarea").forEach(function (t) { session.survey[t.getAttribute("data-name")] = t.value.trim(); });
       finish();
     };
   }
 
-  // ── Finish + save ────────────────────────────────────────────────────────────
+  // ── finish ──
   function finish() {
+    finished = true;
     session.finishedAt = new Date().toISOString();
-    // tidy: strip internal flags from the saved record
-    var clean = JSON.parse(JSON.stringify(session));
-    clean.tasks.forEach(function (t) { delete t.done; });
-    try { localStorage.setItem("iput_" + session.participant, JSON.stringify(clean)); } catch (e) {}
-
-    var sent = false;
-    if (RESULTS_ENDPOINT) {
-      try {
-        fetch(RESULTS_ENDPOINT, {
-          method: "POST", mode: "no-cors",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(clean)
-        });
-        sent = true;
-      } catch (e) {}
-    }
-
+    send("completed");
+    try { localStorage.setItem("iput_" + session.sessionId, JSON.stringify(session)); } catch (e) {}
     var inner = el("div");
-    inner.innerHTML =
-      '<div class="iput-check ok"><i class="fa-solid fa-circle-check"></i></div>' +
-      "<h1>All done — thank you!</h1>" +
-      "<p>Your responses have been recorded. You can close this tab.</p>" +
-      (sent ? "" : '<p class="iput-muted">Facilitator: results are saved in this browser. <a href="#" id="iput-dl">Download this session as a file</a>.</p>');
+    inner.innerHTML = '<div class="iput-check ok">✓</div><h1>All done — thank you!</h1><p>Your responses have been recorded. You can close this tab.</p>' +
+      (RESULTS_ENDPOINT ? "" : '<p class="iput-muted">Facilitator: results saved in this browser. <a href="#" id="iput-dl">Download this session</a>.</p>');
     overlay(inner);
     var dl = document.getElementById("iput-dl");
-    if (dl) dl.onclick = function (e) {
-      e.preventDefault();
-      var blob = new Blob([JSON.stringify(clean, null, 2)], { type: "application/json" });
-      var a = el("a", { href: URL.createObjectURL(blob), download: session.participant + ".json" });
-      document.body.appendChild(a); a.click(); a.remove();
-    };
+    if (dl) dl.onclick = function (e) { e.preventDefault(); var a = el("a", { href: URL.createObjectURL(new Blob([JSON.stringify(session, null, 2)], { type: "application/json" })), download: session.sessionId + ".json" }); document.body.appendChild(a); a.click(); a.remove(); };
   }
 
-  // ── Styles ─────────────────────────────────────────────────────────────────────
+  // ── styles ──
   var css =
     "#iput-root{position:relative;z-index:2147483000}" +
     ".iput-overlay{position:fixed;inset:0;background:rgba(20,16,40,.55);display:flex;align-items:center;justify-content:center;z-index:2147483600;padding:24px}" +
-    ".iput-card{background:#fff;border-radius:16px;max-width:520px;width:100%;padding:32px;box-shadow:0 24px 60px rgba(0,0,0,.25);font-family:'Hanken Grotesk',system-ui,sans-serif;max-height:90vh;overflow:auto}" +
-    ".iput-card h1{font-size:24px;margin:0 0 12px;color:#23232D;font-weight:600}" +
-    ".iput-card h2{font-size:20px;margin:0 0 8px;color:#23232D;font-weight:600}" +
-    ".iput-card p{font-size:15px;line-height:1.6;color:#46465A;margin:0 0 14px}" +
-    ".iput-muted{color:#8F8FA8;font-size:13px}" +
-    ".iput-muted a{color:" + PURPLE + "}" +
+    ".iput-card{background:#fff;border-radius:16px;max-width:520px;width:100%;padding:32px;box-shadow:0 24px 60px rgba(0,0,0,.25);font-family:system-ui,sans-serif;max-height:90vh;overflow:auto}" +
+    ".iput-card h1{font-size:24px;margin:0 0 12px;color:#23232D;font-weight:600}.iput-card h2{font-size:20px;margin:0 0 8px;color:#23232D;font-weight:600}" +
+    ".iput-card p{font-size:15px;line-height:1.6;color:#46465A;margin:0 0 14px}.iput-muted{color:#8F8FA8;font-size:13px}.iput-muted a{color:" + PURPLE + "}" +
     ".iput-brand{display:inline-flex;align-items:center;gap:8px;font-weight:600;color:" + PURPLE + ";margin-bottom:16px}" +
-    ".iput-brand i{color:" + CORAL + "}" +
+    ".iput-lbl{display:block;font-size:13px;font-weight:600;color:#23232D;margin:0 0 6px}" +
+    ".iput-name{width:100%;border:1px solid #DBDBE4;border-radius:10px;padding:11px 13px;font-size:15px;font-family:inherit;box-sizing:border-box;margin-bottom:14px}" +
+    ".iput-name:focus{outline:none;border-color:" + PURPLE + "}" +
+    ".iput-err{color:#DB2B39;font-size:13px;margin-top:8px;min-height:16px}" +
     ".iput-btn{border:0;border-radius:10px;padding:12px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}" +
-    ".iput-btn--primary{background:" + PURPLE + ";color:#fff;margin-top:8px}" +
-    ".iput-btn--primary:hover{background:#54265E}" +
-    ".iput-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:2147483500;background:#fff;border:1px solid #DBDBE4;border-left:5px solid " + PURPLE + ";border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);display:flex;gap:16px;align-items:flex-start;padding:14px 18px;font-family:'Hanken Grotesk',system-ui,sans-serif}" +
+    ".iput-btn--primary{background:" + PURPLE + ";color:#fff;margin-top:4px}" +
+    ".iput-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:2147483500;background:#fff;border:1px solid #DBDBE4;border-left:5px solid " + PURPLE + ";border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);display:flex;gap:16px;align-items:flex-start;padding:14px 18px;font-family:system-ui,sans-serif}" +
     ".iput-banner__tag{flex:0 0 auto;background:#F0E2F3;color:" + PURPLE + ";font-weight:600;font-size:12px;padding:4px 10px;border-radius:20px;margin-top:2px}" +
-    ".iput-banner__body{flex:1 1 auto;min-width:0}" +
-    ".iput-banner__scenario{font-size:14px;line-height:1.5;color:#23232D}" +
-    ".iput-banner__hint{font-size:12px;color:#8F8FA8;margin-top:5px}" +
+    ".iput-banner__body{flex:1 1 auto;min-width:0}.iput-banner__scenario{font-size:14px;line-height:1.5;color:#23232D}.iput-banner__hint{font-size:12px;color:#8F8FA8;margin-top:5px}" +
+    ".iput-banner__done{flex:0 0 auto;background:" + PURPLE + ";border:0;color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer;font-family:inherit}" +
     ".iput-banner__skip{flex:0 0 auto;background:transparent;border:1px solid #DBDBE4;color:#585870;border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer;font-family:inherit}" +
-    ".iput-banner__skip:hover{background:#F7F7F9}" +
-    ".iput-interstitial,.iput-survey{text-align:center}" +
-    ".iput-survey{text-align:left}" +
-    ".iput-check{font-size:48px;margin-bottom:8px}" +
-    ".iput-check.ok{color:#019064}.iput-check.skip{color:" + CORAL + "}" +
-    ".iput-q{margin:0 0 22px}" +
-    ".iput-q label{display:block;font-size:15px;font-weight:600;color:#23232D;margin-bottom:10px;line-height:1.4}" +
+    ".iput-interstitial,.iput-survey{text-align:center}.iput-survey{text-align:left}" +
+    ".iput-check{font-size:44px;margin-bottom:8px;font-weight:700}.iput-check.ok{color:#019064}.iput-check.skip{color:" + CORAL + "}" +
+    ".iput-q{margin:0 0 22px}.iput-q label{display:block;font-size:15px;font-weight:600;color:#23232D;margin-bottom:10px;line-height:1.4}" +
     ".iput-q textarea{width:100%;border:1px solid #DBDBE4;border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box}" +
-    ".iput-scale{display:flex;gap:8px}" +
-    ".iput-scale button{flex:1;aspect-ratio:1;border:1px solid #DBDBE4;background:#fff;border-radius:10px;font-size:16px;font-weight:600;color:#46465A;cursor:pointer;font-family:inherit}" +
-    ".iput-scale button:hover{border-color:" + PURPLE + "}" +
+    ".iput-scale{display:flex;gap:8px}.iput-scale button{flex:1;aspect-ratio:1;border:1px solid #DBDBE4;background:#fff;border-radius:10px;font-size:16px;font-weight:600;color:#46465A;cursor:pointer;font-family:inherit}" +
     ".iput-scale button.sel{background:" + PURPLE + ";color:#fff;border-color:" + PURPLE + "}" +
     ".iput-scale-labels{display:flex;justify-content:space-between;font-size:11px;color:#8F8FA8;margin-top:6px}";
   document.head.appendChild(el("style", null, css));
 
-  // ── Boot (wait for the prototype to render) ──────────────────────────────────
-  function boot() {
-    var r = document.getElementById("root");
-    if (r && r.children.length) showIntro();
+  // ── boot ──
+  (function boot() {
+    var r = document.getElementById("root") || document.body;
+    if (document.body && (r.children.length || document.body.children.length > 1)) showIntro();
     else setTimeout(boot, 200);
-  }
-  boot();
+  })();
 })();
