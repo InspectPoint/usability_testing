@@ -1,0 +1,554 @@
+/* building.css — layout glue for the Building → Components page.
+ * Component chrome (buttons, tabs, tags, inputs, brushaway, toast, ACCORDION)
+ * comes from kit.css + quimby-components.css. This file holds the page
+ * scaffold, the leaf-row layout, drag/drop affordances, and form glue. */
+
+/* ─── Building detail page scaffold ─────────────────────────────────────── */
+/* page scrolls normally; the workspace header scrolls away, the tabs pin via sticky */
+.qmb-main { overflow: auto; padding: 0; position: relative; z-index: 0; }
+.bldg-page { display: flex; flex-direction: column; min-height: 100%; background: #fff; }
+.bldg-tabview { position: sticky; top: 0; z-index: 8; background: #fff; }
+.ctab .qmb-ui-accordion__divider-line { display: none; }
+.bldg-page > .qmb-ui-header--workspace { margin-bottom: -24px; position: relative; z-index: 9; }
+.bldg-tabview .qmb-ui-tabs__list { padding: 0 12px; min-height: 64px; }
+
+/* ─── Components tab body ───────────────────────────────────────────────── */
+/* app-like: subtle gray canvas, white system cards, a defined sticky toolbar */
+.ctab { background: var(--gray-50); padding: 0; flex: 1 0 auto; }
+.ctab-filters {
+  align-items: center; flex-wrap: wrap; row-gap: 8px; box-shadow: none;
+  background: #fff; padding: 16px 24px; margin: 0;
+}
+/* system-scoped sub-page: breathing room between the divided header and the filters */
+.bldg-page.is-scoped .ctab-filters { margin-top: 16px; }
+.ctab-search { width: 320px; max-width: 42vw; }
+
+/* filter-bar search (qmb-filters / filters__search) */
+.filters__search { position: relative; }
+.filters__search input {
+  width: 100%; height: 40px; padding: 0 12px 0 36px;
+  border: 1px solid rgba(0,0,0,0.2); border-radius: var(--radius-md);
+  background: #fff; font: 400 14px/20px var(--font-body); color: var(--gray-900);
+  box-sizing: border-box; outline: none;
+  transition: border-color var(--dur-hover) var(--ease-standard), box-shadow var(--dur-hover) var(--ease-standard);
+}
+.filters__search input::placeholder { color: var(--gray-500); }
+.filters__search input:focus { border-color: var(--purple-500); box-shadow: 0 0 0 3px rgba(118,53,132,0.15); }
+.filters__search i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-size: 14px; pointer-events: none; }
+
+/* tier stack: systems (section accordions) spaced apart */
+.ctab-systems { display: flex; flex-direction: column; gap: 16px; position: relative; padding: 16px 90px 56px 24px; transition: padding-right var(--dur-drawer) var(--ease-standard); }
+/* notes feature: widen the right gutter to fit avatar + note preview */
+.ctab.comp-notes-wide .ctab-systems { padding-right: 240px; }
+.ctab-bulkrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 16px 24px 0; }
+/* drop the right gutter on narrower screens */
+@media (max-width: 1023px) {
+  .ctab-systems, .ctab-bulkrow { padding-right: 24px; }
+  .ctab.comp-notes-wide .ctab-systems { padding-right: 24px; }
+  .comp-note { display: none !important; }
+}
+.ctab-count { font: 500 13px/1 var(--font-ui); color: var(--gray-500); }
+.ctab-count b { color: var(--gray-800); font-weight: 600; }
+.ctab-bulk-actions { display: flex; align-items: center; gap: 8px; }
+.ctab-bulk-sep { color: var(--gray-300); font-size: 13px; user-select: none; }
+/* contents of an accordion: stack of inline-group accordions + leaf rows */
+.comp-sublist { display: flex; flex-direction: column; gap: 0; }
+/* -1px overlap so adjacent row borders merge instead of doubling */
+.comp-sublist > * + * { margin-top: -1px; }
+/* lift the hovered row above its neighbors (and above pinned sticky headers, below the
+   tabs bar at z:8) so its border/ring isn't clipped by the -1px overlap */
+.ctab .qmb-ui-accordion--inline { position: relative; }
+.comp-leaf:hover, .ctab .qmb-ui-accordion--inline:has(> .qmb-ui-accordion__summary:hover) { z-index: 4; }
+/* grouped-list corners: square the inner edges, round only the group's outer top/bottom */
+.comp-sublist > .comp-leaf,
+.comp-sublist > .qmb-ui-accordion--inline,
+.comp-sublist > .qmb-ui-accordion--inline > .qmb-ui-accordion__summary,
+.comp-sublist > .qmb-ui-accordion--inline > .qmb-ui-accordion__content { border-radius: 0; }
+.comp-sublist > :first-child,
+.comp-sublist > :first-child > .qmb-ui-accordion__summary { border-top-left-radius: var(--radius-md); border-top-right-radius: var(--radius-md); }
+.comp-sublist > :last-child,
+.comp-sublist > :last-child > .qmb-ui-accordion__content,
+.comp-sublist > :last-child.qmb-ui-accordion--collapsed > .qmb-ui-accordion__summary { border-bottom-left-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); }
+/* deeper per-tier indent */
+.ctab .qmb-ui-accordion__content { padding-left: 40px; padding-right: 24px; padding-top: 12px; padding-bottom: 24px; }
+/* match leaf-row item spacing on group/single header rows */
+.ctab .qmb-ui-accordion__title-container { gap: 24px; }
+/* accordion headers match leaf-row right padding (12px) so trailing buttons align */
+.ctab .qmb-ui-accordion__summary { padding-right: 12px; position: relative; }
+
+/* clickable component title — behaves like a link (Inspect Point blue) */
+.comp-title-link { cursor: pointer; }
+.comp-leaf__name.comp-title-link, .qmb-ui-accordion__title.comp-title-link { color: var(--blue-500); }
+.comp-title-link:hover { color: var(--fg-link-hover); text-decoration: underline; text-underline-offset: 2px; }
+.comp-title-link:focus-visible { outline: 2px solid var(--purple-500); outline-offset: 2px; border-radius: 2px; }
+
+/* drag handle inside summaries / leaf rows */
+.comp-handle { color: var(--gray-300); cursor: grab; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; padding: 0 6px; margin-left: -8px; border-radius: var(--radius-md); flex-shrink: 0; touch-action: none; }
+.comp-handle i { font-size: 14px; }
+.comp-handle:hover { color: var(--gray-500); }
+
+/* location chip (shared) */
+.comp-row__loc { display: inline-flex; align-items: center; gap: 5px; color: var(--gray-500); font: 400 13px/20px var(--font-body); white-space: nowrap; }
+.comp-row__loc i { font-size: 12px; color: var(--gray-400); }
+
+/* icon-only button (sits on the qmb-ui-button atom) */
+.comp-iconbtn { width: 32px; min-width: 32px; padding: 0; }
+.comp-iconbtn i { font-size: 14px; }
+
+/* rollup preview tags compact */
+.qmb-ui-accordion__preview-content .qmb-ui-tag { padding: 0 8px; height: 20px; min-width: 24px; justify-content: center; }
+/* rollup summary — member count + proportional health bar (passed vs deficient vs untested) */
+.comp-rollup { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; cursor: default; background: var(--gray-100); padding: 4px 12px; border-radius: var(--radius-pill); }
+.comp-rollup__count { font: 600 14px/1 var(--font-ui); color: var(--gray-800); min-width: 14px; text-align: right; }
+.comp-rollup__bar { display: flex; gap: 1px; width: 96px; height: 8px; border-radius: var(--radius-pill); overflow: hidden; background: transparent; }
+.comp-rollup__seg { height: 100%; }
+.comp-rollup__seg--passed { background: var(--green-300); }
+.comp-rollup__seg--deficient { background: var(--red-300); }
+.comp-rollup__seg--untested { background: var(--gray-300); }
+
+/* ─── Tooltip — px port of atoms/Tooltip/TooltipStyles.scss ──────────────── */
+.qmb-ui-tooltip__container { display: inline-flex; position: relative; }
+.qmb-ui-tooltip {
+  background: var(--gray-900); border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  color: #fff; font: 400 12px/16px var(--font-body); max-width: 300px; padding: 6px 8px;
+  pointer-events: none; white-space: nowrap; word-wrap: break-word; position: relative;
+}
+.qmb-ui-tooltip--multiline { white-space: normal; max-width: 400px; }
+.qmb-ui-tooltip--top::before, .qmb-ui-tooltip--bottom::before,
+.qmb-ui-tooltip--left::before, .qmb-ui-tooltip--right::before { border: 4px solid transparent; content: ''; height: 0; width: 0; position: absolute; }
+.qmb-ui-tooltip--top::before    { border-top-color: var(--gray-900); bottom: -8px; left: 50%; transform: translateX(-50%); }
+.qmb-ui-tooltip--bottom::before { border-bottom-color: var(--gray-900); top: -8px; left: 50%; transform: translateX(-50%); }
+.qmb-ui-tooltip--left::before   { border-left-color: var(--gray-900); right: -8px; top: 50%; transform: translateY(-50%); }
+.qmb-ui-tooltip--right::before  { border-right-color: var(--gray-900); left: -8px; top: 50%; transform: translateY(-50%); }
+/* group chip — pastry gray, bumped to gray-200 bg */
+.qmb-ui-tag.comp-grouptag { background: var(--gray-200); color: var(--gray-900); }
+/* bulk count appended inside the group chip ("Sprinkler Head Group · 12") */
+.comp-grouptag__count { display: inline-flex; align-items: center; margin-left: 6px; padding-left: 7px; font-weight: 700; font-variant-numeric: tabular-nums; border-left: 1px solid var(--gray-400); }
+/* single/leaf component type tag — outlined instead of filled */
+.qmb-ui-tag.comp-typetag { background: transparent; border: 1px solid var(--gray-200); color: var(--gray-700); box-sizing: border-box; }
+
+/* ─── Leaf (individual) row ─────────────────────────────────────────────── */
+.comp-leaf {
+  display: flex; align-items: center; gap: 16px; justify-content: space-between; position: relative;
+  background: #fff; border: 1px solid var(--gray-250); border-radius: var(--radius-md);
+  padding: 8px 12px; cursor: pointer;
+  transition: box-shadow var(--dur-hover) var(--ease-standard), border-color var(--dur-hover) var(--ease-standard);
+}
+/* leaf leading group mirrors the accordion header (handle → chevron → titles) so leaf names line up with accordion titles */
+.comp-leaf__left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.comp-leaf__chev { width: 16px; flex-shrink: 0; }
+.comp-leaf__titles { display: flex; align-items: center; gap: 24px; min-width: 0; }
+.comp-leaf:hover { border-color: var(--gray-500); }
+.comp-leaf:has(.comp-handle:hover) { box-shadow: 0 0 0 4px rgba(116,116,141,0.12); }
+.comp-leaf.comp-tier--gray { background: var(--gray-50); }
+.comp-leaf.comp-tier--white { background: #fff; }
+/* alternating tier backgrounds on inline-accordion nodes (gray → white by depth) */
+.qmb-ui-accordion--inline.comp-tier--gray > .qmb-ui-accordion__summary,
+.qmb-ui-accordion--inline.comp-tier--gray > .qmb-ui-accordion__content { background: var(--gray-50); }
+.qmb-ui-accordion--inline.comp-tier--white > .qmb-ui-accordion__summary,
+.qmb-ui-accordion--inline.comp-tier--white > .qmb-ui-accordion__content { background: #fff; }
+/* hover/active: no background change — darken the row border one gray step instead */
+.qmb-ui-accordion--inline.comp-tier--gray > .qmb-ui-accordion__summary:hover,
+.qmb-ui-accordion--inline.comp-tier--gray > .qmb-ui-accordion__summary:active { background: var(--gray-50); }
+.qmb-ui-accordion--inline.comp-tier--white > .qmb-ui-accordion__summary:hover,
+.qmb-ui-accordion--inline.comp-tier--white > .qmb-ui-accordion__summary:active { background: #fff; }
+.qmb-ui-accordion--section > .qmb-ui-accordion__summary:hover,
+.qmb-ui-accordion--section > .qmb-ui-accordion__summary:active { background: #fff; }
+.ctab .qmb-ui-accordion--inline { border-color: var(--gray-250); }
+.ctab .qmb-ui-accordion--section { border-color: var(--gray-200); }
+/* systems read as white cards floating on the gray pane (Quimby card: 8px radius, shadow-sm) */
+.ctab-systems > .qmb-ui-accordion--section { box-shadow: var(--shadow-sm); overflow: hidden; transition: border-color var(--dur-hover) var(--ease-standard), box-shadow var(--dur-hover) var(--ease-standard); }
+/* white-background rows blend into the canvas — give them a one-step-darker default border (systems excluded) */
+.comp-leaf.comp-tier--white { border-color: var(--gray-250); }
+.ctab .qmb-ui-accordion--inline.comp-tier--white { border-color: var(--gray-250); }
+.comp-leaf.comp-tier--white:hover { border-color: var(--gray-600); }
+.comp-leaf.comp-tier--gray:hover { border-color: var(--gray-500); }
+.ctab .qmb-ui-accordion--inline.comp-tier--white:has(> .qmb-ui-accordion__summary:hover) { border-color: var(--gray-600); }
+/* gray-background rows — one-step-darker default border too (systems excluded) */
+.comp-leaf.comp-tier--gray { border-color: var(--gray-250); }
+.ctab .qmb-ui-accordion--inline.comp-tier--gray { border-color: var(--gray-250); }
+/* every accordion's details element gets a white background so the sticky-header
+   gradient fades into white, not the gray pane behind it (systems + nested alike) */
+.ctab .qmb-ui-accordion--inline { background: #fff; }
+.ctab .qmb-ui-accordion--inline { transition: border-color var(--dur-hover) var(--ease-standard), box-shadow var(--dur-hover) var(--ease-standard); }
+.ctab .qmb-ui-accordion--inline:has(> .qmb-ui-accordion__summary:hover),
+.ctab .qmb-ui-accordion--section:has(> .qmb-ui-accordion__summary:hover) { border-color: var(--gray-500); }
+.ctab .qmb-ui-accordion--inline:has(> .qmb-ui-accordion__summary .comp-handle:hover) { box-shadow: 0 0 0 4px rgba(116,116,141,0.12); }
+.ctab-systems > .qmb-ui-accordion--section:has(> .qmb-ui-accordion__summary .comp-handle:hover) { box-shadow: var(--shadow-sm), 0 0 0 4px rgba(116,116,141,0.12); }
+.comp-leaf__name { font: 600 16px/24px var(--font-ui); color: var(--gray-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 1; }
+/* keep the type tag / location from being squeezed — the name truncates first */
+.comp-leaf__titles > .comp-typetag, .comp-leaf__titles > .comp-grouptag, .comp-leaf__titles > .comp-row__loc { flex-shrink: 0; }
+.comp-leaf__sp { flex: 1 1 auto; }
+.comp-leaf__menu { margin-left: 0; }
+.comp-leaf__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* ─── Drag + drop affordances ───────────────────────────────────────────── */
+.qmb-ui-accordion, .comp-leaf { position: relative; }
+.is-dragging { opacity: 0.45; outline: 1px dashed var(--gray-300); }
+.comp-incompat-veil { display: none; min-height: 32px; font: 700 11px/1 var(--font-ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--red-600); white-space: nowrap; align-items: center; opacity: 1; }
+.comp-leaf.comp-incompatible > * { opacity: 0.45; }
+.qmb-ui-accordion--inline.comp-incompatible > .qmb-ui-accordion__summary { opacity: 0.45; }
+/* leaf — hide trailing action buttons, show the label on the right */
+.comp-leaf.comp-incompatible .comp-leaf__actions { display: none !important; }
+.comp-leaf.comp-incompatible > .comp-incompat-veil { display: inline-flex; opacity: 1; }
+/* group — hide rollup preview + actions, show the label on the right */
+.qmb-ui-accordion--inline.comp-incompatible .qmb-ui-accordion__preview-content,
+.qmb-ui-accordion--inline.comp-incompatible > .qmb-ui-accordion__summary .qmb-ui-accordion__actions { display: none !important; }
+.qmb-ui-accordion--inline.comp-incompatible > .qmb-ui-accordion__summary .comp-incompat-veil { display: inline-flex; }
+.drop-bar { position: absolute; height: 3px; border-radius: 2px; background: var(--indigo-500); transform: translateY(-50%); pointer-events: none; z-index: 6; }
+.comp-leaf.drop-inside { border-color: var(--indigo-300); box-shadow: 0 0 0 2px var(--indigo-100); background: var(--indigo-50); }
+.qmb-ui-accordion.drop-inside { border-color: var(--indigo-300); box-shadow: 0 0 0 2px var(--indigo-100); z-index: 3; }
+.qmb-ui-accordion.drop-inside > .qmb-ui-accordion__summary,
+.qmb-ui-accordion.drop-inside > .qmb-ui-accordion__content { background: var(--indigo-50) !important; }
+.qmb-ui-accordion.drop-system { border-color: var(--indigo-200); outline: 2px dashed var(--indigo-200); outline-offset: 1px; }
+.qmb-ui-accordion.drop-system > .qmb-ui-accordion__summary { background: var(--indigo-50) !important; }
+.drop-hint { font: 500 12px/16px var(--font-ui); color: var(--indigo-600); display: flex; align-items: center; gap: 6px; padding: 10px 12px; border: 1px dashed var(--indigo-300); border-radius: var(--radius-md); background: var(--indigo-50); }
+.comp-looselist { margin-bottom: 2px; }
+.detach-bar { position: absolute; left: 0; right: 0; height: 3px; transform: translateY(-50%); border-radius: 2px; background: var(--indigo-500); pointer-events: none; z-index: 5; }
+
+/* drag ghost (follows cursor during a pointer drag) */
+.comp-drag-ghost {
+  position: fixed; z-index: 10050; pointer-events: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px; border-radius: var(--radius-md);
+  background: #fff; border: 1px solid var(--indigo-300); box-shadow: var(--shadow-lg);
+  font: 500 13px/1 var(--font-ui); color: var(--gray-900); max-width: 280px; white-space: nowrap;
+}
+.comp-drag-ghost i { color: var(--gray-400); font-size: 12px; }
+
+/* drop flash — moved item glows indigo, then settles to its base gray/white */
+@keyframes flashRing { 0%, 23% { box-shadow: 0 0 0 1px var(--indigo-400), 0 0 0 3px var(--indigo-100); } 100% { box-shadow: 0 0 0 1px rgba(61,27,157,0), 0 0 0 3px rgba(61,27,157,0); } }
+@keyframes flashLeaf { 0%, 23% { background: var(--indigo-50); box-shadow: 0 0 0 1px var(--indigo-400); } 100% { box-shadow: 0 0 0 1px rgba(61,27,157,0); } }
+.comp-flash { animation: flashRing 1100ms var(--ease-standard); z-index: 3; }
+.comp-leaf.comp-flash { animation: flashLeaf 1100ms var(--ease-standard); z-index: 3; }
+/* accordion bg lives on summary/content — flash those from indigo back to their tier color */
+@keyframes flashFill { 0%, 23% { background: var(--indigo-50); } }
+.qmb-ui-accordion--inline.comp-flash > .qmb-ui-accordion__summary,
+.qmb-ui-accordion--inline.comp-flash > .qmb-ui-accordion__content { animation: flashFill 1100ms var(--ease-standard); }
+.popup__section .qmb-ui-button.is-selected { color: var(--purple-600); }
+.popup__section .qmb-ui-button.is-selected i { color: var(--purple-600); }
+
+/* empty state */
+.ctab-empty { text-align: center; margin: 24px; padding: 56px 24px; color: var(--gray-500); background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.ctab-empty i { font-size: 28px; color: var(--gray-300); margin-bottom: 12px; display: block; }
+.ctab-empty h4 { font: 700 16px/24px var(--font-ui); color: var(--gray-900); margin: 0 0 4px; }
+.ctab-empty p { font: var(--text-body); color: var(--gray-500); margin: 0 auto; max-width: 360px; }
+
+/* ─── Brushaway form glue ───────────────────────────────────────────────── */
+.brush-form { display: flex; flex-direction: column; gap: 20px; }
+.brush-members { display: flex; flex-direction: column; gap: 4px; }
+.brush-members__head { display: flex; align-items: center; justify-content: space-between; }
+.brush-members__title { font: 600 13px/1 var(--font-ui); color: var(--fg-2); }
+.brush-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.brush-note { display: flex; gap: 8px; font: 400 13px/19px var(--font-body); color: var(--gray-600); background: var(--purple-50); border-radius: var(--radius-md); padding: 12px; }
+.brush-note i { color: var(--purple-500); margin-top: 2px; }
+
+/* members summary inside a group's panel */
+.members-card { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-md); padding: 12px; }
+.members-card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.members-card__head h5 { font: 700 13px/18px var(--font-ui); color: var(--gray-700); margin: 0; }
+.members-empty { font: 400 13px/19px var(--font-body); color: var(--gray-500); }
+.member-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--gray-200); font: var(--text-body); color: var(--gray-900); }
+.member-item:first-of-type { border-top: 0; }
+.member-item__name { font-weight: 500; }
+
+/* header toolbar overflow menu */
+.header-tools { position: relative; }
+.header-tools .qmb-ui-toolbar { border: none; background: transparent; }
+.hdr-menu { position: absolute; top: 46px; right: 0; width: 200px; z-index: 50; }
+
+/* drawer scrim + row menu */
+.scrim { position: fixed; inset: 0; background: rgba(15,6,40,0.28); z-index: 999; animation: fadein 150ms var(--ease-standard); }
+.ctx-menu { z-index: 1100; }
+.ctx-danger, .ctx-danger i { color: var(--red-600) !important; }
+.ctx-danger:hover { background: var(--red-50) !important; }
+/* move-to picker */
+.ctx-moveto__label { font: 600 11px/1 var(--font-ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray-500); padding: 4px 8px 6px; }
+.ctx-moveto__hint { margin-left: auto; font: 400 12px/1 var(--font-body); color: var(--gray-500); }
+.ctx-moveto__child { padding-left: 28px !important; }
+/* attach-to destination labels inside the component modal's InlineSelect */
+.cmodal-dest { display: inline-flex; align-items: center; gap: 8px; width: 100%; }
+.cmodal-dest > i { color: var(--gray-500); width: 14px; text-align: center; }
+.cmodal-dest--child { padding-left: 16px; }
+.cmodal-dest__hint { margin-left: auto; font: 400 12px/1 var(--font-body); color: var(--gray-500); }
+
+/* ─── Quimby Modal — px port of molecules/Modal/ModalStyles.scss ─────────── */
+.qmb-ui-modal-wrapper { position: fixed; inset: 0; z-index: 10003; display: flex; align-items: center; justify-content: center; }
+.qmb-ui-modal-overlay { position: fixed; inset: 0; background: rgba(18,18,26,0.5); z-index: 0; }
+.qmb-ui-modal {
+  position: relative; z-index: 1; display: flex; flex-direction: column;
+  background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  outline: none; overflow: hidden; animation: qmb-ui-modal-fade-in 150ms ease-out;
+  min-width: 384px; max-width: calc(100vw - 48px); max-height: calc(100vh - 48px);
+}
+@keyframes qmb-ui-modal-fade-in { from { opacity:0; transform: scale(0.95); } to { opacity:1; transform: scale(1); } }
+
+.qmb-ui-modal-header { position: relative; flex-shrink: 0; display: flex; flex-flow: column; gap: 8px; min-height: 64px; padding: 16px 12px; box-sizing: border-box; }
+.qmb-ui-modal-header__row { align-items: center; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px; width: 100%; }
+.qmb-ui-modal-header__row--title { align-items: flex-start; flex-wrap: nowrap; padding-right: 4px; }
+.qmb-ui-modal-header__title { flex: 1 1 0; min-width: 0; display: flex; align-items: center; margin-top: 3px; }
+.qmb-ui-modal-header__title .qmb-ui-text { margin: 0; font: 600 20px/28px var(--font-ui); color: var(--gray-900); }
+.qmb-ui-modal-header__title .qmb-ui-text b { font-weight: 700; }
+.qmb-ui-modal-header__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.qmb-ui-modal-header__divider { border: none; border-top: 1px solid var(--gray-200); bottom: 0; left: 12px; margin: 0; position: absolute; right: 12px; width: auto; }
+.qmb-ui-modal-body { flex: 1 1 auto; min-height: 0; padding: 24px; overflow-y: auto; box-sizing: border-box; }
+
+/* footer — px port of molecules/Modal footer (not in the original port).
+   Divider is inset to match the header's hr (left/right 12px), never full-bleed. */
+.qmb-ui-modal-footer { position: relative; flex-shrink: 0; padding: 16px 12px; box-sizing: border-box; }
+.qmb-ui-modal-footer--divider::before { content: ''; position: absolute; top: 0; left: 12px; right: 12px; border-top: 1px solid var(--gray-200); }
+.qmb-ui-modal-footer__content { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 0 12px; box-sizing: border-box; }
+.qmb-ui-modal-footer__start { display: flex; align-items: center; gap: 8px; }
+.qmb-ui-modal-footer__actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+/* header deactivate text button */
+.modal-deact { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border: 0; background: transparent; border-radius: var(--radius-md); cursor: pointer; font: 500 14px/1 var(--font-ui); color: var(--gray-700); transition: background var(--dur-hover) var(--ease-standard); }
+.modal-deact:hover { background: var(--gray-100); }
+.modal-deact i { font-size: 15px; color: var(--gray-500); }
+.modal-deact.is-danger { color: var(--red-600); }
+.modal-deact.is-danger i { color: var(--red-600); }
+
+/* ─── Component modal form — two-column rows ─────────────────────────────── */
+.cmodal { width: 760px; }
+.cmodal .qmb-ui-modal-body { padding: 8px 32px 32px; }
+.cform { display: grid; grid-template-columns: 168px minmax(0, 1fr); column-gap: 24px; row-gap: 6px; align-items: start; }
+.cform__label { font: 400 15px/24px var(--font-body); color: var(--gray-600); padding: 8px 0; }
+.cform__field { min-width: 0; padding: 4px 0; }
+.cform__field--ro { padding: 8px 0; font: 400 15px/24px var(--font-body); color: var(--gray-900); }
+.cform__sep { grid-column: 1 / -1; border: 0; border-top: 1px solid var(--gray-200); margin: 16px 0 8px; }
+.cform__section { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font: 600 12px/16px var(--font-ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray-500); margin: 8px 0 4px; }
+.cform__section i { font-size: 12px; color: var(--gray-400); }
+.cform__note { grid-column: 1 / -1; font: 400 13px/19px var(--font-body); color: var(--gray-500); margin-top: -2px; }
+/* Item type — radios in a row, aligned to the field column */
+.cform__radiorow { flex-direction: row; align-items: center; gap: 8px; padding: 2px 0; }
+.cform__radiorow .qmb-ui-radio { flex: 0 0 auto; }
+.cform__radiorow .qmb-ui-radio__label { flex: 0 0 auto; }
+/* drop the selected-state tint on the Item type radios (brushaway + modal) */
+.brush-form .qmb-ui-radio--selected, .cform__radiorow .qmb-ui-radio--selected { background: transparent; }
+/* group members list inside the modal */
+.cform__members { grid-column: 1 / -1; margin-top: 16px; }
+.member-item__sp { flex: 1 1 auto; }
+
+/* ─── Inline edit — px port of inputs/inline/InlineEditStyles.scss ───────── */
+.qmb-ui-inline-edit {
+  background: var(--gray-50); border-radius: 4px; color: var(--fg-1);
+  display: inline-block; gap: 8px; font: 400 15px/24px var(--font-body);
+  min-width: 24px; overflow-x: auto; padding: 8px 10px; white-space: nowrap;
+  box-sizing: border-box; cursor: text; outline: none;
+  transition: background var(--dur-hover) var(--ease-standard);
+}
+.qmb-ui-inline-edit:hover { background: var(--gray-100); }
+.qmb-ui-inline-edit:empty::after { color: var(--gray-500); content: attr(data-placeholder); pointer-events: none; font: italic 400 14px/24px var(--font-body); }
+.qmb-ui-inline-edit:focus { background: rgba(61,27,157,0.04); box-shadow: 0 0 0 8px rgba(61,27,157,0.04); color: var(--fg-1); outline: 1px solid var(--indigo-500); }
+.qmb-ui-inline-edit[data-label]:not([data-label=""])::before { content: attr(data-label); margin-right: 4px; color: var(--gray-500); }
+.qmb-ui-inline-edit--multiline { display: block; min-height: 40px; padding: 8px 10px; resize: vertical; white-space: normal; }
+.qmb-ui-inline-edit--x-full { display: block; white-space: normal; width: 100%; }
+.qmb-ui-inline-edit--x-full.qmb-ui-inline-edit--multiline { min-height: 40px; }
+.qmb-ui-inline-edit--disabled { background: transparent; cursor: default; padding-left: 0; }
+.qmb-ui-inline-edit--disabled:hover { background: transparent; }
+
+/* dropdown variant (drives InlineSelect trigger) */
+.qmb-ui-inline-edit--dropdown { border: 0; cursor: pointer; height: auto; width: fit-content; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.qmb-ui-inline-edit--dropdown .ie-caret { color: var(--gray-500); font-size: 12px; flex-shrink: 0; }
+.qmb-ui-inline-edit--dropdown:focus, .qmb-ui-inline-edit--dropdown:focus-visible { background: rgba(61,27,157,0.04); box-shadow: 0 0 0 8px rgba(61,27,157,0.04); color: var(--fg-1); outline: 1px solid var(--indigo-500); }
+.qmb-ui-inline-edit--dropdown.qmb-ui-inline-edit--x-full { width: 100%; display: flex; box-sizing: border-box; }
+.qmb-ui-inline-edit--dropdown.qmb-ui-inline-edit--x-full .ie-caret { margin-left: auto; }
+.qmb-ui-inline-select { display: inline-block; max-width: 100%; }
+.qmb-ui-inline-select .selectValue { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.qmb-ui-inline-select.is-full { display: block; }
+
+/* ─── Tweakable hierarchy & polish (toggled via Tweaks panel) ───────────── */
+
+/* #1 — Indent guide rails: a quiet vertical spine in each container's gutter,
+   one per nesting level (children indented 40px; rail sits mid-gutter). */
+/* #1 — Tree guide rails: a vertical spine in each container's gutter with a
+   right-angle elbow into every child, the spine stopping at the last child (├─ └─). */
+.tw-rails.ctab .qmb-ui-accordion__content > .comp-sublist > details { position: relative; }
+/* vertical spine — one segment per child, tiled into a continuous line; reaches up
+   into the parent header (−12px = through the content's top padding) */
+.tw-rails.ctab .qmb-ui-accordion__content > .comp-sublist > .comp-leaf::before,
+.tw-rails.ctab .qmb-ui-accordion__content > .comp-sublist > details::before {
+  content: ""; position: absolute; left: -22px; top: -12px; bottom: 0; width: 2px;
+  background: var(--gray-250); pointer-events: none;
+}
+/* last child: spine stops at the elbow (└─) */
+.tw-rails.ctab .qmb-ui-accordion__content > .comp-sublist > .comp-leaf:last-child::before { bottom: 50%; }
+.tw-rails.ctab .qmb-ui-accordion__content > .comp-sublist > details:last-child::before { bottom: auto; height: 36px; }
+/* horizontal elbow into each child's header — anchored to the summary so it travels
+   with the header when it's pinned (sticky); falls back to the details box when static */
+.tw-rails.ctab .qmb-ui-accordion__content > .comp-sublist > .comp-leaf::after,
+.tw-rails.ctab .qmb-ui-accordion__content > .comp-sublist > details > summary::after {
+  content: ""; position: absolute; left: -22px; top: 50%; width: 16px; height: 2px;
+  background: var(--gray-250); pointer-events: none;
+}
+.tw-rails.ctab .qmb-ui-accordion__content > .comp-sublist > details > summary::after { top: 24px; }
+
+/* #4 — Sticky parent headers: each summary pins under the tabs + ancestor headers.
+   per-element `top`/`z-index` come from inline styles (depth-aware).
+   Background fades white→transparent at the bottom so rows dissolve softly as
+   they scroll underneath the pinned header (invisible at rest — list is white). */
+/* pinned header: fully opaque white. A soft drop-shadow + hairline appear ONLY while
+   the header is actually stuck (toggled via .is-stuck), so scrolling content reads as
+   sliding *behind* a floating header rather than being hard-cropped. No shadow at rest. */
+/* Only systems + top-level components (marked .comp-stickyhdr) pin; nested children scroll.
+   The pin offset comes from --sticky-top (set inline) and is applied ONLY here, so the
+   base summary can be position:relative for note anchoring without ever shifting. */
+.tw-sticky.ctab .comp-stickyhdr { position: sticky; top: var(--sticky-top, 64px); background: #fff; }
+/* While ANY header is pinned (systems AND orphaned/top-level components — treated the
+   same), cover the gutter band beside it (in the gutter's own color) so row notes
+   scrolling underneath disappear behind the pinned header. Cover sits at z-index 1 —
+   BELOW .comp-note (z-2) — so the pinned header's OWN note (also a child of the summary)
+   stays visible above it, while scrolling child notes (in the lower page stack, behind
+   the z-5 summary) are hidden. */
+.tw-sticky.ctab .comp-stickyhdr.is-stuck::after {
+  content: ""; position: absolute; top: 0; bottom: -16px; left: calc(100% + 1px); width: 280px;
+  background: linear-gradient(180deg, var(--gray-50) 0, var(--gray-50) calc(100% - 16px), transparent 100%);
+  z-index: 1; pointer-events: none;
+}
+/* bottom shadow rendered as a scalable bar (matches the popup's 1px@40% + 4px@10% stroke)
+   so it can animate in from the center outward when the header pins */
+.tw-sticky.ctab .comp-stickyhdr::before {
+  content: ""; position: absolute; top: 100%; left: 0; right: 0; height: 4px; z-index: 1;
+  background: linear-gradient(180deg, rgba(88,88,112,0.4) 0, rgba(88,88,112,0.4) 1px, rgba(88,88,112,0.1) 1px, rgba(88,88,112,0.1) 100%);
+  transform: scaleX(0); transform-origin: center; pointer-events: none;
+  transition: none; /* snap away instantly when unpinned */
+}
+.tw-sticky.ctab .comp-stickyhdr.is-stuck::before {
+  transform: scaleX(1);
+  transition: transform 200ms var(--ease-standard); /* grow from center only on the way in */
+}
+
+/* #5 — Hover-reveal row actions: only the FIRST TIER (system headers) show their
+   +/⋯ always; every component row (any depth) reveals on hover/focus. */
+.tw-hover-actions .comp-leaf__actions,
+.tw-hover-actions .qmb-ui-accordion__summary .qmb-ui-accordion__actions {
+  opacity: 0; transition: opacity var(--dur-hover) var(--ease-standard);
+}
+.tw-hover-actions .comp-leaf:hover .comp-leaf__actions,
+.tw-hover-actions .comp-leaf:focus-within .comp-leaf__actions,
+.tw-hover-actions .qmb-ui-accordion__summary:hover .qmb-ui-accordion__actions,
+.tw-hover-actions .qmb-ui-accordion__summary:focus-within .qmb-ui-accordion__actions { opacity: 1; }
+/* always-visible on the first tier only: system headers */
+.tw-hover-actions .qmb-ui-accordion__summary[data-band="system"] .qmb-ui-accordion__actions { opacity: 1; }
+
+/* count (rollup) sits flush right — after the actions — in accordion headers */
+.qmb-ui-accordion__header .comp-rollup { order: 1; }
+
+/* ─── Group children list (children-list groupView) ─────────────────────── */
+.comp-childlist { display: flex; flex-direction: column; padding: 8px 0 4px; gap: 0; }
+.comp-childlist__empty { padding: 12px 16px; font: 400 13px/1.5 var(--font-body); color: var(--gray-500); font-style: italic; }
+.comp-childlist__item {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px 16px; border-radius: var(--radius-sm);
+  transition: background var(--dur-hover) var(--ease-standard);
+}
+.comp-childlist__item + .comp-childlist__item { border-top: 1px solid var(--gray-200); }
+/* plain text name — no link styling; these items are managed through the group, not individual modals */
+.comp-childlist__name {
+  font: 500 14px/1.3 var(--font-ui); color: var(--fg-1);
+  flex: 0 0 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%;
+}
+/* spacer pushes remove button to the far right while keeping name/tag/location left-aligned */
+.comp-childlist__item .comp-childlist__spacer { flex: 1 1 auto; }
+/* remove button on group child items — revealed on hover */
+.comp-childlist__remove, .member-item__remove {
+  opacity: 0; margin-left: auto; transition: opacity var(--dur-hover) var(--ease-standard);
+  flex-shrink: 0; color: var(--gray-500);
+}
+.comp-childlist__item:hover .comp-childlist__remove,
+.member-item:hover .member-item__remove { opacity: 1; }
+.comp-childlist__remove:hover, .member-item__remove:hover { color: var(--red-600); }
+.comp-childlist__newrow {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 12px; margin: 4px 8px;
+  background: var(--purple-50); border: 1px solid var(--purple-200); border-radius: var(--radius-sm);
+}
+.comp-childlist__newrow input,
+.comp-childlist__newrow select {
+  height: 32px; padding: 0 10px; border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm); background: #fff;
+  font: 400 13px/1 var(--font-body); color: var(--fg-1); outline: none;
+}
+.comp-childlist__newrow input:focus, .comp-childlist__newrow select:focus {
+  border-color: var(--purple-400); box-shadow: 0 0 0 2px var(--purple-100);
+}
+.comp-childlist__newrow input.cn-name { flex: 1 1 160px; min-width: 100px; }
+.comp-childlist__newrow select.cn-type { flex: 0 0 auto; }
+.comp-childlist__newrow input.cn-loc { flex: 1 1 110px; min-width: 80px; }
+.comp-childlist__newrow-acts { display: flex; gap: 6px; flex-shrink: 0; }
+.comp-childlist__add i { font-size: 13px; }
+
+/* context banner — shown at the top of the brushaway when adding to a parent */
+.brush-parent-ctx {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: var(--radius-md);
+  background: var(--gray-50); border: 1px solid var(--gray-200);
+  font: 400 13px/1.4 var(--font-body); color: var(--gray-700);
+}
+.brush-parent-ctx i { color: var(--gray-500); font-size: 14px; flex-shrink: 0; }
+.brush-parent-ctx strong { font-weight: 600; color: var(--fg-1); }
+
+/* ─── Notes in the right gutter (Tweak: notes) ──────────────────────────────
+   Each note is absolutely positioned within its row and pushed into the gutter.
+   The --depth var cancels the per-tier right inset (24px/level) so every note
+   lands in ONE vertical column, vertically centered on its row. */
+.comp-note { position: absolute; top: 50%; transform: translateY(-50%); display: flex; align-items: center; pointer-events: none; z-index: 2;
+  left: calc(100% + 16px + 24px * var(--depth, 0)); }
+.comp-note > * { pointer-events: auto; }
+/* empty state spans the gutter so hovering anywhere in the gutter (to the right of the row)
+   reveals the add-note button, which sits at the note column on the left. Width adapts to
+   the gutter: ~72px when compact (no notes, 90px gutter), ~216px when widened (notes exist). */
+.comp-note--empty { width: 72px; justify-content: flex-start; pointer-events: auto; transition: width var(--dur-drawer) var(--ease-standard); }
+.ctab.comp-notes-wide .comp-note--empty { width: 216px; }
+.comp-note--filled { width: 208px; }
+/* hidden unless the tweak is on */
+.ctab:not(.comp-notes-on) .comp-note { display: none; }
+
+/* empty state: add-note button = qmb-ui-button atom, revealed on row hover/focus */
+.comp-note__add { opacity: 0; transition: opacity var(--dur-hover) var(--ease-standard); }
+.comp-note__add i { font-size: 14px; }
+.comp-leaf:hover .comp-note__add, .comp-leaf:focus-within .comp-note__add,
+.qmb-ui-accordion__summary:hover .comp-note__add, .qmb-ui-accordion__summary:focus-within .comp-note__add,
+.comp-note--empty:hover .comp-note__add { opacity: 1; }
+.comp-note__add:focus-visible { opacity: 1; }
+/* gutter grow/shrink is a layout animation — honor reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .ctab-systems, .comp-note--empty { transition: none; }
+}
+
+/* Present notes (filled previews) slide in from the right by 8px and fade in when
+   their accordion opens, after a 0.2s hold so they trail the content reveal.
+   Gated on the accordion's --expanded class (not just display) so the animation
+   re-fires every time you expand a previously-collapsed accordion, not only on
+   first paint. Scoped to FILLED notes — empty slots and header notes don't move. */
+@keyframes comp-note-in {
+  from { opacity: 0; transform: translate(8px, -50%); }
+  to   { opacity: 1; transform: translate(0, -50%); }
+}
+.ctab .qmb-ui-accordion--expanded > .qmb-ui-accordion__content > .comp-sublist > .comp-leaf > .comp-note--filled,
+.ctab .qmb-ui-accordion--expanded > .qmb-ui-accordion__content > .comp-sublist > .qmb-ui-accordion--inline > .qmb-ui-accordion__summary > .comp-note--filled {
+  animation: comp-note-in var(--dur-fade) var(--ease-standard) 0.2s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ctab .qmb-ui-accordion--expanded > .qmb-ui-accordion__content > .comp-sublist > .comp-leaf > .comp-note--filled,
+  .ctab .qmb-ui-accordion--expanded > .qmb-ui-accordion__content > .comp-sublist > .qmb-ui-accordion--inline > .qmb-ui-accordion__summary > .comp-note--filled { animation: none; }
+}
+
+/* filled state: 24px avatar + truncated preview, transparent background, gray-500 text */
+.comp-note__preview {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0;
+  background: transparent; border: 0; padding: 0; cursor: pointer; text-align: left;
+}
+/* avatar = real qmb-ui-avatar molecule (SVG initials), sized to 24px in this prototype */
+.comp-note__avatar { flex: 0 0 auto; }
+.comp-note__avatar.qmb-ui-avatar--24, .comp-note__avatar.qmb-ui-avatar--24 svg { width: 24px; height: 24px; }
+.qmb-ui-avatar { display: inline-block; position: relative; vertical-align: middle; overflow: hidden; font-size: 0; }
+.qmb-ui-avatar svg { vertical-align: middle; }
+.qmb-ui-avatar svg text { font-family: var(--font-ui); font-size: 7px; font-weight: 600; }
+.qmb-ui-avatar__sr { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
+.comp-note__text {
+  flex: 1 1 auto; min-width: 0; font: 400 13px/18px var(--font-body); color: var(--gray-500);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.comp-note__preview:hover .comp-note__text { color: var(--gray-700); }
+.comp-note__preview:focus-visible { outline: 2px solid var(--purple-500); outline-offset: 2px; border-radius: var(--radius-sm); }

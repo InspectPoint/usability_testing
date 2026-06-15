@@ -1,0 +1,281 @@
+/* Quimby Design System — Colors & Type tokens
+ *
+ * Two families: Hanken Grotesk (headings + UI), Inter (body + values).
+ * Hanken Grotesk is loaded locally from /fonts (variable, wght 100–900).
+ * Inter is still loaded from Google Fonts.
+ */
+@font-face {
+  font-family: "Hanken Grotesk";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("fonts/HankenGrotesk-VariableFont_wght.ttf") format("truetype-variations"),
+       url("fonts/HankenGrotesk-VariableFont_wght.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("fonts/HankenGrotesk-Italic-VariableFont_wght.ttf") format("truetype-variations"),
+       url("fonts/HankenGrotesk-Italic-VariableFont_wght.ttf") format("truetype");
+}
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  /* -------- Brand --------
+   * Per /Colors/Overview2 (Scales): 4 canonical scales — Gray, Purple, Red, Blue.
+   * Inspect Point's brand blue is #1967D2 (blue-500). Purple-500 #763584 is the
+   * Quimby primary-action color. There is no separate "indigo" scale — older
+   * deep values came from the AI gradient and are not tokens.
+   */
+  --ip-brand-blue: #1967D2;          /* Inspect Point brand blue (blue-500) */
+  --ip-brand-blue-ink: #1452A8;      /* blue-600 — hover / pressed */
+
+  /* -------- Blue (IP brand + info) -------- */
+  --blue-50:   #E9F1FC;
+  --blue-100:  #DCE9FB;
+  --blue-200:  #B9D3F7;
+  --blue-300:  #96BDF2;
+  --blue-400:  #4F91EA;
+  --blue-500:  #1967D2;              /* Inspect Point brand */
+  --blue-600:  #1452A8;
+  --blue-700:  #0F3E7E;
+  --blue-800:  #0A2954;
+  --blue-900:  #06152A;
+
+  /* -------- Primary (Quimby purple) --------
+   * Values below are the canonical --purple-* CSS custom properties from
+   * app/assets/stylesheets/qmb/_colors.scss on the InspectPoint repo. */
+  --purple-50:  #F6EDF8;
+  --purple-100: #E7D1EC;
+  --purple-200: #D0A2DA;
+  --purple-300: #B874C7;
+  --purple-400: #9F48B2;
+  --purple-500: #763584;             /* primary action */
+  --purple-600: #652D71;             /* hover */
+  --purple-700: #54265E;
+  --purple-800: #431E4B;
+
+  /* -------- Red (danger / destructive) -------- */
+  --red-50:   #FBE5E6;
+  --red-100:  #F3B8BD;
+  --red-200:  #ED959C;
+  --red-300:  #E7727B;
+  --red-400:  #E14E5A;
+  --red-500:  #DB2B39;                /* danger base */
+  --red-600:  #A81D28;
+  --red-700:  #70131A;
+  --red-800:  #380A0D;
+
+  /* -------- Neutrals — QMB gray scale, 9 steps --------
+   * Source: --gray-50..--gray-900 in qmb/_colors.scss. No 750 step;
+   * gray-0 (pure white) is a local helper, not a QMB token. */
+  --gray-0:    #FFFFFF;              /* local alias for white */
+  --gray-50:   #F7F7F9;
+  --gray-100:  #EFEFF4;
+  --gray-200:  #DBDBE4;
+  --gray-250:  #C1C1D0;              /* local: midpoint of 200/300 */
+  --gray-300:  #A7A7BB;
+  --gray-400:  #74748D;
+  --gray-500:  #585870;
+  --gray-600:  #46465A;
+  --gray-700:  #353543;
+  --gray-800:  #23232D;
+  --gray-900:  #12121A;
+
+  /* -------- Green (success) — QMB scale -------- */
+  --green-50:  #D9FFF3;
+  --green-100: #B3FFE8;
+  --green-200: #1CFEB9;
+  --green-300: #01CD8F;              /* QMB status "completed" */
+  --green-400: #019064;
+  --green-500: #017350;
+  --green-600: #004D36;
+  --green-700: #003324;
+  --green-800: #001A12;
+
+  /* -------- Indigo — QMB scale (reserved for AI features) -------- */
+  --indigo-50:  #E9E3FA;
+  --indigo-100: #D3C7F6;
+  --indigo-200: #BEABF1;
+  --indigo-300: #9273E8;
+  --indigo-400: #663BDF;
+  --indigo-500: #3D1A9E;
+  --indigo-600: #2E1377;
+  --indigo-700: #1F0D4F;
+  --indigo-800: #0F0628;
+
+  /* -------- Brand (legacy QMB) --------
+   * Kept for interop with the Rails app; new UI should prefer
+   * --ip-brand-blue and the semantic tokens below. */
+  --brand-01: #EA6952;               /* fire opal */
+  --brand-02: #3D1B9D;               /* han purple */
+  --brand-03: #B14F6B;               /* rose */
+  --brand-04: var(--purple-500);     /* max purple */
+  --brand-05: #F0F600;               /* safety yellow */
+
+  /* -------- Status -------- */
+  --danger:       var(--red-500);
+  --danger-ink:   var(--red-600);
+  --danger-bg:    var(--red-50);
+  --success:      var(--green-300);   /* #01CD8F */
+  --success-ink:  var(--green-400);
+  --success-bg:   var(--green-50);
+  --warning:      #F1C40F;
+  --warning-ink:  #8C6B00;
+  --warning-bg:   #FEF7DB;
+  --info:         var(--blue-500);
+  --info-ink:     var(--blue-600);
+  --info-bg:      var(--blue-50);
+
+  /* -------- Semantic -------- */
+  --fg-1: var(--gray-900);           /* primary text */
+  --fg-2: var(--gray-500);           /* secondary text */
+  --fg-3: var(--gray-400);           /* tertiary / placeholder */
+  --fg-inverse: var(--gray-0);
+  --fg-accent: var(--purple-500);    /* action / interactive accent */
+  --fg-link:   var(--blue-500);      /* text links — Inspect Point blue #1967D2 */
+  --fg-link-hover: var(--blue-600);
+  --fg-brand:  var(--ip-brand-blue);
+
+  --bg-canvas:  var(--gray-0);
+  --bg-subtle:  var(--gray-50);
+  --bg-muted:   var(--gray-100);
+  --bg-inverse: var(--gray-800);
+
+  --border-default:  var(--gray-200);
+  --border-subtle:   rgba(0,0,0,0.08);
+  --border-strong:   rgba(0,0,0,0.20);
+  --border-inverse:  rgba(255,255,255,0.10);
+
+  /* -------- Type families --------
+   * Hanken Grotesk → headings, subheadings, UI controls (button, filter,
+   *   form-control + table-header labels).
+   * Inter → body copy, table values, links, filter values.
+   * Avoid expressive / decorative faces. Avoid Light/Thin weights.
+   */
+  --font-ui:    "Hanken Grotesk", "HK Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-display: var(--font-ui); /* legacy alias */
+
+  /* -------- Heading scale (Hanken Grotesk) --------
+   * Source: Typography-Writing/Use in the .fig.
+   * Rule: line-height ≈ 1.3× type size at ≥16px, 1.5× below 16px.
+   * Color: pure #000 unless noted.
+   */
+  --text-heading-xxl:     500 32px/42px var(--font-ui);  /* page title / hero */
+  --text-heading-xl:      500 28px/36px var(--font-ui);
+  --text-heading-customl: 500 24px/32px var(--font-ui);  /* color: var(--gray-500) — subhead variant */
+  --text-heading-l:       500 24px/32px var(--font-ui);
+  --text-heading-m:       700 20px/26px var(--font-ui);
+  --text-heading-s:       700 16px/24px var(--font-ui);
+  --text-heading-xs:      700 14px/21px var(--font-ui);
+  --text-heading-xxs:     700 12px/18px var(--font-ui);  /* color: var(--gray-500) */
+
+  /* -------- Body (Inter) -------- */
+  --text-body:       400 14px/21px var(--font-body);
+
+  /* -------- Links (Inter, color #12121A; underline only when inline) -------- */
+  --text-link:       400 14px/21px var(--font-body);
+  --text-link-para:  400 14px/21px var(--font-body);     /* same metrics; renderer adds underline */
+
+  /* -------- Component labels (Hanken Grotesk Medium 14/24) -------- */
+  --text-label-primary:           500 14px/24px var(--font-ui); /* primary btn — color: white */
+  --text-label-secondary:         500 14px/24px var(--font-ui);
+  --text-label-base:              500 14px/24px var(--font-ui);
+  --text-label-tertiary:          500 14px/24px var(--font-ui); /* color: white */
+  --text-label-filter:            500 14px/24px var(--font-ui);
+  --text-label-filter-active:     500 14px/24px var(--font-ui); /* color: var(--brand-02) */
+  --text-label-filter-value:      400 14px/24px var(--font-body); /* Inter regular, #000 */
+
+  /* -------- Form-control labels (Hanken Bold 14/24, gray-500) -------- */
+  --text-label-form: 700 14px/24px var(--font-ui);
+
+  /* -------- Table text -------- */
+  --text-table-l-header: 700 12px/24px var(--font-ui);   /* List table — gray-700 */
+  --text-table-l-value: 400 14px/24px var(--font-body);  /* List table — #000 */
+  --text-table-d-header: 700 12px/24px var(--font-ui);   /* Detail table — gray-500 */
+  --text-table-d-value: 400 14px/24px var(--font-body);  /* Detail table — #000 */
+
+  /* -------- Mono / code -------- */
+  --text-code: 400 13px/20px var(--font-mono);
+
+  /* -------- Legacy aliases (keep until callers migrate) -------- */
+  --text-h1:        var(--text-heading-xxl);
+  --text-h2:        var(--text-heading-l);
+  --text-h3:        var(--text-heading-m);
+  --text-h4:        var(--text-heading-s);
+  --text-body-md:   400 16px/24px var(--font-body);
+  --text-body-sm:   400 12px/18px var(--font-body);
+  --text-body-bold: 700 14px/21px var(--font-body);
+  --text-value:     400 14px/24px var(--font-body);
+  --text-label:     500 14px/24px var(--font-ui);
+  --text-eyebrow:   700 12px/18px var(--font-ui);
+
+  /* -------- Spacing (base 8) -------- */
+  --space-2:  0.2rem; /*  2px */
+  --space-4:  0.4rem; /*  4px */
+  --space-8:  0.8rem; /*  8px */
+  --space-12: 1.2rem; /* 12px */
+  --space-16: 1.6rem; /* 16px */
+  --space-24: 2.4rem; /* 24px */
+  --space-32: 3.2rem; /* 32px */
+  --space-48: 4.8rem; /* 48px */
+  --space-64: 6.4rem; /* 64px */
+
+  /* -------- Radii -------- */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 16px;
+  --radius-full: 9999px;
+
+  /* -------- Shadows -------- */
+  --shadow-sm:   0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:   0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(219,219,228,0.5);
+  --shadow-lg:   0 8px 24px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+  --shadow-ring: 0 0 0 1px rgba(0,0,0,0.16), 0 0 0 4px rgba(0,0,0,0.04);
+  --shadow-focus: 0 0 0 2px var(--bg-canvas), 0 0 0 4px var(--purple-500);
+
+  /* -------- Motion -------- */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --dur-hover: 150ms;
+  --dur-fade: 200ms;
+  --dur-drawer: 250ms;
+
+  /* -------- AI launcher -------- */
+  --ai-gradient: linear-gradient(180deg, #3D1A9E 25%, #1835D9 85%);
+}
+
+/* -------- Base element defaults --------
+ * Headings render in pure #000 per the type spec, not --fg-1.
+ * Sentence case is enforced in writing, not CSS.
+ */
+html, body { color: var(--fg-1); background: var(--bg-canvas); font: var(--text-body); }
+body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+h1 { font: var(--text-heading-xxl); color: #000; margin: 0 0 var(--space-16); }
+h2 { font: var(--text-heading-l);   color: #000; margin: 0 0 var(--space-12); }
+h3 { font: var(--text-heading-m);   color: #000; margin: 0 0 var(--space-8); }
+h4 { font: var(--text-heading-s);   color: #000; margin: 0 0 var(--space-8); }
+h5 { font: var(--text-heading-xs);  color: #000; margin: 0 0 var(--space-8); }
+h6 { font: var(--text-heading-xxs); color: var(--gray-500); margin: 0 0 var(--space-4); }
+
+p     { font: var(--text-body); color: #000; margin: 0 0 var(--space-12); max-width: 720px; }
+small { font: var(--text-body-sm); color: var(--gray-500); }
+code, pre { font: var(--text-code); color: #000; background: var(--bg-muted); padding: 0 4px; border-radius: var(--radius-sm); }
+
+/* Links — color #1967D2 (Inspect Point blue) by default. Underline only inside paragraphs. */
+a  { color: var(--fg-link); text-decoration: none; }
+p a, .text a { text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: var(--fg-link-hover); }
+
+/* Utility classes */
+.subhead   { font: var(--text-heading-customl); color: var(--gray-500); }
+.eyebrow   { font: var(--text-heading-xxs); color: var(--gray-500); }
+.label-form { font: var(--text-label-form); color: var(--gray-500); }
+.mono      { font: var(--text-code); }
+.muted     { color: var(--gray-500); }

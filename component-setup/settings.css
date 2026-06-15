@@ -1,0 +1,536 @@
+/* settings.css — Settings → Component setup.
+   Builds on kit.css + quimby-components.css; all values via Quimby tokens. */
+
+/* ── Page scaffold ─────────────────────────────────────────────────────── */
+.set-page { display: flex; flex-direction: column; min-height: 0; }
+.set-body { padding: 24px; }
+.set-body--flush { padding: 0; }
+
+/* secondary nav for the Settings area (Component types / Component questions) */
+.set-subnav { display: flex; align-items: center; gap: 4px; padding: 0 24px; border-bottom: 1px solid var(--gray-200); background: #fff; }
+.set-subnav__link {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  font: 600 14px/1 var(--font-ui); color: var(--gray-500);
+  padding: 14px 12px; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color .15s ease, border-color .15s ease;
+}
+.set-subnav__link:hover { color: var(--gray-800); }
+.set-subnav__link:active { background: var(--gray-100); }
+.set-subnav__link--current { color: var(--indigo-500); border-bottom-color: var(--indigo-500); }
+
+/* ── List toolbar ──────────────────────────────────────────────────────── */
+.set-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.set-toolbar__search { position: relative; flex: 0 0 320px; max-width: 320px; }
+.set-toolbar__search i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 13px; pointer-events: none; }
+.set-toolbar__search input {
+  width: 100%; box-sizing: border-box; height: 36px; padding: 0 12px 0 32px;
+  border: 1px solid var(--gray-300); border-radius: var(--radius-md);
+  font: 400 14px/1 var(--font-body); background: #fff; color: #000;
+}
+.set-toolbar__search input:focus { outline: none; border-color: var(--indigo-500); box-shadow: 0 0 0 3px rgba(61,26,158,.12); }
+.set-toolbar__spacer { flex: 1; }
+.set-filter {
+  appearance: none; height: 36px; padding: 0 30px 0 12px; border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23777' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+  font: 500 13px/1 var(--font-ui); color: var(--gray-700); cursor: pointer;
+}
+
+/* path / system / default cells in the listing table */
+.set-pathchip { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--font-ui); color: var(--gray-600); }
+.set-pathchip i { font-size: 11px; color: var(--gray-400); }
+.set-cell-count { font: 600 14px/1 var(--font-ui); font-variant-numeric: tabular-nums; color: var(--gray-800); }
+.set-cell-empty { color: var(--gray-400); }
+
+/* inline row controls (power-user editing in the list) */
+.set-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.set-namecell { display: inline-flex; align-items: center; gap: 8px; }
+.set-rowedit { appearance: none; border: 0; background: none; cursor: pointer; color: var(--gray-400); width: 24px; height: 24px; border-radius: var(--radius-md); display: inline-grid; place-items: center; opacity: 0; transition: opacity .12s ease, background .12s ease, color .12s ease; font-size: 12px; }
+tr:hover .set-rowedit { opacity: 1; }
+.set-rowedit:hover { background: var(--gray-100); color: var(--indigo-500); }
+.set-rename { height: 32px; max-width: 260px; }
+.set-defcell { display: inline-flex; align-items: center; gap: 10px; }
+.set-defcell__auto { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--font-ui); color: var(--gray-600); cursor: pointer; }
+.set-defcell__unit { font-size: 12px; }
+.def-stepper--sm { height: 30px; }
+.def-stepper--sm button { width: 28px; height: 28px; font-size: 12px; }
+.def-stepper--sm input { width: 38px; height: 28px; font-size: 13px; }
+.set-rowact { appearance: none; border: 1px solid transparent; background: none; cursor: pointer; color: var(--gray-500); width: 30px; height: 30px; border-radius: var(--radius-md); display: inline-grid; place-items: center; font-size: 13px; transition: background .12s ease, color .12s ease; }
+.set-rowact:hover { background: var(--gray-100); color: var(--indigo-500); }
+.set-rowact:active { background: var(--gray-200); }
+
+/* ── Config page: shared chrome ────────────────────────────────────────── */
+/* No inner scroll region — the page container (.qmb-main) does the scrolling.
+   The gray area grows with content; min-height fills the viewport when short. */
+.cfg { display: flex; flex-direction: column; min-height: 100%; background: #fff; }
+/* Sticky workspace header (real WorkspaceHeader component) */
+.cfg-headwrap { position: sticky; top: 0; z-index: 10; }
+.cfg-headwrap .qmb-header--workspace { border-bottom: 1px solid var(--gray-200); }
+/* vertically center the title row content (title ↔ progress + Save) */
+.cfg-headwrap .qmb-header__row--main { align-items: center; }
+.cfg-headwrap .qmb-header__actions { display: flex; align-items: center; gap: 8px; }
+
+/* header field labels — Quimby BrushawayHeader pattern (header__label + inline edit).
+   The inline-edit trigger / select / caret / popup styling all come from building.css
+   (the real qmb-ui-inline-edit kit styles) — don't override them here. */
+.qmb-header__row--fields .qmb-field__label:empty { display: none; }
+.qmb-header__row--fields .qmb-field { gap: 8px; }
+.header__label { font: 400 14px/24px var(--font-ui); color: var(--gray-500); white-space: nowrap; }
+.qmb-ui-inline-select .selectValue--empty { color: var(--gray-500); }
+/* inline-select value at 14px (Inter, from building.css) to match the label scale */
+.qmb-ui-inline-edit { font-size: 14px; }
+.qmb-header__row--fields .qmb-ui-inline-edit { line-height: 24px; padding: 4px 10px; }
+.qmb-ui-popup__action-list .qmb-ui-button.is-selected { color: var(--indigo-600); font-weight: 600; }
+.cfg-top {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 24px;
+  padding: 20px 24px; background: #fff; border-bottom: 1px solid var(--gray-200);
+}
+.cfg-top__back {
+  appearance: none; border: 0; background: none; cursor: pointer; color: var(--gray-500);
+  font: 500 13px/1 var(--font-ui); display: inline-flex; align-items: center; gap: 6px; padding: 4px 0; margin-bottom: 8px;
+}
+.cfg-top__back:hover { color: var(--indigo-500); }
+.cfg-top__title { font: 700 24px/30px var(--font-ui); color: #000; margin: 0; }
+.cfg-top__sub { font: 400 14px/20px var(--font-body); color: var(--gray-500); margin: 4px 0 0; }
+.cfg-top__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.cfg-top__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* progress meter (shared) */
+.cfg-meter { display: flex; align-items: center; gap: 10px; margin-right: 16px; }
+.cfg-meter__track { width: 120px; height: 6px; border-radius: var(--radius-full); background: var(--gray-200); overflow: hidden; }
+.cfg-meter__fill { height: 100%; background: var(--indigo-500); border-radius: inherit; transition: width .25s var(--ease-standard); }
+.cfg-meter__fill.cfg-meter__fill--complete { background: var(--green-400); }
+.cfg-meter__label { font: 600 12px/1 var(--font-ui); color: var(--gray-600); font-variant-numeric: tabular-nums; }
+.cfg-meter__label.cfg-meter__label--complete { color: var(--green-400); }
+
+/* ── Shell A: guided scroll + sticky Notion-style TOC in a right gutter ──── */
+.cfg-main { flex: 1; min-height: 0; display: grid; }
+.cfg--rail .cfg-main { grid-template-columns: 1fr 90px; position: relative; }
+
+/* table-of-contents lives in the 90px right gutter, stuck to the top.
+   Ported from the Quimby docs-site .bs-sidebar: collapsed = right-aligned lines;
+   on hover the lines fade + slide left while labels slide in from the right into a
+   gray card. Container grows leftward (right edge pinned) — no rescale jank. */
+.cfg-toc {
+  grid-column: 2; justify-self: end; align-self: start;
+  position: sticky; top: calc(var(--cfg-head-h, 0px) + 16px); z-index: 20;
+  margin: 16px 16px 0 0;
+  display: flex; flex-direction: column; align-items: flex-end;
+  padding: 12px; border-radius: 8px;
+  background: transparent;
+  transition: background .1s ease;
+}
+.cfg-toc:hover, .cfg-toc:focus-within { background: var(--gray-50); align-items: stretch; }
+/* each item is the link; the marker line is its ::after (after the name span) */
+.cfg-toc__item {
+  display: flex; align-items: center; gap: 12px;
+  appearance: none; border: 0; background: none; cursor: pointer;
+  padding: 0 8px; min-height: 24px; color: var(--gray-700); text-align: left;
+  font: 500 13px/16px var(--font-ui);
+}
+.cfg-toc__item:hover { color: #000; }
+.cfg-toc__item:hover .cfg-toc__label { text-decoration: underline; }
+.cfg-toc__item::after {
+  content: ""; display: inline-block; flex-shrink: 0;
+  width: 16px; height: 2px; margin: 0 4px; border-radius: 2px;
+  background: var(--gray-300); transition: all .1s ease;
+}
+.cfg-toc__item:hover::after { background: #000; }
+.cfg-toc__item--active { font-weight: 700; color: var(--indigo-600); }
+.cfg-toc__item--active::after { background: var(--indigo-500); width: 24px; height: 3px; margin: 0; }
+/* name: hidden + shifted right when collapsed; slides in on sidebar hover.
+   max-width keeps the collapsed rail narrow enough to sit in the 90px gutter. */
+.cfg-toc__label {
+  margin-right: auto; color: inherit; white-space: nowrap;
+  max-width: 0; opacity: 0; overflow: hidden;
+  transform: translateX(24px); transition: all .1s ease;
+}
+.cfg-toc:hover .cfg-toc__label,
+.cfg-toc:focus-within .cfg-toc__label { max-width: 220px; opacity: 1; transform: translateX(0); }
+.cfg-toc:hover .cfg-toc__item::after,
+.cfg-toc:focus-within .cfg-toc__item::after { opacity: 0; transform: translateX(-48px); }
+@media (prefers-reduced-motion: reduce) { .cfg-toc, .cfg-toc__label, .cfg-toc__item::after { transition: none; } }
+
+/* scroll content — form sits in column 1; calmer centered measure */
+.cfg-scroll { grid-column: 1; min-width: 0; padding: 8px 0 48px; scroll-behavior: smooth; }
+.cfg-canvas { max-width: 760px; margin: 0 auto; padding: 24px; }
+
+/* ── Section block ─────────────────────────────────────────────────────── */
+.cfg-section { padding: 44px 0; scroll-margin-top: 16px; }
+.cfg-section:last-child { border-bottom: 0; }
+/* Tail space (rail shell only): lets the short final sections scroll up far
+   enough to cross the scrollspy trigger line and highlight. */
+.cfg--rail .cfg-section:last-child { margin-bottom: 33vh; }
+
+/* ── Shell: Express (dense single-column form for power/repeat use) ─────── */
+.cfg--express .cfg-main { grid-template-columns: 1fr; }
+.cfg--express .cfg-canvas { padding-top: 8px; }
+.cfg--express .cfg-section { padding: 14px 0 16px; }
+.cfg--express .cfg-section__head { margin-bottom: 12px; }
+.cfg--express .cfg-section__eyebrow,
+.cfg--express .cfg-section__desc { display: none; }
+.cfg--express .cfg-section__title { font: 600 16px/22px var(--font-ui); margin: 0; }
+.cfg--express .fork { gap: 10px; }
+.cfg--express .fork-card { padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+.cfg--express .fork-card__icon { width: 30px; height: 30px; font-size: 14px; margin: 0; }
+.cfg--express .fork-card__desc { display: none; }
+.cfg--express .fork-card__title { font-size: 14px; }
+.cfg--express .pick-grid { gap: 8px; }
+.cfg--express .pick-opt { padding: 8px 12px; }
+.cfg--express .pick-opt__blurb { display: none; }
+.cfg--express .tpl-grid { gap: 10px; }
+.cfg--express .tpl-card { padding: 12px; gap: 8px; }
+.cfg--express .tpl-card__blurb { display: none; }
+.cfg--express .def-row { padding: 12px 14px; }
+.cfg--express .def-row__desc { display: none; }
+.cfg--express .cfg-adv-acc { margin-top: 12px; }
+.cfg-section__head { margin-bottom: 16px; }
+.cfg-section__eyebrow { font: 700 11px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--indigo-400); }
+.cfg-section__title { font: 600 19px/26px var(--font-ui); color: #000; margin: 4px 0 0; }
+.cfg-section__desc { font: 400 14px/21px var(--font-body); color: var(--gray-500); margin: 4px 0 0; max-width: 640px; }
+
+/* ── Path fork cards ───────────────────────────────────────────────────── */
+/* Clickable tile grids keep their original ~712px width (canvas used to be 760px
+   wide w/ 24px padding) now that the canvas is left-aligned with a wide gutter. */
+.fork { max-width: 712px; }
+.fork { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.fork-card {
+  text-align: left; appearance: none; cursor: pointer; background: #fff;
+  border: 1.5px solid var(--gray-300); border-radius: var(--radius-lg); padding: 20px;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.fork-card:hover { border-color: #000; box-shadow: var(--shadow-sm); }
+.fork-card:active { background: var(--gray-100); }
+.fork-card--active,
+.fork-card--active:hover { border-color: var(--indigo-500); box-shadow: 0 0 0 4px rgba(61,26,158,.12); }
+.fork-card__icon { width: 40px; height: 40px; border-radius: var(--radius-md); display: grid; place-items: center; background: var(--gray-100); color: var(--gray-500); font-size: 18px; margin-bottom: 12px; }
+.fork-card--active .fork-card__icon { background: var(--indigo-50); color: var(--indigo-500); }m: 12px; }
+.fork-card__title { font: 600 16px/22px var(--font-ui); color: #000; display: flex; align-items: center; gap: 8px; }
+.fork-card__check { margin-left: auto; color: var(--indigo-500); opacity: 0; transition: opacity .15s ease; }
+.fork-card--active .fork-card__check { opacity: 1; }
+.fork-card__desc { font: 400 13px/19px var(--font-body); color: var(--gray-500); margin: 6px 0 0; }
+
+/* ── Pick (system type / attach-to) grouped radio cards ────────────────── */
+.pick-group { margin-bottom: 20px; }
+.pick-group__label { font: 600 14px/1 var(--font-ui); color: var(--gray-800); }
+.pick-group__blurb { font: 400 13px/18px var(--font-body); color: var(--gray-500); margin: 2px 0 10px; }
+.pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; max-width: 992px; }
+.pick-opt {
+  display: flex; align-items: flex-start; gap: 12px; text-align: left; cursor: pointer;
+  appearance: none; background: #fff; border: 1.5px solid var(--gray-300); border-radius: var(--radius-md);
+  padding: 12px 14px; transition: border-color .15s ease, background .15s ease;
+}
+.pick-opt:hover { border-color: #000; }
+.pick-opt:active { background: var(--gray-100); }
+.pick-opt--active,
+.pick-opt--active:hover { border-color: var(--indigo-500); box-shadow: 0 0 0 4px rgba(61,26,158,.12); }
+.pick-opt__icon { color: var(--gray-500); font-size: 15px; margin-top: 1px; width: 18px; text-align: center; }
+.pick-opt--active .pick-opt__icon { color: var(--indigo-500); }
+.pick-opt--blank { border-style: dashed; }
+.pick-opt__name { font: 600 14px/18px var(--font-ui); color: #000; }
+.pick-opt__blurb { font: 400 12px/16px var(--font-body); color: var(--gray-500); margin-top: 2px; }
+.pick-more { appearance: none; border: 0; background: none; cursor: pointer; color: var(--fg-link); font: 500 13px/1 var(--font-ui); display: inline-flex; align-items: center; gap: 6px; padding: 6px 0; }
+.pick-more:hover { text-decoration: underline; }
+
+/* ── Template gallery ──────────────────────────────────────────────────── */
+.tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: 14px; max-width: 992px; }
+.tpl-card {
+  text-align: left; appearance: none; cursor: pointer; background: #fff;
+  border: 1.5px solid var(--gray-300); border-radius: var(--radius-lg); padding: 16px;
+  display: flex; flex-direction: column; gap: 10px; transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.tpl-card:hover { border-color: #000; box-shadow: var(--shadow-sm); }
+.tpl-card:active { background: var(--gray-100); }
+.tpl-card--active { border-color: var(--indigo-500); box-shadow: 0 0 0 3px rgba(61,26,158,.12); }
+.tpl-card__top { display: flex; align-items: center; gap: 10px; }
+.tpl-card__icon { width: 34px; height: 34px; border-radius: var(--radius-md); display: grid; place-items: center; background: var(--gray-100); color: var(--gray-500); font-size: 15px; flex-shrink: 0; }
+.tpl-card--active .tpl-card__icon { background: var(--indigo-50); color: var(--indigo-500); }
+.tpl-card__name { font: 600 15px/20px var(--font-ui); color: #000; }
+.tpl-card__check { margin-left: auto; color: var(--indigo-500); opacity: 0; }
+.tpl-card--active .tpl-card__check { opacity: 1; }
+.tpl-card__blurb { font: 400 13px/18px var(--font-body); color: var(--gray-500); flex: 1; }
+.tpl-card__includes { display: flex; flex-wrap: wrap; gap: 6px; }
+.tpl-chip { display: inline-flex; align-items: center; gap: 5px; font: 500 11px/1 var(--font-ui); color: var(--gray-600); background: var(--gray-100); border-radius: var(--radius-full); padding: 5px 9px; }
+.tpl-chip i { font-size: 10px; color: var(--gray-400); }
+.tpl-card--blank { border-style: dashed; align-items: center; justify-content: center; text-align: center; color: var(--gray-500); min-height: 120px; }
+.tpl-card--blank .tpl-card__icon { background: var(--gray-100); color: var(--gray-500); }
+
+/* ── Details fields ────────────────────────────────────────────────────── */
+.cfg-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.cfg-fields--single { grid-template-columns: 1fr; }
+.cfg-field { display: flex; flex-direction: column; gap: 6px; }
+.cfg-field--full { grid-column: 1 / -1; }
+.cfg-field__label { font: 500 13px/1 var(--font-ui); color: var(--gray-700); }
+.cfg-field__label .req { color: var(--red-500); }
+.cfg-input {
+  height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md); font: 400 14px/1 var(--font-body); background: #fff; color: #000; width: 100%;
+}
+textarea.cfg-input { height: auto; min-height: 76px; padding: 10px 12px; resize: vertical; line-height: 1.45; }
+.cfg-input:focus { outline: none; border-color: var(--indigo-500); box-shadow: 0 0 0 3px rgba(61,26,158,.12); }
+select.cfg-input { appearance: none; cursor: pointer; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23777' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center; padding-right: 32px; }
+.cfg-field__hint { font: 400 12px/16px var(--font-body); color: var(--gray-400); }
+
+/* inline restriction guidance (recovery-before-the-fact) */
+.cfg-guard {
+  display: flex; gap: 10px; align-items: flex-start; background: var(--blue-50);
+  border: 1px solid var(--blue-200, #cfe0fb); border-radius: var(--radius-md); padding: 11px 13px; margin-top: 4px;
+}
+.cfg-guard i { color: var(--blue-700); font-size: 14px; margin-top: 1px; }
+.cfg-guard__text { font: 400 13px/19px var(--font-body); color: var(--gray-700); }
+.cfg-guard__text b { font-weight: 600; color: #000; }
+
+/* Advanced disclosure — uses the Quimby inline accordion (qmb-ui-accordion--inline).
+   Neutralize the building-page "tier border" here — Quimby's inline accordion has none. */
+.cfg-adv-acc { margin-top: 16px; }
+.cfg-adv-acc.qmb-ui-accordion--inline { border: 0; }
+
+/* ── Compatibilities ───────────────────────────────────────────────────── */
+.compat-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.compat-tag { display: inline-flex; align-items: center; gap: 8px; background: var(--gray-100); border-radius: var(--radius-full); padding: 6px 6px 6px 12px; font: 500 13px/1 var(--font-ui); color: var(--gray-800); }
+.compat-tag__x { appearance: none; border: 0; background: none; cursor: pointer; color: var(--gray-400); width: 20px; height: 20px; border-radius: var(--radius-full); display: grid; place-items: center; }
+.compat-tag__x:hover { background: var(--gray-300); color: var(--gray-700); }
+.compat-empty { font: 400 13px/18px var(--font-body); color: var(--gray-400); margin-bottom: 14px; }
+.compat-add { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.compat-add__menu { display: flex; flex-wrap: wrap; gap: 8px; }
+.compat-opt { appearance: none; cursor: pointer; border: 1px solid var(--gray-300); background: #fff; border-radius: var(--radius-full); padding: 6px 12px; font: 500 13px/1 var(--font-ui); color: var(--gray-700); transition: border-color .15s ease, color .15s ease; }
+.compat-opt:hover:not(:disabled) { border-color: var(--indigo-400); color: var(--indigo-600); }
+.compat-opt:active:not(:disabled) { background: var(--gray-100); }
+.compat-opt:disabled { opacity: .4; cursor: not-allowed; }
+.compat-summary { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; background: var(--gray-100); border-radius: var(--radius-md); padding: 12px 14px; }
+.compat-summary i { color: var(--indigo-500); font-size: 14px; margin-top: 1px; }
+.compat-summary__text { font: 400 13px/19px var(--font-body); color: var(--gray-700); }
+.compat-summary__text b { color: #000; font-weight: 600; }
+
+/* ── Inline questions ──────────────────────────────────────────────────── */
+.q-attach { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 16px; }
+.q-attach__icon { width: 36px; height: 36px; border-radius: var(--radius-md); display: grid; place-items: center; background: var(--indigo-50); color: var(--indigo-500); font-size: 15px; flex-shrink: 0; }
+.q-attach__body { min-width: 0; flex: 1; }
+.q-attach__name { font: 600 14px/18px var(--font-ui); color: #000; }
+.q-attach__meta { font: 400 12px/16px var(--font-body); color: var(--gray-500); margin-top: 1px; }
+.q-attach__actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+.q-list { display: flex; flex-direction: column; gap: 8px; }
+.q-item { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-md); padding: 10px 12px; }
+.q-item__num { flex-shrink: 0; width: 22px; height: 22px; border-radius: var(--radius-full); background: var(--gray-100); color: var(--gray-500); display: grid; place-items: center; font: 600 11px/1 var(--font-ui); }
+.q-item__text { flex: 1; min-width: 0; font: 400 14px/19px var(--font-body); color: #000; }
+.q-item__type { flex-shrink: 0; }
+.q-item__x { appearance: none; border: 0; background: none; cursor: pointer; color: var(--gray-400); width: 26px; height: 26px; border-radius: var(--radius-md); display: grid; place-items: center; }
+.q-item__x:hover { background: var(--gray-100); color: var(--red-500); }
+.q-add { display: flex; gap: 8px; align-items: stretch; margin-top: 12px; }
+.q-add .cfg-input { flex: 1; }
+.q-add__type { flex: 0 0 160px; }
+.q-newset { margin-top: 14px; }
+
+/* ── Defaults (NET-NEW) ────────────────────────────────────────────────── */
+.def-row { display: flex; align-items: flex-start; gap: 14px; background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 14px; }
+.def-row__body { flex: 1; min-width: 0; }
+.def-row__title { font: 600 15px/20px var(--font-ui); color: #000; display: flex; align-items: center; gap: 8px; }
+.def-row__desc { font: 400 13px/19px var(--font-body); color: var(--gray-500); margin-top: 3px; }
+.def-qty { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.def-stepper { display: inline-flex; align-items: center; border: 1px solid var(--gray-300); border-radius: var(--radius-md); overflow: hidden; }
+.def-stepper button { appearance: none; border: 0; background: #fff; cursor: pointer; width: 36px; height: 38px; font-size: 14px; color: var(--gray-600); display: grid; place-items: center; }
+.def-stepper button:hover { background: var(--gray-100); }
+.def-stepper button:active { background: var(--gray-200); }
+.def-stepper button:disabled { opacity: .35; cursor: not-allowed; }
+.def-stepper input { width: 56px; height: 38px; border: 0; border-left: 1px solid var(--gray-300); border-right: 1px solid var(--gray-300); text-align: center; font: 600 15px/1 var(--font-ui); color: #000; font-variant-numeric: tabular-nums; }
+.def-stepper input:focus { outline: none; background: var(--indigo-50); }
+.def-summary { display: flex; gap: 10px; align-items: flex-start; background: var(--green-50); border: 1px solid #bfe9d8; border-radius: var(--radius-md); padding: 12px 14px; }
+.def-summary i { color: var(--green-700); font-size: 14px; margin-top: 1px; }
+.def-summary__text { font: 400 13px/19px var(--font-body); color: var(--gray-700); }
+.def-summary__text b { color: var(--green-700); font-weight: 700; }
+.def-summary--muted { background: var(--gray-100); border-color: var(--gray-200); }
+.def-summary--muted i { color: var(--gray-400); }
+.def-summary--muted b { color: var(--gray-700); }
+
+/* default sub-components — quantity per type added inside each new component */
+.defsub-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.defsub-row { display: flex; align-items: center; gap: 12px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-md); padding: 8px 8px 8px 14px; }
+.defsub-row__name { flex: 1; min-width: 0; font: 500 14px/1.3 var(--font-ui); color: #000; }
+.defsub-row .def-stepper { flex-shrink: 0; }
+.def-row__icon { width: 40px; display: grid; place-items: center; color: var(--purple-500); font-size: 18px; flex-shrink: 0; }
+
+/* new question set authoring */
+.q-newset-head { display: flex; gap: 12px; align-items: flex-start; background: var(--indigo-50); border: 1px solid var(--indigo-100); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 16px; }
+.q-newset-head .cfg-fields { flex: 1; margin: 0; }
+.q-createbtn { margin-top: 4px; }
+.q-discard { margin-top: 12px; color: var(--gray-600); }
+
+/* starting-point: recommended tag + copied-from banner + share/duplicate choice */
+.start-rec { color: var(--gray-400); font-weight: 400; }
+.cfg-copybanner {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-md);
+  padding: 11px 14px; font: 400 13px/19px var(--font-body); color: var(--gray-700);
+}
+.cfg-copybanner i { color: var(--indigo-500); font-size: 14px; margin-top: 2px; }
+.cfg-copybanner b { color: #000; font-weight: 600; }
+.q-sharemode {
+  background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
+  padding: 14px 16px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.q-sharemode__title { font: 600 13px/1 var(--font-ui); color: var(--gray-700); }
+.q-sharemode__opt { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.q-sharemode__opt input { margin-top: 2px; accent-color: var(--indigo-500); flex-shrink: 0; }
+.q-sharemode__text { font: 400 13px/19px var(--font-body); color: var(--gray-700); }
+.q-sharemode__text b { color: #000; font-weight: 600; }
+
+/* ── Review ────────────────────────────────────────────────────────────── */
+.review-card { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg); overflow: hidden; }
+.review-line { display: flex; gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--gray-100); }
+.review-line:last-child { border-bottom: 0; }
+.review-line__label { flex: 0 0 150px; font: 600 13px/20px var(--font-ui); color: var(--gray-500); }
+.review-line__value { flex: 1; font: 400 14px/20px var(--font-body); color: #000; }
+.review-line__value .qmb-ui-tag { vertical-align: middle; }
+.review-line__edit { appearance: none; border: 0; background: none; cursor: pointer; color: var(--fg-link); font: 500 13px/1 var(--font-ui); flex-shrink: 0; }
+.review-line__edit:hover { text-decoration: underline; }
+
+/* ── (footer removed — actions live in the top header) ──────────────────── */
+
+/* ── Shell B: section tabs ─────────────────────────────────────────────── */
+.cfg--tabs .cfg-main { grid-template-columns: 1fr; }
+.cfg-tabbar { display: flex; gap: 2px; padding: 0 24px; background: #fff; border-bottom: 1px solid var(--gray-200); overflow-x: auto; position: sticky; top: var(--cfg-head-h, 0px); z-index: 9; }
+.cfg-tab { appearance: none; border: 0; background: none; cursor: pointer; white-space: nowrap; font: 600 13px/1 var(--font-ui); color: var(--gray-500); padding: 14px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px; display: inline-flex; align-items: center; gap: 8px; }
+.cfg-tab:hover { color: var(--gray-800); }
+.cfg-tab:active { background: var(--gray-100); }
+.cfg-tab--current { color: var(--indigo-500); border-bottom-color: var(--indigo-500); }
+.cfg-tab__dot { width: 7px; height: 7px; border-radius: var(--radius-full); background: var(--gray-300); }
+.cfg-tab--done .cfg-tab__dot { background: var(--green-500, #01CD8F); }
+/* ── Shell C: accordion sections ───────────────────────────────────────── */
+.cfg--accordion .cfg-main { grid-template-columns: 1fr; }
+.cfg--accordion .cfg-canvas { padding-top: 20px; }
+.cfg-acc { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg); margin-bottom: 12px; overflow: hidden; }
+.cfg-acc__head { display: flex; align-items: center; gap: 12px; width: 100%; appearance: none; border: 0; background: #fff; cursor: pointer; padding: 16px 18px; }
+.cfg-acc__head:hover { background: var(--gray-50); }
+.cfg-acc__head:active { background: var(--gray-100); }
+.cfg-acc__num { flex-shrink: 0; width: 24px; height: 24px; border-radius: var(--radius-full); display: grid; place-items: center; font: 600 12px/1 var(--font-ui); background: var(--gray-100); color: var(--gray-500); }
+.cfg-acc--open .cfg-acc__num, .cfg-acc--done .cfg-acc__num { background: var(--indigo-500); color: #fff; }
+.cfg-acc--done .cfg-acc__num { background: var(--green-50); color: var(--green-700); }
+.cfg-acc__title { font: 600 16px/22px var(--font-ui); color: #000; text-align: left; }
+.cfg-acc__sub { font: 400 13px/18px var(--font-body); color: var(--gray-500); margin-top: 1px; text-align: left; }
+.cfg-acc__chev { margin-left: auto; color: var(--gray-400); font-size: 13px; transition: transform .2s ease; }
+.cfg-acc--open .cfg-acc__chev { transform: rotate(90deg); }
+.cfg-acc__body { padding: 4px 18px 22px 54px; border-top: 1px solid var(--gray-100); }
+.cfg-acc--accordion-hidden { display: none; }
+
+/* entrance for accordion body / tab content */
+@media (prefers-reduced-motion: no-preference) {
+  .cfg-acc__body, .cfg--tabs .cfg-canvas { animation: cfg-fade .2s var(--ease-standard) both; }
+}
+@keyframes cfg-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ── Toggle (Quimby) ───────────────────────────────────────────────────── */
+.qmb-ui-toggle { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; cursor: pointer; }
+.qmb-ui-toggle__input { position: absolute; opacity: 0; width: 0; height: 0; }
+.qmb-ui-toggle__slider { position: absolute; inset: 0; background: var(--gray-300); border-radius: var(--radius-full); transition: background .15s ease; }
+.qmb-ui-toggle__slider::before { content: ''; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; background: #fff; border-radius: 50%; box-shadow: var(--shadow-sm); transition: transform .15s var(--ease-standard); }
+.qmb-ui-toggle__input:checked + .qmb-ui-toggle__slider { background: var(--indigo-500); }
+.qmb-ui-toggle__input:checked + .qmb-ui-toggle__slider::before { transform: translateX(18px); }
+.qmb-ui-toggle__input:focus-visible + .qmb-ui-toggle__slider { box-shadow: 0 0 0 3px rgba(61,26,158,.25); }
+
+/* ── Questions library ─────────────────────────────────────────────────── */
+.qlib-detail { padding: 4px 0; }
+.qlib-detail__row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
+.qlib-detail__row:last-child { border-bottom: 0; }
+.qlib-detail__num { flex-shrink: 0; width: 20px; color: var(--gray-400); font: 600 12px/20px var(--font-ui); }
+.qlib-detail__q { flex: 1; font: 400 14px/20px var(--font-body); color: #000; }
+.qlib-detail__t { flex-shrink: 0; }
+
+/* ── Indigo is the page's selection/accent color; Quimby action buttons keep
+   their native purple (variant="primary"/"highlighted" untouched). ── */
+
+/* ── Component-setup sub-tabs: real Quimby tabs (qmb-ui-tabs), white strip ──
+   The kit's tab strip is translucent white; force a clean transparent background
+   and give it the page's side padding + a thin baseline rule. */
+/* tabs pin to the top of the scroll region (like the building page's .bldg-tabview):
+   the workspace header above scrolls away, the tabs stay. */
+.set-tabview { padding: 0 12px; background: #fff; position: sticky; top: 0; z-index: 8; }
+.set-tabview .qmb-ui-tabs__list { background: transparent; backdrop-filter: none; min-height: 64px; }
+/* indigo active treatment (kit uses brand-02; keep selected text/underline indigo here) */
+.set-tabview .qmb-ui-tabs__option--current { color: var(--indigo-500); }
+.set-tabview .qmb-ui-tabs__option--current::after { background: var(--indigo-500); box-shadow: 0 0 0 1px var(--indigo-500); }
+
+/* ── Component Questions: accordion sections + comp-leaf question rows ───── */
+.qsec-list { padding: 24px; gap: 12px; }
+.qsec-list .qmb-ui-accordion--inline { scroll-margin-top: 80px; }
+.qsec--drop-before { box-shadow: inset 0 2px 0 0 var(--indigo-500); }
+.qsec--drop-after { box-shadow: inset 0 -2px 0 0 var(--indigo-500); }
+.qrow--drop-before { box-shadow: inset 0 2px 0 0 var(--indigo-400); }
+.qrow--drop-after { box-shadow: inset 0 -2px 0 0 var(--indigo-400); }
+/* section name — inline-edit inside the accordion title */
+.qsec__name { min-width: 0; max-width: 320px; border: 1px solid transparent; background: transparent; border-radius: var(--radius-sm); padding: 4px 8px; font: 600 16px/24px var(--font-ui); color: var(--gray-900); }
+.qsec__name:hover { background: var(--gray-50); border-color: var(--gray-200); }
+.qsec__name:focus { outline: none; background: #fff; border-color: var(--indigo-500); box-shadow: 0 0 0 3px rgba(61,26,158,.12); }
+.qsec__meta { font: 400 12px/1 var(--font-body); color: var(--gray-500); font-variant-numeric: tabular-nums; margin-right: 4px; }
+.qsec__empty { padding: 8px 12px; font: 400 14px/1.5 var(--font-body); color: var(--gray-500); }
+.qsec__add { display: inline-flex; align-items: center; gap: 8px; margin: 8px 0 4px; appearance: none; border: 0; background: none; cursor: pointer; color: var(--fg-link); font: 500 14px/1 var(--font-ui); padding: 6px 8px; border-radius: var(--radius-sm); }
+.qsec__add:hover { background: var(--gray-50); text-decoration: underline; }
+/* frequency tag on the leaf row */
+.qrow__freqtag { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; font: 500 13px/1 var(--font-ui); color: var(--gray-600); white-space: nowrap; }
+.qrow__freqtag i { font-size: 12px; color: var(--gray-400); }
+.qlink { appearance: none; border: 0; background: none; cursor: pointer; color: var(--fg-link); font: inherit; padding: 0; text-decoration: underline; }
+
+/* question edit modal */
+.qset-modal { width: 520px; }
+.qset-modal__body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+.qset-modal__row { display: flex; align-items: center; gap: 16px; min-height: 40px; }
+.qset-modal__row .header__label { flex: 0 0 104px; text-align: left; }
+.qset-modal__row > .qmb-ui-inline-select { flex: 1; min-width: 0; }
+.qset-modal__row > .qmb-ui-inline-edit { flex: 1; min-width: 0; }
+.qset-modal__foot { display: flex; align-items: center; gap: 8px; padding: 14px 24px; border-top: 1px solid var(--gray-200); }
+
+/* ── question-set modal (set → list of questions) ──────────────────────── */
+.qset-list-modal { width: 760px; max-width: calc(100vw - 48px); height: calc(100vh - 48px); }
+.qset-list-modal__name { max-width: none; width: 100%; font: 700 18px/28px var(--font-ui); padding: 4px 8px; }
+.qset-list-modal__sub { display: flex; align-items: center; gap: 8px; padding-top: 4px; }
+.qset-list-modal__body { padding: 16px 24px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+/* question list — Quimby detail-variant table (gray-framed default styles) */
+.qset-qtable { max-width: 100%; }
+.qset-qtable .qset-qcol-grip { width: 36px; text-align: center; }
+.qset-qtable .qset-qcol-type { width: 184px; }
+.qset-qtable .qset-qcol-freq { width: 152px; }
+.qset-qtable .qset-qcol-act { width: 44px; }
+.qset-qtable td { vertical-align: middle; }
+/* no row-hover highlight in the modal — rows are editable, not navigable */
+.qset-qtable tbody tr:hover td { background: transparent; }
+.qset-qtable .comp-handle { display: inline-grid; place-items: center; }
+.qset-qrow.is-dragging td { opacity: .4; }
+.qset-qrow.qrow--drop-before td { box-shadow: inset 0 2px 0 0 var(--indigo-400); }
+.qset-qrow.qrow--drop-after td { box-shadow: inset 0 -2px 0 0 var(--indigo-400); }
+.qset-qtable .qmb-ui-inline-select { min-width: 0; }
+
+/* modal tabs + Component-types apply list */
+.qset-modal-tabs { padding: 0 12px; margin-top: 4px; }
+.qset-modal-tabs .qmb-ui-tabs__list { min-height: 40px; background: transparent; backdrop-filter: none; }
+.qset-tabcount { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: var(--radius-full); background: var(--gray-200); color: var(--gray-600); font: 600 11px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+.qmb-ui-tabs__option--current .qset-tabcount { background: var(--indigo-50); color: var(--indigo-600); }
+/* modal sections (stacked questions + component types in one view) */
+.qset-modal__section { padding: 4px 0 20px; }
+/* add-question-set brushaway */
+.qset-row--inactive .cell-link { color: var(--gray-400); }
+.qset-inactive-tag { margin-left: 8px; vertical-align: middle; }
+.qmb-ui-brushaway-scrim { position: fixed; inset: 0; background: rgba(18,18,26,0.5); z-index: 999; }
+.qset-brushaway { max-width: calc(100vw - 32px); }
+.qset-brushaway__top { display: flex; flex-direction: column; gap: 16px; padding-bottom: 20px; margin-bottom: 4px; border-bottom: 1px solid var(--gray-200); }
+.qset-modal__section + .qset-modal__section { border-top: 1px solid var(--gray-200); padding-top: 18px; }
+.qset-modal__sectionhead { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+.qset-modal__sectiontitle { font: 600 15px/20px var(--font-ui); color: #000; margin: 0; }
+.qset-apply__intro { font: 400 14px/20px var(--font-body); color: var(--gray-600); margin: 0 0 16px; }
+/* searchable token input (component-type picker) */
+.typepick { position: relative; }
+.typepick__control { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 44px; padding: 7px 10px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); background: #fff; cursor: text; }
+.typepick__control.is-open { border-color: var(--indigo-500); box-shadow: 0 0 0 3px rgba(61,26,158,.12); }
+.typepick__control .compat-tag { cursor: default; }
+.typepick__input { flex: 1; min-width: 140px; border: 0; outline: none; background: transparent; font: 400 14px/24px var(--font-body); color: #000; padding: 2px 0; }
+.typepick__menu { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 5; background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); padding: 4px; max-height: 240px; overflow-y: auto; }
+.typepick__menu--empty { padding: 12px; font: 400 13px/1 var(--font-body); color: var(--gray-500); }
+.typepick__opt { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; appearance: none; border: 0; background: none; cursor: pointer; padding: 9px 10px; border-radius: var(--radius-sm); }
+.typepick__opt.is-active { background: var(--gray-100); }
+.typepick__optname { font: 500 14px/20px var(--font-ui); color: #000; }
+.typepick__warn { margin-left: auto; font: 500 12px/1 var(--font-ui); color: var(--orange-600, #B45309); white-space: nowrap; }
+
+/* responsive: collapse 2-col grids on narrow content */
+@media (max-width: 720px) {
+  .fork, .tpl-grid, .cfg-fields { grid-template-columns: 1fr; }
+  .cfg--rail .cfg-main { grid-template-columns: 1fr; }
+  .cfg-rail { display: none; }
+}

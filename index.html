@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inspect Point — Usability Testing</title>
+<style>
+  :root { --purple:#3D1B9D; --coral:#EA6952; --ink:#23232D; --muted:#8F8FA8; --line:#DBDBE4; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color:var(--ink);
+         background:#F7F7F9; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:16px; box-shadow:0 12px 40px rgba(0,0,0,.08);
+          width:100%; max-width:460px; padding:36px; }
+  .brand { display:flex; align-items:center; gap:8px; font-weight:600; color:var(--purple); margin-bottom:20px; }
+  .brand .flame { color:var(--coral); font-size:20px; }
+  h1 { font-size:22px; margin:0 0 6px; }
+  p.sub { color:var(--muted); font-size:14px; margin:0 0 24px; line-height:1.5; }
+  label { display:block; font-size:13px; font-weight:600; margin-bottom:8px; }
+  input[type=password] { width:100%; padding:12px 14px; font-size:15px; border:1px solid var(--line);
+          border-radius:10px; font-family:inherit; }
+  input[type=password]:focus { outline:none; border-color:var(--purple); }
+  button { width:100%; margin-top:14px; padding:12px; font-size:15px; font-weight:600; color:#fff;
+           background:var(--purple); border:0; border-radius:10px; cursor:pointer; font-family:inherit; }
+  button:hover { background:#54265E; }
+  .err { color:#DB2B39; font-size:13px; margin-top:10px; min-height:18px; }
+  .tests { list-style:none; padding:0; margin:8px 0 0; }
+  .tests li { border:1px solid var(--line); border-radius:12px; margin-bottom:12px; }
+  .tests a { display:flex; align-items:center; justify-content:space-between; padding:16px 18px;
+             text-decoration:none; color:var(--ink); }
+  .tests a:hover { background:#F7F7F9; }
+  .tests .t-name { font-weight:600; font-size:15px; }
+  .tests .t-desc { font-size:13px; color:var(--muted); margin-top:2px; }
+  .tests .arrow { color:var(--purple); font-size:18px; }
+  .hidden { display:none; }
+  .foot { color:var(--muted); font-size:12px; margin-top:18px; line-height:1.5; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand"><span class="flame">&#128293;</span> Inspect Point</div>
+
+    <div id="gate">
+      <h1>Usability Testing</h1>
+      <p class="sub">This area hosts prototype tests for the Inspect Point design team. Enter the access code you were given to continue.</p>
+      <label for="pw">Access code</label>
+      <input id="pw" type="password" autocomplete="off" placeholder="Enter access code" />
+      <button id="go">Unlock</button>
+      <div class="err" id="err"></div>
+    </div>
+
+    <div id="content" class="hidden">
+      <h1>Available tests</h1>
+      <p class="sub">Pick a test below. Each one runs on its own — follow the tasks as they appear.</p>
+      <ul class="tests">
+        <li>
+          <a href="component-setup/Component%20Setup%20%E2%80%94%20Test.html">
+            <span>
+              <span class="t-name">Component Setup</span>
+              <span class="t-desc">Create &amp; edit a component type and its inspection questions</span>
+            </span>
+            <span class="arrow">&rarr;</span>
+          </a>
+        </li>
+      </ul>
+      <p class="foot">More tests will appear here as they're added.</p>
+    </div>
+  </div>
+
+<script>
+  var STORED_HASH = "696ce2066e3aa425be83e103a7fc575bde92e8c85091dfbceecb8663c42bc730";
+  var gate = document.getElementById('gate');
+  var content = document.getElementById('content');
+  var err = document.getElementById('err');
+  var pw = document.getElementById('pw');
+
+  function unlock(){ gate.classList.add('hidden'); content.classList.remove('hidden'); }
+
+  async function sha256Hex(text){
+    var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+  }
+
+  async function check(){
+    err.textContent = '';
+    var h = await sha256Hex(pw.value);
+    if (h === STORED_HASH) {
+      try { sessionStorage.setItem('ut_unlocked', '1'); } catch(e){}
+      unlock();
+    } else {
+      err.textContent = 'That code didn’t match. Please try again.';
+      pw.value = ''; pw.focus();
+    }
+  }
+
+  if (sessionStorage.getItem('ut_unlocked') === '1') unlock();
+  document.getElementById('go').addEventListener('click', check);
+  pw.addEventListener('keydown', function(e){ if (e.key === 'Enter') check(); });
+</script>
+</body>
+</html>
