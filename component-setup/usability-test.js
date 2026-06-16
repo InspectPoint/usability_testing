@@ -216,7 +216,7 @@
     finished = true;
     session.finishedAt = new Date().toISOString();
     send("completed");
-    try { localStorage.setItem("iput_" + session.sessionId, JSON.stringify(session)); } catch (e) {}
+    try { localStorage.setItem("iput_" + session.sessionId, JSON.stringify(session)); localStorage.setItem(doneKey(), "1"); } catch (e) {}
     var inner = el("div");
     inner.innerHTML = '<div class="iput-check ok">✓</div><h1>All done — thank you!</h1><p>Your responses have been recorded. You can close this tab.</p>' +
       (RESULTS_ENDPOINT ? "" : '<p class="iput-muted">Facilitator: results saved in this browser. <a href="#" id="iput-dl">Download this session</a>.</p>');
@@ -253,10 +253,32 @@
     ".iput-scale-labels{display:flex;justify-content:space-between;font-size:11px;color:#8F8FA8;margin-top:6px}";
   document.head.appendChild(el("style", null, css));
 
+  // ── one-completion gate (stops retakes) ──
+  function doneKey() { return "iput_done_" + TEST_NAME + "_" + (session.pid || ""); }
+  function showAlreadyDone() {
+    var inner = el("div");
+    inner.innerHTML = '<div class="iput-brand">🔥 ' + BRAND.appName + "</div>" +
+      '<div class="iput-check ok">✓</div><h1>You’ve already completed this</h1>' +
+      "<p>Thanks — our records show this test was already finished with your link, so there’s nothing more to do. You can close this tab.</p>";
+    overlay(inner);
+  }
+  function gate() {
+    var localDone = false;
+    try { localDone = localStorage.getItem(doneKey()) === "1"; } catch (e) {}
+    if (localDone) { showAlreadyDone(); return; }
+    if (session.pid && RESULTS_ENDPOINT) {
+      var checkUrl = RESULTS_ENDPOINT.replace(/\/api\/results$/, "/api/check") +
+        "?test=" + encodeURIComponent(TEST_NAME) + "&pid=" + encodeURIComponent(session.pid);
+      fetch(checkUrl).then(function (r) { return r.json(); })
+        .then(function (d) { if (d && d.completed) showAlreadyDone(); else showIntro(); })
+        .catch(function () { showIntro(); }); // fail open — don't block real participants on a network hiccup
+    } else { showIntro(); }
+  }
+
   // ── boot ──
   (function boot() {
     var r = document.getElementById("root") || document.body;
-    if (document.body && (r.children.length || document.body.children.length > 1)) showIntro();
+    if (document.body && (r.children.length || document.body.children.length > 1)) gate();
     else setTimeout(boot, 200);
   })();
 })();
