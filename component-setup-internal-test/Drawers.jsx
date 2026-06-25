@@ -94,57 +94,8 @@ function AttachedTo({ systems, components, role, type, system, parentId, onChang
   );
 }
 
-// Searchable type picker — real Quimby Popup (BodyPopup → qmb-ui-popup action-list),
-// with a search row and a "Create new component type" action.
-function TypeSelect({ value, onChange, onCreateType, required, placeholder = 'Select a type' }) {
-  const [open, setOpen] = React.useState(false);
-  const [query, setQuery] = React.useState('');
-  const anchorRef = React.useRef(null);
-  const types = window.COMPONENT_TYPES || [];
-  const matches = types.filter(t => !query || t.toLowerCase().includes(query.toLowerCase()));
-  return (
-    <div className="qmb-ui-select">
-      <div ref={anchorRef} className={`qmb-ui-select__trigger ${value ? '' : 'is-placeholder'}`} role="button" tabIndex={0}
-        aria-expanded={open} onClick={() => setOpen(o => !o)}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o); } }}>
-        {value || placeholder}
-      </div>
-      <label>Type{required && <span className="req"></span>}</label>
-      <window.BodyPopup open={open} anchor={anchorRef.current} matchWidth width={280}
-        className="qmb-ui-popup--action-list qmb-ui-typepop" onClose={() => setOpen(false)}>
-        <div className="popup__section qmb-ui-popup__search">
-          <input className="qmb-ui-popup__search-input" autoFocus value={query} placeholder="Search types…" onChange={e => setQuery(e.target.value)} />
-          <i className="qmb-ui-popup__search-icon fa-light fa-magnifying-glass"></i>
-        </div>
-        <div className="popup__section" style={{ maxHeight: 240, overflowY: 'auto' }}>
-          <ul className="qmb-ui-popup__action-list">
-            {matches.map(t => (
-              <li key={t}>
-                <button className={`qmb-ui-button ${value === t ? 'is-selected' : ''}`} onClick={() => { onChange(t); setOpen(false); setQuery(''); }}>
-                  {t}{value === t && <i className="fa-light fa-check" style={{ marginLeft: 'auto' }}></i>}
-                </button>
-              </li>
-            ))}
-            {matches.length === 0 && <li><span className="qmb-ui-typepop__empty">No types match “{query}”.</span></li>}
-          </ul>
-        </div>
-        <hr className="popup__split" />
-        <div className="popup__section">
-          <ul className="qmb-ui-popup__action-list">
-            <li>
-              <button className="qmb-ui-button qmb-ui-typepop__create" onClick={() => { setOpen(false); const q = query.trim(); setQuery(''); onCreateType && onCreateType(q); }}>
-                <i className="fa-light fa-plus"></i>Create new component type{query.trim() ? ` “${query.trim()}”` : ''}
-              </button>
-            </li>
-          </ul>
-        </div>
-      </window.BodyPopup>
-    </div>
-  );
-}
-
 function CloseBtn({ onClose }) {
-  return <button className="qmb-ui-button comp-iconbtn" aria-label="Close" onClick={onClose}><i className="fa-light fa-xmark"></i></button>;
+  return <button className="qmb-ui-button qmb-ui-button--highlighted comp-iconbtn" aria-label="Close" onClick={onClose}><i className="fa-light fa-xmark"></i></button>;
 }
 
 // ─── Edit panel ─────────────────────────────────────────────────────────────
@@ -261,7 +212,7 @@ function EditDrawer({ comp, systems, components, onClose, onSave }) {
 }
 
 // ─── Add panel ──────────────────────────────────────────────────────────────
-function AddBrushaway({ context, systems, components, onClose, onCreate, onCreateType, justCreatedType, onConsumedType }) {
+function AddBrushaway({ context, systems, components, onClose, onCreate }) {
   const presetParent = context && context.parentId ? components.find(c => c.id === context.parentId) : null;
   const presetSystem = (presetParent && presetParent.system) || (context && context.systemId) || systems[0].id;
   const presetType = (() => {
@@ -279,7 +230,6 @@ function AddBrushaway({ context, systems, components, onClose, onCreate, onCreat
   const [role, setRole] = React.useState('individual');
   const [name, setName] = React.useState('');
   const [type, setType] = React.useState(presetType);
-  React.useEffect(() => { if (justCreatedType) { setType(justCreatedType); onConsumedType && onConsumedType(); } }, [justCreatedType]);
   const [attach, setAttach] = React.useState({ system: presetSystem, parentId: presetParent ? presetParent.id : null });
   const [location, setLocation] = React.useState('');
   const [barcode, setBarcode] = React.useState('');
@@ -346,7 +296,13 @@ function AddBrushaway({ context, systems, components, onClose, onCreate, onCreat
                 <label>Component Name<span className="req"></span></label>
               </div>
 
-              <TypeSelect value={type} onChange={setType} onCreateType={onCreateType} required placeholder="Select an Option" />
+              <div className="qmb-ui-select">
+                <select className={`qmb-ui-select__trigger ${type ? '' : 'is-placeholder'}`} value={type} onChange={e=>setType(e.target.value)}>
+                  <option value="">Select an Option</option>
+                  {window.COMPONENT_TYPES.map(t => <option key={t}>{t}</option>)}
+                </select>
+                <label>Type<span className="req"></span></label>
+              </div>
 
               <AttachedTo systems={systems} components={components} role={role} type={type}
                 system={attach.system} parentId={attach.parentId} onChange={setAttach} />

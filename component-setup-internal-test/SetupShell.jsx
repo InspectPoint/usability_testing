@@ -37,17 +37,12 @@ function InlineSelect({ label, value, options, placeholder, onChange }) {
   );
 }
 
-function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNext, chrome = 'page' }) {
-  const modal = chrome === 'modal';
+function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNext }) {
   // Edit mode has no "starting point" — you're editing an existing type, not choosing
   // how to begin. Hide the start step there.
   const sections = isEdit ? window.SETUP_SECTIONS.filter(s => s.id !== 'start') : window.SETUP_SECTIONS;
   const [d, setD] = React.useState(initial);
   const set = React.useCallback((patch) => setD(prev => ({ ...prev, ...patch })), []);
-  const [dirty, setDirty] = React.useState(false);
-  const [confirmCancel, setConfirmCancel] = React.useState(false);
-  const setTracked = React.useCallback((patch) => { setDirty(true); setD(prev => ({ ...prev, ...patch })); }, []);
-  const requestClose = () => { if (dirty) setConfirmCancel(true); else onClose && onClose(); };
   const [active, setActive] = React.useState(0);
   const [visited, setVisited] = React.useState(() => new Set([sections[0].id]));
   const [openAcc, setOpenAcc] = React.useState(() => new Set([sections[0].id]));
@@ -76,8 +71,7 @@ function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNe
 
   const doneCount = sections.filter(s => stepDone(s.id, d, visited)).length;
   const progress = Math.round((doneCount / (sections.length - 1)) * 100); // review never "done"
-  const canSave = !!d.path && (d.path === 'non-system' ? !!d.attach : !!d.system) && !!d.name && !!d.category
-    && (d.questionSetId !== '__new' || !!(d.newSetName && d.newSetName.trim()));
+  const canSave = !!d.path && (d.path === 'non-system' ? !!d.attach : !!d.system) && !!d.name && !!d.category;
 
   // path summary chips (header)
   const sys = window.SETUP_SYSTEMS.find(s => s.id === d.system);
@@ -87,19 +81,7 @@ function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNe
   // The page scrolls at .qmb-main now (no inner scroll region), so the spy must
   // listen there and measure section positions by rect, offsetting past the
   // sticky header so the step under the header is the "active" one.
-  const getScroller = () => {
-    if (cfgRef.current) {
-      const mb = cfgRef.current.querySelector && cfgRef.current.querySelector('.typewiz-modal__body');
-      if (mb) return mb;
-    }
-    let n = sectionRefs.current[sections[0] && sections[0].id] || cfgRef.current;
-    while (n && n !== document.body) {
-      const o = getComputedStyle(n).overflowY;
-      if (o === 'auto' || o === 'scroll') return n;
-      n = n.parentElement;
-    }
-    return (cfgRef.current && cfgRef.current.closest('.qmb-main')) || document.querySelector('.qmb-main');
-  };
+  const getScroller = () => (cfgRef.current && cfgRef.current.closest('.qmb-main')) || document.querySelector('.qmb-main');
   const headH = () => parseInt((cfgRef.current && getComputedStyle(cfgRef.current).getPropertyValue('--cfg-head-h')) || '0', 10) || 0;
 
   React.useEffect(() => {
@@ -114,9 +96,8 @@ function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNe
       setActive(idx); markVisited(sections[idx].id);
     };
     onScroll();
-    const raf = requestAnimationFrame(onScroll);
     scroller.addEventListener('scroll', onScroll, { passive: true });
-    return () => { cancelAnimationFrame(raf); scroller.removeEventListener('scroll', onScroll); };
+    return () => scroller.removeEventListener('scroll', onScroll);
   }, [shell, sections, markVisited]);
 
   const scrollToSection = (i) => {
@@ -125,8 +106,7 @@ function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNe
     const scroller = getScroller();
     if (n && scroller) {
       const top = scroller.scrollTop + n.getBoundingClientRect().top - scroller.getBoundingClientRect().top - headH() - 12;
-      try { scroller.scrollTo({ top, behavior: 'smooth' }); } catch (e) {}
-      scroller.scrollTop = top;
+      scroller.scrollTo({ top, behavior: 'smooth' });
     }
   };
   const goToStep = (i) => {
@@ -147,11 +127,11 @@ function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNe
 
   const renderBody = (s) => {
     const Body = s.Body;
-    return <Body d={d} set={setTracked} locked={isEdit ? d.inUse : 0} goTo={goToStep} goId={goId} />;
+    return <Body d={d} set={set} locked={isEdit ? d.inUse : 0} goTo={goToStep} goId={goId} />;
   };
 
   // ── header — real WorkspaceHeader component (Shell.jsx), sticky ──
-  const headerActions = modal ? null : (
+  const headerActions = (
     <>
       {!isEdit && (
         <div className="cfg-meter">
@@ -159,7 +139,11 @@ function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNe
           <span className={`cfg-meter__label ${progress >= 100 ? 'cfg-meter__label--complete' : ''}`}>{progress}%</span>
         </div>
       )}
-      <button className="qmb-ui-button" onClick={requestClose}>Cancel</button>
+      {!isEdit && (
+        <button className="qmb-ui-button qmb-ui-button--secondary" disabled={!canSave} onClick={() => onSaveNext && onSaveNext(d)}>
+          <i className="fa-light fa-plus"></i>Save &amp; add another
+        </button>
+      )}
       <button className="qmb-ui-button qmb-ui-button--primary" disabled={!canSave} onClick={() => onSave(d)}>
         <i className="fa-light fa-check"></i>{isEdit ? 'Save changes' : 'Save type'}
       </button>
@@ -202,22 +186,13 @@ function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNe
     </div>
   ) : null;
 
-  // unsaved-changes guard, shared across shells
-  const confirmEl = confirmCancel && window.ConfirmDialog && (
-    <window.ConfirmDialog
-      title="Discard changes?"
-      message="You have unsaved changes. Leaving now discards them. This can't be undone."
-      confirmLabel="Discard changes"
-      variant="primary"
-      onConfirm={() => { setConfirmCancel(false); onClose && onClose(); }}
-      onCancel={() => setConfirmCancel(false)}
-    />
-  );
-
   // ── shell: RAIL / EXPRESS (single scroll; Express drops the rail + compacts) ──
   if (shell === 'rail' || shell === 'express') {
     const express = shell === 'express';
-    const railMain = (
+    return (
+      <div className={`cfg ${express ? 'cfg--express' : 'cfg--rail'}`} ref={cfgRef}>
+        {header}
+        {banner}
         <div className="cfg-main">
           <div className="cfg-scroll" ref={scrollRef}>
             <div className="cfg-canvas">
@@ -246,47 +221,6 @@ function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNe
             </nav>
           )}
         </div>
-    );
-    if (modal) {
-      return (
-        <div className="qmb-ui-modal-wrapper typewiz-modal-wrap">
-          <div className="qmb-ui-modal-overlay" onClick={requestClose}></div>
-          <div className="qmb-ui-modal typewiz-modal cfg cfg--rail" role="dialog" aria-modal="true" aria-label="New component type" ref={cfgRef}>
-            <header className="qmb-ui-modal-header">
-              <div className="qmb-ui-modal-header__row qmb-ui-modal-header__row--title">
-                <div className="qmb-ui-modal-header__title"><span className="qmb-ui-text"><b>New component type</b></span></div>
-                <div className="qmb-ui-modal-header__actions">
-                  <button className="qmb-ui-button comp-iconbtn qmb-ui-modal-header__close" aria-label="Close" onClick={requestClose}><i className="fa-light fa-xmark"></i></button>
-                </div>
-              </div>
-              <hr className="qmb-ui-modal-header__divider" aria-hidden="true" />
-            </header>
-            <div className="qmb-ui-modal-body typewiz-modal__body">{banner}{railMain}</div>
-            <footer className="qmb-ui-modal-footer qmb-ui-modal-footer--divider">
-              <div className="qmb-ui-modal-footer__content">
-                <div className="qmb-ui-modal-footer__start">
-                  <div className="cfg-meter">
-                    <div className="cfg-meter__track"><div className={`cfg-meter__fill ${progress >= 100 ? 'cfg-meter__fill--complete' : ''}`} style={{ width: progress + '%' }}></div></div>
-                    <span className={`cfg-meter__label ${progress >= 100 ? 'cfg-meter__label--complete' : ''}`}>{progress}%</span>
-                  </div>
-                </div>
-                <div className="qmb-ui-modal-footer__actions">
-                  <button className="qmb-ui-button" onClick={requestClose}>Cancel</button>
-                  <button className="qmb-ui-button qmb-ui-button--primary" disabled={!canSave} onClick={() => onSave(d)}><i className="fa-light fa-check"></i>Save type</button>
-                </div>
-              </div>
-            </footer>
-          </div>
-          {confirmEl}
-        </div>
-      );
-    }
-    return (
-      <div className={`cfg ${express ? 'cfg--express' : 'cfg--rail'}`} ref={cfgRef}>
-        {header}
-        {banner}
-        {railMain}
-        {confirmEl}
       </div>
     );
   }
@@ -321,7 +255,6 @@ function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNe
             </div>
           </div>
         </div>
-        {confirmEl}
       </div>
     );
   }
@@ -355,7 +288,6 @@ function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNe
           </div>
         </div>
       </div>
-      {confirmEl}
     </div>
   );
 }

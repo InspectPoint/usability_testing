@@ -1,4 +1,4 @@
-/* usability-test.js — self-contained unmoderated usability-test harness.
+/* usability-test.js — self-contained unmoderated usability-test harness (TEMPLATE).
    Layers a task panel, click/time/success logging, and an end survey on TOP of an
    existing interactive prototype WITHOUT modifying the prototype's own code.
 
@@ -20,29 +20,21 @@
   /* ─────────────────────────── CONFIG — EDIT THIS ─────────────────────────── */
 
   var RESULTS_ENDPOINT = "https://inspectpoint-usability-results.fly.dev/api/results";
-  var TEST_NAME = "Components: Setup";  // labels every result row; keep stable across reruns
+  var TEST_NAME = "Untitled test";   // labels every result row; keep stable across reruns
   var COLLECT_NAME = true;           // ask the participant's name on the intro screen
   var BRAND = { primary: "#3D1B9D", accent: "#EA6952", appName: "Inspect Point" };
   var SUCCESS_TOAST_SELECTOR = ".qmb-ui-toast--success"; // for success type "toast"
 
   var TASKS = [
-    { id: "create", label: "Task 1 of 3",
-      scenario: "You just took on a building with a commercial kitchen, so now you're inspecting its <b>hood suppression</b> — something new for your account. Set it up so your techs can inspect it, including the checks they'll fill out.",
-      success: { type: "toast", match: /created|add another/i } },
-    { id: "defaults", label: "Task 2 of 3",
-      scenario: "Your buildings each have dozens of <b>sprinkler heads</b>, and adding them one by one is a pain. Set them up so new buildings start with a typical number already there — much like the sprinkler heads you already inspect.",
-      success: { type: "toast", match: /created|add another|updated/i } },
-    { id: "edit-section", label: "Task 3 of 3",
-      scenario: "An AHJ wants an extra check on your <b>backflow</b> inspections. You'd also like the report to keep the visual checks and the functional tests in separate <b>sections</b>.",
-      success: { type: "manual" } }
+    { id: "task1", label: "Task 1", scenario: "Scenario in the participant's words. <b>No button names.</b>", hint: "", success: { type: "manual" } },
+    { id: "task2", label: "Task 2", scenario: "Second scenario.", hint: "", success: { type: "manual" } }
   ];
 
   var SURVEY = [
-    { name: "ease", type: "scale", label: "Overall, how easy or difficult was it to set these components up?", low: "Very difficult", high: "Very easy" },
-    { name: "unexpected", type: "text", label: "Was there any point where something worked differently than you expected? Please describe what happened." },
-    { name: "organization", type: "text", label: "Did the way this was organized — the components, their questions, and sections — match how you think about your own work? Where did it feel different?" },
-    { name: "change", type: "text", label: "If you could change one thing about this setup process, what would it be?" },
-    { name: "missing", type: "text", label: "Was there anything you expected to be able to do but couldn't find?" }
+    { name: "ease", type: "scale", label: "Overall, how easy or hard was it to do those tasks?", low: "Very hard", high: "Very easy" },
+    { name: "comprehension", type: "text", label: "In your own words, what was this screen for / how did the main pieces relate?" },
+    { name: "unexpected", type: "text", label: "Did anything work differently than you expected? If so, what?" },
+    { name: "confidence", type: "scale", label: "How confident are you that you did the tasks correctly?", low: "Not at all", high: "Very confident" }
   ];
 
   /* ──────────────────────── END CONFIG — engine below ─────────────────────── */
@@ -118,30 +110,6 @@
     }
   });
 
-  // ── flip the prototype's Tweaks "Demo state" (empty ↔ populated) without a reload ──
-  // The prototype seeds an empty first-run state and only fills the library when its
-  // "Demo state" tweak is set to "populated". That tweak renders as a <select> inside the
-  // Tweaks panel (kept hidden from participants via CSS). We mount the panel via the host
-  // edit-mode message, set the value the React way, fire change, then dismiss.
-  function setDemoState(state, tries) {
-    tries = tries || 0;
-    try { window.postMessage({ type: "__activate_edit_mode" }, "*"); } catch (e) {}
-    setTimeout(function () {
-      var panel = document.querySelector(".twk-panel");
-      var sel = panel && Array.prototype.find.call(panel.querySelectorAll("select"), function (s) {
-        return Array.prototype.some.call(s.options, function (o) { return o.value === state; });
-      });
-      if (sel) {
-        var setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, "value").set;
-        setter.call(sel, state);
-        sel.dispatchEvent(new Event("change", { bubbles: true }));
-        try { window.postMessage({ type: "__deactivate_edit_mode" }, "*"); } catch (e) {}
-      } else if (tries < 12) {
-        setDemoState(state, tries + 1);
-      }
-    }, 70);
-  }
-
   // ── DOM helpers ──
   function el(tag, attrs, html) { var n = document.createElement(tag); if (attrs) for (var k in attrs) n.setAttribute(k, attrs[k]); if (html != null) n.innerHTML = html; return n; }
   function root() { var r = document.getElementById("iput-root"); if (!r) { r = el("div", { id: "iput-root" }); document.body.appendChild(r); } return r; }
@@ -150,7 +118,8 @@
 
   // ── task banner ──
   var banner;
-  // Keep --iput-bar synced to the docked bar's height so the app + overlays reserve space.
+  // The bar is DOCKED at the bottom: keep --iput-bar synced to its height so the app
+  // and any fixed overlays reserve space and nothing is hidden behind the bar.
   function syncBarHeight() {
     var h = (banner && banner.isConnected) ? banner.offsetHeight : 0;
     document.documentElement.style.setProperty("--iput-bar", h + "px");
@@ -186,8 +155,6 @@
     r.done = true; r.completed = success; r.skipped = !success;
     r.seconds = Math.max(1, Math.round((Date.now() - taskStart) / 1000)); r.endVia = how || "";
     send("in-progress");
-    // After Task 1, populate the full library (types/questions/sections) for Tasks 2–3.
-    if (current === 0) setDemoState("populated");
     if (banner) banner.remove();
     document.documentElement.style.setProperty("--iput-bar", "0px");
     var inner = el("div", { class: "iput-interstitial" });
@@ -253,7 +220,7 @@
     finished = true;
     session.finishedAt = new Date().toISOString();
     send("completed");
-    try { localStorage.setItem("iput_" + session.sessionId, JSON.stringify(session)); } catch (e) {}
+    try { localStorage.setItem("iput_" + session.sessionId, JSON.stringify(session)); localStorage.setItem(doneKey(), "1"); } catch (e) {}
     var inner = el("div");
     inner.innerHTML = '<div class="iput-check ok">✓</div><h1>All done — thank you!</h1><p>Your responses have been recorded. You can close this tab.</p>' +
       (RESULTS_ENDPOINT ? "" : '<p class="iput-muted">Facilitator: results saved in this browser. <a href="#" id="iput-dl">Download this session</a>.</p>');
@@ -276,6 +243,7 @@
     ".iput-err{color:#DB2B39;font-size:13px;margin-top:8px;min-height:16px}" +
     ".iput-btn{border:0;border-radius:10px;padding:12px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}" +
     ".iput-btn--primary{background:" + PURPLE + ";color:#fff;margin-top:4px}" +
+    // DOCKED bottom bar — full width, anchored; app + overlays reserve --iput-bar of space.
     ".iput-banner{position:fixed;left:0;right:0;bottom:0;z-index:2147483500;background:#fff;border-top:3px solid " + PURPLE + ";box-shadow:0 -6px 20px rgba(0,0,0,.12);display:flex;gap:16px;align-items:flex-start;padding:14px 18px;font-family:system-ui,sans-serif}" +
     ":root{--iput-bar:0px}" +
     ".app{height:calc(100vh - var(--iput-bar))!important}" +
@@ -294,14 +262,35 @@
     ".iput-q textarea{width:100%;border:1px solid #DBDBE4;border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box}" +
     ".iput-scale{display:flex;gap:8px}.iput-scale button{flex:1;aspect-ratio:1;border:1px solid #DBDBE4;background:#fff;border-radius:10px;font-size:16px;font-weight:600;color:#46465A;cursor:pointer;font-family:inherit}" +
     ".iput-scale button.sel{background:" + PURPLE + ";color:#fff;border-color:" + PURPLE + "}" +
-    ".iput-scale-labels{display:flex;justify-content:space-between;font-size:11px;color:#8F8FA8;margin-top:6px}" +
-    ".twk-panel{display:none!important}"; // hide the prototype's Tweaks panel from participants
+    ".iput-scale-labels{display:flex;justify-content:space-between;font-size:11px;color:#8F8FA8;margin-top:6px}";
   document.head.appendChild(el("style", null, css));
+
+  // ── one-completion gate (stops retakes) ──
+  function doneKey() { return "iput_done_" + TEST_NAME + "_" + (session.pid || ""); }
+  function showAlreadyDone() {
+    var inner = el("div");
+    inner.innerHTML = '<div class="iput-brand">🔥 ' + BRAND.appName + "</div>" +
+      '<div class="iput-check ok">✓</div><h1>You’ve already completed this</h1>' +
+      "<p>Thanks — our records show this test was already finished with your link, so there’s nothing more to do. You can close this tab.</p>";
+    overlay(inner);
+  }
+  function gate() {
+    var localDone = false;
+    try { localDone = localStorage.getItem(doneKey()) === "1"; } catch (e) {}
+    if (localDone) { showAlreadyDone(); return; }
+    if (session.pid && RESULTS_ENDPOINT) {
+      var checkUrl = RESULTS_ENDPOINT.replace(/\/api\/results$/, "/api/check") +
+        "?test=" + encodeURIComponent(TEST_NAME) + "&pid=" + encodeURIComponent(session.pid);
+      fetch(checkUrl).then(function (r) { return r.json(); })
+        .then(function (d) { if (d && d.completed) showAlreadyDone(); else showIntro(); })
+        .catch(function () { showIntro(); }); // fail open — don't block real participants on a network hiccup
+    } else { showIntro(); }
+  }
 
   // ── boot ──
   (function boot() {
     var r = document.getElementById("root") || document.body;
-    if (document.body && (r.children.length || document.body.children.length > 1)) showIntro();
+    if (document.body && (r.children.length || document.body.children.length > 1)) gate();
     else setTimeout(boot, 200);
   })();
 })();

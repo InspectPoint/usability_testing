@@ -25,13 +25,7 @@ function TypesList({ types, onOpen, onNew, onDuplicate, onUpdate }) {
   const stop = (e) => e.stopPropagation();
 
   return (
-    <div className={`set-body${types.length === 0 ? ' set-body--empty' : ''}`}>
-      {types.length === 0 ? (
-        <window.EmptyState icon="fa-cube" title="No component types yet"
-          text="Component types are the equipment your team inspects — like a sprinkler head or a control panel. Create your first one to get started."
-          actionLabel="New component type" onAction={onNew} />
-      ) : (
-      <>
+    <div className="set-body">
       <div className="set-toolbar">
         <div className="set-toolbar__search">
           <i className="fa-light fa-magnifying-glass"></i>
@@ -93,8 +87,6 @@ function TypesList({ types, onOpen, onNew, onDuplicate, onUpdate }) {
         </table>
       </div>
       {rows.length === 0 && <div className="compat-empty" style={{ padding: 24, textAlign: 'center' }}>No component types match your search.</div>}
-      </>
-      )}
     </div>
   );
 }

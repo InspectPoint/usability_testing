@@ -1,0 +1,41 @@
+// ── Inspect Point usability-test → internal results DASHBOARD ────────────────
+// Serves a read-only dashboard of all usability-test results, with a holistic
+// overview and per-test drill-down. It reads the SAME sheet the receiver writes to.
+//
+// SETUP
+//  1. Open the Apps Script project bound to your results sheet (Extensions → Apps
+//     Script) — the same project that holds the doPost receiver.
+//  2. Add this code (a new .gs file, or paste below the receiver's doPost).
+//  3. Add a second file: click + → HTML, name it exactly  dashboard  (no .html),
+//     and paste in the companion dashboard.html.
+//  4. Deploy → New deployment → Web app:
+//        Execute as: Me
+//        Who has access: Anyone within <your organization>   ← this is the internal lock
+//     Open the resulting URL while signed into your work account to view the dashboard.
+//
+// Because access is limited to your organization, only people signed into a company
+// Google account can open it — that is what keeps the dashboard internal-only.
+
+function doGet() {
+  var data = readResults();
+  var t = HtmlService.createTemplateFromFile('dashboard');
+  t.payload = JSON.stringify(data);
+  return t.evaluate()
+    .setTitle('Usability Test Results')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+// Reads the first sheet into { headers: [...], rows: [ {col: value, ...}, ... ] }.
+function readResults() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) return { headers: [], rows: [] };
+  var headers = values[0].map(function (h) { return String(h); });
+  var rows = [];
+  for (var i = 1; i < values.length; i++) {
+    var obj = {};
+    for (var c = 0; c < headers.length; c++) obj[headers[c]] = values[i][c];
+    rows.push(obj);
+  }
+  return { headers: headers, rows: rows };
+}

@@ -1,0 +1,302 @@
+/* quimby-components.css
+ * Faithful px ports of real Quimby molecules/atoms from frontend/ui/**, so the
+ * prototype composes genuine components instead of bespoke CSS. Upstream is rem
+ * (Quimby root = 10px); converted to px here to match kit.css (root = 16px).
+ * Sources: Brushaway, TabView, Tag, Radio, ControlGroup, inputs/form, Toast.
+ * The Accordion (qmb-ui-accordion) is NOT in the mounted source — it is a
+ * convention-faithful stand-in pending the real component.
+ */
+
+/* ─── Brushaway — frontend/ui/molecules/Brushaway/BrushawayStyles.scss ───── */
+.qmb-ui-brushaway {
+  position: fixed; top: 0; right: 0; height: 100%;
+  background: #fff; z-index: 1000;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  box-shadow: 0 0 0 4px rgba(88,88,112,0.1), 0 0 0 1px rgba(88,88,112,0.4);
+  box-sizing: content-box;
+  animation: brush-in var(--dur-drawer) var(--ease-standard);
+}
+@keyframes brush-in { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.qmb-ui-brushaway__main { display: flex; flex-direction: column; flex: 1 0 0; min-width: 0; height: 100%; }
+
+.qmb-ui-brushaway-header {
+  position: sticky; top: 0; z-index: 1; display: flex; flex-flow: column; gap: 8px;
+  min-height: 64px; padding: 16px 12px;
+  backdrop-filter: blur(5px); background: rgba(255,255,255,0.9); box-sizing: border-box;
+}
+.qmb-ui-brushaway-header__row { align-items: center; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 12px 24px; padding: 0 12px; width: 100%; }
+.qmb-ui-brushaway-header__row--title { align-items: flex-start; flex-wrap: nowrap; padding-right: 4px; }
+.qmb-ui-brushaway-header__title { flex: 1 0 0; min-width: 0; display: flex; align-items: center; margin-top: 3px; }
+.qmb-ui-brushaway-header__title .qmb-ui-text { margin: 0; font: 700 20px/26px var(--font-ui); color: var(--gray-900); }
+.qmb-ui-brushaway-header__title .qmb-ui-text b { font-weight: 700; }
+.qmb-ui-brushaway-header__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.qmb-ui-brushaway-header__close { flex-shrink: 0; }
+.qmb-ui-brushaway-header__divider { border: none; border-top: 1px solid var(--gray-200); bottom: 0; left: 12px; margin: 0; position: absolute; right: 12px; width: auto; }
+
+.qmb-ui-brushaway-body { flex: 1 1 0; min-height: 0; padding: 24px; overflow-y: auto; box-sizing: border-box; }
+
+.qmb-ui-brushaway-footer {
+  position: sticky; bottom: 0; z-index: 1; padding: 0 12px;
+  backdrop-filter: blur(5px); background: rgba(255,255,255,0.9); box-sizing: border-box;
+}
+.qmb-ui-brushaway-footer__content {
+  display: flex; align-items: center; justify-content: space-between; min-height: 64px;
+  padding: 8px 4px; border-top: 1px solid var(--gray-200); box-sizing: border-box;
+}
+.qmb-ui-brushaway-footer__start { display: flex; align-items: center; gap: 8px; flex-shrink: 0; font: 500 13px/1 var(--font-ui); color: var(--gray-500); }
+.qmb-ui-brushaway-footer__actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex: 1 0 0; min-width: 0; }
+
+/* ─── TabView — frontend/ui/molecules/TabView/TabViewStyles.scss ─────────── */
+.qmb-ui-tabs { box-sizing: border-box; display: block; width: 100%; }
+.qmb-ui-tabs__list {
+  list-style: none; margin: 0; padding: 0; display: flex; align-items: flex-end;
+  gap: 4px; background: rgba(255,255,255,0.8); backdrop-filter: blur(8px);
+}
+.qmb-ui-tabs__list::after { content: ''; display: block; height: 1px; background: rgba(0,0,0,0.2); position: relative; bottom: -1px; flex: 1; }
+.qmb-ui-tabs__option {
+  align-content: center; background: transparent; border: 0; border-radius: 1px 1px 0 0;
+  color: var(--gray-700); cursor: pointer; display: inline-flex; align-items: center;
+  font: 500 14px/1 var(--font-ui); gap: 8px; padding: 12px; position: relative;
+  user-select: none; transition: all 0.1s; box-shadow: 0 1px 0 var(--gray-200);
+}
+.qmb-ui-tabs__option::after {
+  content: ''; display: block; height: 1px; background: var(--brand-02); box-shadow: 0 0 0 1px var(--brand-02);
+  border-radius: 2px; position: absolute; left: 50%; right: 50%; bottom: -1px; opacity: 0; z-index: 1; transition: all 0.1s;
+}
+.qmb-ui-tabs__option:hover, .qmb-ui-tabs__option:focus-visible { background: var(--gray-100); color: #000; }
+.qmb-ui-tabs__option:active { background: var(--gray-100); }
+.qmb-ui-tabs__option--current { font-weight: 600; color: var(--brand-02); }
+.qmb-ui-tabs__option--current::after { opacity: 1; left: 0; right: 0; }
+.qmb-ui-tabs__option .counter {
+  padding: 0 4px; border-radius: 1px; background: var(--brand-01); color: #fff;
+  font: 700 10px/1.4 var(--font-ui);
+}
+.qmb-ui-tabs__option--current .counter { background: var(--brand-02); }
+
+/* ─── Tag — frontend/ui/atoms/Tag/TagStyles.scss ─────────────────────────── */
+.qmb-ui-tag {
+  align-items: center; border-radius: 16px; display: inline-flex; gap: 8px;
+  height: 24px; padding: 0 12px; user-select: none;
+  font: 500 12px/16px var(--font-ui);
+}
+.qmb-ui-tag__icon { font-size: 12px; line-height: 1; }
+.qmb-ui-tag__label { font: 500 12px/16px var(--font-ui); white-space: nowrap; }
+.qmb-ui-tag--readonly { cursor: default; }
+/* pastry */
+.qmb-ui-tag--pastry.qmb-ui-tag--gray   { background: var(--gray-100); color: var(--gray-700); }
+.qmb-ui-tag--pastry.qmb-ui-tag--red    { background: #fee; color: #c00; }
+.qmb-ui-tag--pastry.qmb-ui-tag--blue   { background: var(--blue-50); color: var(--blue-700); }
+.qmb-ui-tag--pastry.qmb-ui-tag--purple { background: #f3e8ff; color: #7c3aed; }
+.qmb-ui-tag--pastry.qmb-ui-tag--yellow { background: #fef3c7; color: #92400e; }
+.qmb-ui-tag--pastry.qmb-ui-tag--green  { background: var(--green-50); color: var(--green-700); }
+/* solid */
+.qmb-ui-tag--solid.qmb-ui-tag--gray   { background: var(--gray-500); color: #fff; }
+.qmb-ui-tag--solid.qmb-ui-tag--red    { background: var(--red-600); color: #fff; }
+.qmb-ui-tag--solid.qmb-ui-tag--blue   { background: var(--blue-500); color: #fff; }
+.qmb-ui-tag--solid.qmb-ui-tag--purple { background: var(--purple-500); color: #fff; }
+.qmb-ui-tag--solid.qmb-ui-tag--green  { background: var(--green-500); color: #fff; }
+/* compact dot */
+.qmb-ui-tag--compact { border-radius: 16px; display: inline-block; padding: 0; width: 8px; height: 8px; }
+
+/* ─── Radio — frontend/ui/molecules/inputs/Radio/RadioStyles.scss ────────── */
+.qmb-ui-radio-group { display: flex; flex-direction: column; }
+.qmb-ui-radio-group__label { font: 500 14px/14px var(--font-ui); color: var(--gray-700); margin-bottom: 4px; }
+.qmb-ui-radio-group__options { display: flex; flex-direction: column; }
+.qmb-ui-radio { display: flex; flex-wrap: wrap; align-items: flex-start; column-gap: 16px; row-gap: 4px; padding: 8px; cursor: pointer; }
+.qmb-ui-radio input[type='radio'] {
+  appearance: none; -webkit-appearance: none; border: 1.5px solid var(--gray-700); border-radius: 50%;
+  cursor: pointer; flex-shrink: 0; height: 12px; width: 12px; margin: 2px; margin-top: 4px;
+  position: relative; outline: none; transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.qmb-ui-radio input[type='radio']:hover { box-shadow: 0 0 0 8px rgba(70,70,90,0.08); }
+.qmb-ui-radio input[type='radio']:checked {
+  background: var(--indigo-500); border-color: var(--indigo-500); box-shadow: 0 0 0 4px rgba(61,27,157,0.04);
+}
+.qmb-ui-radio input[type='radio']:checked:hover { box-shadow: 0 0 0 8px rgba(61,27,157,0.08); }
+.qmb-ui-radio__label { font: 400 14px/21px var(--font-body); color: #000; cursor: pointer; user-select: none; flex: 1; }
+.qmb-ui-radio__label--bold { font-weight: 500; }
+.qmb-ui-radio__description { width: 100%; padding-left: 32px; font: 400 13px/20px var(--font-body); color: var(--gray-500); margin: 0; }
+.qmb-ui-radio--selected { background: rgba(61,27,157,0.04); border-radius: var(--radius-md); }
+
+/* ─── Inputs — preview/components-inputs.html (TextInput/SelectInput) ─────── */
+.qmb-ui-input { display: inline-block; position: relative; width: 100%; }
+.qmb-ui-input input, .qmb-ui-input textarea {
+  background: transparent; border: 1px solid rgba(0,0,0,0.2); border-radius: 2px; box-sizing: border-box;
+  color: #000; font: 400 15px/1.2 var(--font-ui); min-height: 48px; margin: 0; padding: 18px 8px 0;
+  width: 100%; transition: border 0.1s ease-in-out, background 0.1s ease-in-out;
+}
+.qmb-ui-input textarea { min-height: 96px; resize: vertical; padding-top: 22px; line-height: 1.4; }
+.qmb-ui-input input::placeholder, .qmb-ui-input textarea::placeholder { color: rgba(0,0,0,0.32); font-size: 12px; }
+.qmb-ui-input label {
+  color: var(--gray-500); cursor: text; font: 400 12px/12px var(--font-ui); pointer-events: none;
+  max-width: 100%; overflow: hidden; position: absolute; top: 0; left: 0; text-overflow: ellipsis;
+  white-space: nowrap; transition: all 0.15s ease; padding: 8px; margin: 0;
+}
+.qmb-ui-input input:placeholder-shown ~ label, .qmb-ui-input textarea:placeholder-shown ~ label { font-size: 14px; }
+.qmb-ui-input label .req::after { content: ' *'; color: var(--red-500); font-weight: 600; }
+.qmb-ui-input input:hover, .qmb-ui-input textarea:hover { border-color: rgba(0,0,0,1); }
+.qmb-ui-input input:focus, .qmb-ui-input textarea:focus {
+  background: rgba(61,27,157,0.04); border-color: #3D1B9D; outline: 8px solid rgba(61,27,157,0.025); outline-offset: 0; z-index: 2;
+}
+.qmb-ui-input input:focus ~ label, .qmb-ui-input textarea:focus ~ label { color: #3D1B9D; font-size: 12px; z-index: 2; }
+
+.qmb-ui-select { position: relative; width: 100%; }
+.qmb-ui-select__trigger {
+  background: transparent; border: 1px solid rgba(0,0,0,0.2); border-radius: 2px; box-sizing: border-box;
+  color: #000; font: 400 15px/1.2 var(--font-ui); min-height: 48px; padding: 18px 32px 0 8px; width: 100%;
+  cursor: pointer; display: flex; align-items: center; text-align: left;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23000' d='M10.293 3.293 6 7.586 1.707 3.293A1 1 0 0 0 .293 4.707l5 5a1 1 0 0 0 1.414 0l5-5a1 1 0 1 0-1.414-1.414Z'/%3E%3C/svg%3E");
+  background-size: 8px; background-position: calc(100% - 12px) center; background-repeat: no-repeat;
+  transition: border 0.1s ease, background-color 0.1s ease;
+}
+.qmb-ui-select__trigger:hover { border-color: rgba(0,0,0,1); }
+.qmb-ui-select__trigger.is-placeholder { color: rgba(0,0,0,0.4); }
+.qmb-ui-select > label {
+  color: var(--gray-500); font: 400 12px/12px var(--font-ui); pointer-events: none; position: absolute;
+  top: 0; left: 0; padding: 8px; margin: 0;
+}
+.qmb-ui-select > label .req::after { content: ' *'; color: var(--red-500); font-weight: 600; }
+.qmb-ui-select.is-open .qmb-ui-select__trigger { background-color: rgba(61,27,157,0.04); border-color: #3D1B9D; outline: 8px solid rgba(61,27,157,0.025); }
+.qmb-ui-select.is-open > label { color: #3D1B9D; }
+/* native <select> styled as a QMB select (label always small since it always has a value) */
+select.qmb-ui-select__trigger { appearance: none; -webkit-appearance: none; }
+
+/* hierarchical select popup (Assets-style attach picker) — Popup shell provides the card */
+.qmb-ui-hier-popup {
+  position: absolute; z-index: 60; top: 54px; left: 0;
+}
+.qmb-ui-hier-popup .popup__section { max-height: 300px; overflow-y: auto; }
+/* hierarchical attach options rendered as Quimby Button rows (in popup__section) */
+.popup__section .qmb-ui-button.qmb-ui-hier-opt--system { font-weight: 600; }
+.popup__section .qmb-ui-button.qmb-ui-hier-opt--child { padding-left: 38px; position: relative; }
+.qmb-ui-hier-opt--child::before {
+  content: ''; position: absolute; left: 22px; top: 0; bottom: 50%; width: 9px;
+  border-left: 1.5px solid var(--gray-200); border-bottom: 1.5px solid var(--gray-200); border-bottom-left-radius: 4px;
+}
+.popup__section .qmb-ui-button.qmb-ui-hier-opt--selected { background: rgba(61,27,157,0.1); color: #3D1B9D; }
+.popup__section .qmb-ui-button.qmb-ui-hier-opt--selected:hover { background: rgba(61,27,157,0.14); }
+.qmb-ui-hier-opt--none { border-bottom: 1px solid var(--gray-100); }
+.qmb-ui-hier-opt i.lead { color: var(--gray-400); }
+
+/* clear button on the select trigger (detach to top level) */
+.qmb-ui-select__trigger.has-clear { padding-right: 52px; }
+.qmb-ui-select__clear {
+  position: absolute; right: 28px; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 22px; border: 0; background: transparent; color: var(--gray-500);
+  cursor: pointer; border-radius: var(--radius-full); display: inline-flex; align-items: center; justify-content: center; font-size: 12px;
+}
+.qmb-ui-select__clear:hover { background: var(--gray-100); color: var(--gray-800); }
+
+/* ─── Toast — frontend/ui/molecules/Toast/ToastStyles.scss ───────────────── */
+.qmb-ui-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  border-radius: 4px; max-width: 384px; overflow: hidden; padding: 8px; z-index: 10002; color: #fff;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--gray-500) 10%, transparent), 0 0 0 1px color-mix(in srgb, var(--gray-500) 50%, transparent);
+  animation: slideup 200ms var(--ease-standard);
+}
+.qmb-ui-toast--success { background: var(--green-500); box-shadow: 0 0 0 4px color-mix(in srgb, var(--green-500) 10%, transparent), 0 0 0 1px var(--green-700); }
+.qmb-ui-toast--error { background: var(--red-600); box-shadow: 0 0 0 4px color-mix(in srgb, var(--red-500) 10%, transparent), 0 0 0 1px var(--red-800); }
+.qmb-ui-toast--info { background: var(--blue-500); box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue-500) 10%, transparent), 0 0 0 1px var(--blue-700); }
+.qmb-ui-toast .notification__content { align-items: center; display: flex; gap: 8px; min-height: 32px; padding: 6px 8px; }
+.qmb-ui-toast .notification__icon { display: flex; align-items: center; flex-shrink: 0; }
+.qmb-ui-toast .notification__icon i { font-size: 16px; color: #fff; }
+.qmb-ui-toast .notification__message { font: 500 14px/21px var(--font-ui); }
+@keyframes slideup { from { transform: translate(-50%, 12px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+
+/* ─── WorkspaceHeader — px port of frontend/ui/molecules/Header/WorkspaceHeader ─ */
+.qmb-ui-header--workspace {
+  backdrop-filter: blur(5px); background: #fff; box-sizing: border-box;
+  display: flex; flex-flow: column; gap: 8px; min-height: 64px; padding: 16px 12px; position: relative; width: 100%;
+}
+.qmb-ui-header--workspace.qmb-ui-header--sticky { position: sticky; top: 0; z-index: 10; }
+.qmb-ui-header--workspace > .header__row { align-items: center; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 12px 24px; padding: 0 12px; width: 100%; }
+.qmb-ui-header--workspace > .header__row:first-child { align-items: flex-start; flex-wrap: nowrap; }
+.qmb-ui-header--workspace .header__title { color: #000; display: flex; flex: 1; flex-wrap: wrap; font: 500 24px/32px var(--font-ui); gap: 0 12px; margin: 0; }
+.qmb-ui-header--workspace .header__title-text { flex: 0 1 auto; }
+.qmb-ui-header--workspace .header__context { color: var(--gray-500); font: 300 24px/32px var(--font-ui); text-decoration: none; }
+.qmb-ui-header--workspace .header__context:hover { text-decoration: underline; text-underline-offset: 2px; }
+.qmb-ui-header--workspace .header__actions { align-items: flex-start; display: flex; flex-shrink: 0; gap: 8px; }
+.qmb-ui-header--workspace .header__actions .qmb-ui-toolbar,
+.qmb-ui-header--workspace .header__actions .qmb-ui-toolbar__group,
+.qmb-ui-header--workspace .header__actions .qmb-ui-toolbar__overflow { padding: 0; }
+.qmb-ui-header--workspace > .header__divider { border: none; border-top: 1px solid var(--gray-200); bottom: 0; left: 12px; margin: 0; position: absolute; right: 12px; width: auto; }
+
+/* ─── Toolbar — px port of frontend/ui/molecules/Toolbar/ToolbarStyles.scss ── */
+.qmb-ui-toolbar {
+  align-items: center; background: #fff; display: inline-flex; flex-flow: row nowrap; gap: 0;
+  min-height: 32px; position: relative; border: 1px solid var(--gray-200); border-radius: var(--radius-md);
+}
+.qmb-ui-toolbar__group { align-items: center; display: inline-flex; flex-flow: row nowrap; gap: 8px; padding: 4px 8px; }
+.qmb-ui-toolbar__divider { align-self: center; background: var(--gray-200); flex-shrink: 0; height: 24px; margin: 0 2px; width: 1px; }
+.qmb-ui-toolbar__overflow { align-items: center; display: inline-flex; flex-shrink: 0; padding: 4px 6px; }
+.qmb-ui-toolbar__overflow-trigger {
+  align-items: center; background: transparent; border: 0; border-radius: var(--radius-md); cursor: pointer;
+  display: inline-flex; font-size: 16px; height: 32px; justify-content: center; min-width: 32px; padding: 0 8px;
+  color: var(--gray-700); transition: background 0.1s ease;
+}
+.qmb-ui-toolbar__overflow-trigger:hover, .qmb-ui-toolbar__overflow-trigger:focus-visible { background: var(--gray-100); outline: none; }
+.qmb-ui-toolbar__overflow-trigger[aria-expanded='true'] { background: var(--gray-200); color: #000; }
+
+/* ─── Popup — px port of frontend/ui/molecules/Popup/PopupStyles.scss ────── */
+.qmb-ui-popup { position: relative; min-width: 240px; width: 240px; background: transparent; border: 0; border-radius: 4px; isolation: isolate; z-index: 10001; }
+.qmb-ui-popup > * { position: relative; z-index: 1; }
+.qmb-ui-popup .k-popup { background: #fff; border: none; border-radius: 4px; box-shadow: 0 0 0 4px rgba(88,88,112,0.1), 0 0 0 1px rgba(88,88,112,0.4); overflow: hidden; }
+.qmb-ui-popup--block { width: 100%; min-width: 0; }
+.popup__section { padding: 8px 0; box-sizing: border-box; }
+.popup__section .qmb-ui-button { border-radius: 0; gap: 12px; justify-content: flex-start; padding-left: 16px; padding-right: 16px; text-align: left; width: 100%; min-height: 36px; font: 500 13px/18px var(--font-ui); color: var(--gray-800); }
+.popup__section .qmb-ui-button i { width: 16px; text-align: center; color: var(--gray-500); font-size: 13px; }
+.popup__section .qmb-ui-button:hover { background: var(--gray-50); color: #000; }
+.popup__section .qmb-ui-button.is-danger, .popup__section .qmb-ui-button.is-danger i { color: var(--red-600); }
+.popup__section .qmb-ui-button.is-danger:hover { background: var(--red-50); }
+.qmb-ui-popup__action-list { list-style: none; margin: 0; padding: 0; }
+.qmb-ui-popup__action-list--padded { padding: 12px 0; }
+.qmb-ui-popup__action-list > li { margin: 0; padding: 0; }
+.qmb-ui-popup__title.popup__title--group { color: var(--gray-500); font: 700 13px/1 var(--font-ui); padding: 4px 16px 8px; }
+.popup__split { border: 0; border-bottom: 1px solid rgba(0,0,0,0.16); margin: -1px 8px; }
+
+/* ─── Accordion — faithful px port of
+   frontend/ui/molecules/Accordion/AccordionStyles.scss (inline + section). ── */
+.qmb-ui-accordion { width: 100%; border: none; margin: 0; padding: 0; }
+.qmb-ui-accordion__summary {
+  display: block; cursor: pointer; list-style: none; user-select: none;
+  padding: 8px 8px 8px 12px; border-radius: 4px 4px 0 0; transition: background-color 200ms ease;
+  background: #fff;
+}
+.qmb-ui-accordion__summary::-webkit-details-marker { display: none; }
+.qmb-ui-accordion__summary::marker { content: ""; }
+.qmb-ui-accordion__summary:focus-visible { outline: 2px solid var(--blue-500); outline-offset: 2px; }
+.qmb-ui-accordion__header { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 32px; }
+.qmb-ui-accordion__header-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.qmb-ui-accordion__chevron { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 16px; color: var(--gray-500); transition: transform 200ms ease; font-size: 12px; }
+.qmb-ui-accordion--expanded > .qmb-ui-accordion__summary .qmb-ui-accordion__chevron { transform: rotate(90deg); }
+.qmb-ui-accordion__title-container { display: flex; align-items: center; gap: 12px; min-width: 0; margin-right: 8px; }
+.qmb-ui-accordion__title { flex: 0 0 auto; font: 600 16px/normal var(--font-ui); color: var(--gray-700); }
+.qmb-ui-accordion__preview-content { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.qmb-ui-accordion__preview-text { font: 500 13px/normal var(--font-ui); color: var(--gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qmb-ui-accordion__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.qmb-ui-accordion__divider-line { flex: 1; min-width: 16px; height: 1px; background: rgba(0,0,0,0.1); }
+.qmb-ui-accordion__content { padding: 4px 16px 16px 16px; background: #fff; border-radius: 0 0 4px 4px; }
+
+/* inline variant */
+.qmb-ui-accordion--inline > .qmb-ui-accordion__summary { background: var(--gray-50); border-radius: 4px 4px 0 0; }
+.qmb-ui-accordion--inline > .qmb-ui-accordion__summary:hover,
+.qmb-ui-accordion--inline > .qmb-ui-accordion__summary:active { background: var(--gray-100); }
+.qmb-ui-accordion--inline > .qmb-ui-accordion__content { background: var(--gray-50); }
+.qmb-ui-accordion--inline.qmb-ui-accordion--collapsed > .qmb-ui-accordion__summary { border-radius: 4px; }
+
+/* section variant */
+.qmb-ui-accordion--section > .qmb-ui-accordion__summary { background: #fff; }
+.qmb-ui-accordion--section > .qmb-ui-accordion__summary:hover,
+.qmb-ui-accordion--section > .qmb-ui-accordion__summary:active { background: var(--gray-100); }
+.qmb-ui-accordion--section > .qmb-ui-accordion__summary .qmb-ui-accordion__title { font-size: 18px; font-weight: 700; line-height: 26px; }
+.qmb-ui-accordion--section > .qmb-ui-accordion__content { background: #fff; }
+
+/* selected (checkbox) */
+.qmb-ui-accordion--selected.qmb-ui-accordion--inline > .qmb-ui-accordion__summary,
+.qmb-ui-accordion--selected.qmb-ui-accordion--inline > .qmb-ui-accordion__content,
+.qmb-ui-accordion--selected.qmb-ui-accordion--section > .qmb-ui-accordion__summary,
+.qmb-ui-accordion--selected.qmb-ui-accordion--section > .qmb-ui-accordion__content { background: var(--indigo-50); }
+
+/* tier borders (kept per request — delineates nesting tiers) */
+.qmb-ui-accordion--inline { border: 1px solid var(--gray-200); border-radius: 4px; background: var(--gray-50); }
+.qmb-ui-accordion--section { border: 1px solid var(--gray-200); border-radius: 4px; background: #fff; }

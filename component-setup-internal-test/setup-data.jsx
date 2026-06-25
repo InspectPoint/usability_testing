@@ -178,16 +178,7 @@ const CATEGORY_COLOR = {
 
 const QUESTION_TYPES = ['Pass / Fail / N/A','Yes / No','Number','Text','Date','Open / Closed','Single select','Multi select'];
 
-// ── Inspection sections — group questions within an inspection form ─────────
-const SECTIONS = [
-  { id:'sec-visual',  name:'Visual inspection',   description:'General condition, corrosion, obstructions, and signage checks.', questions:8 },
-  { id:'sec-func',    name:'Functional test',     description:'Actuation, flow, and device-response tests performed on site.', questions:12 },
-  { id:'sec-valve',   name:'Valves & gauges',     description:'Valve positions, supervision, and gauge readings.', questions:6 },
-  { id:'sec-alarm',   name:'Alarms & notification', description:'Initiating and notification devices, panel signals.', questions:9 },
-  { id:'sec-docs',    name:'Documentation',       description:'Tags, certificates, and recordkeeping verification.', questions:4 },
-];
-
 Object.assign(window, {
   SETUP_SYSTEMS, ATTACH_GROUPS, ATTACH_MORE, RECOMMENDED_TYPES, QUESTION_SETS,
-  SETUP_TYPES, SUBCOMPONENT_TYPES, CATEGORY_COLOR, QUESTION_TYPES, SECTIONS,
+  SETUP_TYPES, SUBCOMPONENT_TYPES, CATEGORY_COLOR, QUESTION_TYPES,
 });

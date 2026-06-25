@@ -12,59 +12,6 @@
 .bldg-page > .qmb-ui-header--workspace { margin-bottom: -24px; position: relative; z-index: 9; }
 .bldg-tabview .qmb-ui-tabs__list { padding: 0 12px; min-height: 64px; }
 
-/* ─── Building tabs — Inspect Point workspace style (bordered, wrapping) ───── */
-.bldg-tabbar { background: #fff; }
-.bldg-tabs-ip { padding: 28px 16px 0; }
-.bldg-tabs-ip ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--gray-200); }
-.bldg-tabs-ip li { display: block; }
-.bldg-tabs-ip__tab {
-  display: inline-flex; align-items: center; gap: 8px;
-  margin: -1px 0 0 -1px; padding: 11px 16px; min-height: 44px;
-  background: #fff; border: 1px solid var(--gray-200);
-  color: var(--gray-700); font: 500 14px/1 var(--font-ui);
-  cursor: pointer; white-space: nowrap; position: relative;
-  transition: background 0.12s, color 0.12s;
-}
-.bldg-tabs-ip__tab i { font-size: 14px; color: var(--gray-400); }
-.bldg-tabs-ip__tab:hover { background: var(--gray-50); color: #000; z-index: 1; }
-.bldg-tabs-ip__tab--current {
-  color: var(--blue-500); font-weight: 600; background: #fff; z-index: 2;
-  border-top: 2px solid var(--blue-500); padding-top: 10px;
-}
-.bldg-tabs-ip__tab--current i { color: var(--blue-500); }
-.bldg-tabs-ip__tab .counter {
-  padding: 0 6px; border-radius: 10px; background: var(--brand-02); color: #fff;
-  font: 700 11px/1.6 var(--font-ui);
-}
-.bldg-tabs-ip__tab--current .counter { background: var(--blue-500); }
-
-/* ─── System And Assets tab body ──────────────────────────────────────────── */
-.sysassets { padding: 24px; background: #fff; }
-.sysassets__status { margin-bottom: 32px; max-width: 280px; }
-.sysassets__status-label { display: block; font: 600 14px/1.4 var(--font-ui); color: var(--gray-800); margin-bottom: 6px; }
-.sysassets__select { position: relative; }
-.sysassets__select select {
-  width: 100%; appearance: none; -webkit-appearance: none;
-  padding: 8px 34px 8px 12px; border: 1px solid var(--gray-300); border-radius: 4px;
-  background: #fff; font: 400 14px/1.4 var(--font-body); color: var(--gray-900); cursor: pointer;
-}
-.sysassets__select select:focus-visible { outline: 2px solid var(--purple-500); outline-offset: 1px; }
-.sysassets__caret { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-500); pointer-events: none; font-size: 12px; }
-.sysassets__cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: start; }
-.sysassets__h { font: 700 22px/1.3 var(--font-ui); color: var(--blue-500); margin: 0 0 4px; }
-.sysassets__masslink { display: inline-block; margin-bottom: 16px; color: var(--fg-link); font: 400 14px/1.4 var(--font-body); text-decoration: none; }
-.sysassets__masslink:hover { text-decoration: underline; }
-.sysassets__table { width: 100%; border-collapse: collapse; }
-.sysassets__table th { text-align: left; padding: 12px 16px; background: var(--gray-50); border: 1px solid var(--gray-200); font: 700 14px/1.4 var(--font-ui); color: var(--gray-800); }
-.sysassets__table td { padding: 14px 16px; border: 1px solid var(--gray-200); vertical-align: top; font: 400 14px/1.5 var(--font-body); color: var(--gray-900); }
-.sysassets__table th:first-child, .sysassets__table td:first-child { width: 34%; }
-.sysassets__table th:nth-child(2), .sysassets__table td:nth-child(2) { width: 18%; }
-.sysassets__link { color: var(--fg-link); text-decoration: none; }
-.sysassets__link:hover { color: var(--fg-link-hover); text-decoration: underline; }
-.sysassets__cats { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
-.sysassets__empty { color: var(--gray-500); font: 400 14px/1.5 var(--font-body); padding: 8px 0; }
-@media (max-width: 1100px) { .sysassets__cols { grid-template-columns: 1fr; gap: 32px; } }
-
 /* ─── Components tab body ───────────────────────────────────────────────── */
 /* app-like: subtle gray canvas, white system cards, a defined sticky toolbar */
 .ctab { background: var(--gray-50); padding: 0; flex: 1 0 auto; }
@@ -74,10 +21,6 @@
 }
 /* system-scoped sub-page: breathing room between the divided header and the filters */
 .bldg-page.is-scoped .ctab-filters { margin-top: 16px; }
-.ctab-filter-empty { text-align: center; padding: 56px 24px; color: var(--gray-500); }
-.ctab-filter-empty i { font-size: 32px; color: var(--gray-300); margin-bottom: 12px; display: block; }
-.ctab-filter-empty h4 { margin: 0 0 4px; font: 700 16px/1.4 var(--font-ui); color: var(--gray-700); }
-.ctab-filter-empty p { margin: 0; font: 400 14px/1.5 var(--font-body); color: var(--gray-500); max-width: 420px; margin-left: auto; margin-right: auto; }
 .ctab-search { width: 320px; max-width: 42vw; }
 
 /* filter-bar search (qmb-filters / filters__search) */
@@ -346,10 +289,6 @@
 .qmb-ui-modal-header__title { flex: 1 1 0; min-width: 0; display: flex; align-items: center; margin-top: 3px; }
 .qmb-ui-modal-header__title .qmb-ui-text { margin: 0; font: 600 20px/28px var(--font-ui); color: var(--gray-900); }
 .qmb-ui-modal-header__title .qmb-ui-text b { font-weight: 700; }
-/* title field: bold "<Label>:" + the value as an inline-edit gray box (Edit Type pattern) */
-.cmodal__titlefield { display: flex; align-items: center; gap: 10px; }
-.cmodal__titlefield .qmb-ui-text { flex: 0 0 auto; }
-.cmodal__titlefield .qmb-ui-inline-edit { flex: 0 1 auto; font: 600 20px/28px var(--font-ui); }
 .qmb-ui-modal-header__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .qmb-ui-modal-header__divider { border: none; border-top: 1px solid var(--gray-200); bottom: 0; left: 12px; margin: 0; position: absolute; right: 12px; width: auto; }
 .qmb-ui-modal-body { flex: 1 1 auto; min-height: 0; padding: 24px; overflow-y: auto; box-sizing: border-box; }
@@ -613,28 +552,3 @@
 }
 .comp-note__preview:hover .comp-note__text { color: var(--gray-700); }
 .comp-note__preview:focus-visible { outline: 2px solid var(--purple-500); outline-offset: 2px; border-radius: var(--radius-sm); }
-
-/* ── Type picker popup (Add Component brushaway) — Quimby popup search/divider ── */
-.qmb-ui-typepop .k-popup { padding: 0; }
-/* Quimby PopupSearchInput — inset divider, indigo focus highlight (PopupStyles.scss) */
-.popup__section.qmb-ui-popup__search { overflow: visible; padding: 0; }
-.qmb-ui-popup__search { position: relative; display: flex; align-items: center; background: #fff; border: 0; border-radius: 4px 4px 0 0; }
-.qmb-ui-popup__search::after { content: ''; position: absolute; left: 8px; right: 8px; bottom: 0; border-bottom: 1px solid var(--gray-200); pointer-events: none; transition: all .1s ease; }
-.qmb-ui-popup__search:focus-within { background: rgba(61,26,158,0.08); box-shadow: 0 8px 0 0 rgba(61,26,158,0.08); }
-.qmb-ui-popup__search:focus-within::after { border-bottom-color: var(--indigo-500); }
-.qmb-ui-popup__search:focus-within .qmb-ui-popup__search-icon { color: var(--indigo-500); }
-.qmb-ui-popup__search-icon { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--gray-300); font-size: 16px; line-height: 1; pointer-events: none; }
-.qmb-ui-popup__search-input { -webkit-appearance: none; appearance: none; background: transparent; border: 0; box-shadow: none; outline: none; color: #000; flex: 1; min-width: 0; font: 400 14px/14px var(--font-body); margin: 0; padding: 12px 40px 12px 16px; }
-.qmb-ui-popup__search-input::placeholder { color: var(--gray-400); }
-.qmb-ui-typepop__empty { display: block; padding: 8px 16px; font: 400 13px/1.4 var(--font-body); color: var(--gray-500); }
-.qmb-ui-typepop__create { color: var(--purple-500); font-weight: 600; }
-
-.typewiz-overlay { position: fixed; inset: 0; z-index: 10075; background: #fff; overflow: auto; }
-/* Add-Type wizard as a Quimby modal (centered, footer with buttons + progress) */
-.typewiz-modal-wrap { z-index: 10075; }
-.typewiz-modal { width: 960px; max-width: calc(100vw - 48px); max-height: calc(100vh - 48px); min-height: 0; display: flex; flex-direction: column; }
-.typewiz-modal.cfg { min-height: 0; }
-.typewiz-modal__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0; }
-.typewiz-modal .cfg-main { min-height: 0; }
-.typewiz-modal .cfg-scroll { max-height: none !important; overflow: visible !important; }
-.typewiz-modal .cfg-toc { position: sticky; top: 8px; }

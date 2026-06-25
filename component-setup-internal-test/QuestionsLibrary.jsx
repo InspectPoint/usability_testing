@@ -80,11 +80,11 @@ function TypePicker({ selected, currentSetId, sets, onAdd, onRemove }) {
   );
 }
 
-function QuestionsLibrary({ emptyMode }) {
+function QuestionsLibrary() {
   const seed = () => window.QUESTION_SETS.map(s => ({
-    id: s.id, name: s.name, code: s.code, category: s.category, description: s.description || '', usedBy: s.usedBy, updated: s.updated,
+    id: s.id, name: s.name, code: s.code, category: s.category, usedBy: s.usedBy, updated: s.updated,
     active: s.active !== false,
-    questions: s.questions.map(q => ({ id: nextId('q'), q: q.q, type: q.type, frequency: q.frequency || 'Annual', section: q.section || '' })),
+    questions: s.questions.map(q => ({ id: nextId('q'), q: q.q, type: q.type, frequency: q.frequency || 'Annual' })),
   }));
   const [sets, setSets] = React.useState(seed);
   const [q, setQ] = React.useState('');
@@ -94,20 +94,16 @@ function QuestionsLibrary({ emptyMode }) {
   const drag = React.useRef(null);
   const [dropHint, setDropHint] = React.useState(null);
   const [dragId, setDragId] = React.useState(null);
-  const [qEdit, setQEdit] = React.useState(null); // null | qId | 'new'
-  const [confirmDelSet, setConfirmDelSet] = React.useState(false);
-  // First-run demo: creating the first set reveals the full seeded library.
-  const revealedRef = React.useRef(false);
 
   const codeFor = (name) => (name || 'SET').split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 5);
   const commit = (next) => {
     setSets(next);
     window.QUESTION_SETS.length = 0;
     next.forEach(s => window.QUESTION_SETS.push({
-      id: s.id, name: s.name, code: s.code || codeFor(s.name), category: s.category, description: s.description || '',
+      id: s.id, name: s.name, code: s.code || codeFor(s.name), category: s.category,
       active: s.active !== false,
       usedBy: s.usedBy || 0, updated: 'Just now',
-      questions: s.questions.map(x => ({ q: x.q, type: x.type, frequency: x.frequency, section: x.section || '' })),
+      questions: s.questions.map(x => ({ q: x.q, type: x.type, frequency: x.frequency })),
     }));
   };
   const typesUsing = (setId) => window.SETUP_TYPES.filter(t => t.questionSet === setId);
@@ -116,7 +112,7 @@ function QuestionsLibrary({ emptyMode }) {
   const appliesFor = (setId) => window.SETUP_TYPES.filter(t => t.questionSet === setId).map(t => t.id);
   const openSet = (s) => { setCreating(false); setOpenId(s.id); setDraft({ ...s, questions: s.questions.map(x => ({ ...x })), appliesTo: appliesFor(s.id) }); };
   const addSet = () => {
-    const s = { id: nextId('qs'), name: '', code: '', category: 'Other', description: '', questions: [], appliesTo: [] };
+    const s = { id: nextId('qs'), name: '', code: '', category: 'Other', questions: [], appliesTo: [] };
     setCreating(true); setOpenId(s.id); setDraft(s);
   };
   const closeModal = () => { setOpenId(null); setDraft(null); setCreating(false); setDropHint(null); drag.current = null; setDragId(null); };
@@ -129,18 +125,7 @@ function QuestionsLibrary({ emptyMode }) {
   };
   const saveModal = () => {
     const exists = sets.some(s => s.id === draft.id);
-    let next = exists ? sets.map(s => s.id === draft.id ? draft : s) : [...sets, draft];
-    // First-run demo: creating the first question set reveals the full seeded library.
-    if (!exists && emptyMode && !revealedRef.current && sets.length === 0) {
-      revealedRef.current = true;
-      const seedSets = (window.__seedSnap ? window.__seedSnap.qs : []).map(s => ({
-        id: s.id, name: s.name, code: s.code, category: s.category, description: s.description || '',
-        active: s.active !== false, usedBy: s.usedBy, updated: s.updated,
-        questions: s.questions.map(qq => ({ id: nextId('q'), q: qq.q, type: qq.type, frequency: qq.frequency || 'Annual', section: qq.section || '' })),
-      }));
-      next = [draft, ...seedSets];
-    }
-    commit(next);
+    commit(exists ? sets.map(s => s.id === draft.id ? draft : s) : [...sets, draft]);
     syncAppliesTo(draft);
     closeModal();
   };
@@ -149,10 +134,8 @@ function QuestionsLibrary({ emptyMode }) {
   // ── draft mutations (modal only) ──
   const setDraftField = (patch) => setDraft(d => ({ ...d, ...patch }));
   const setQ_ = (qId, patch) => setDraft(d => ({ ...d, questions: d.questions.map(x => x.id === qId ? { ...x, ...patch } : x) }));
-  const addQ = () => setDraft(d => ({ ...d, questions: [...d.questions, { id: nextId('q'), q: '', type: 'Pass / Fail / N/A', frequency: 'Annual', section: '' }] }));
+  const addQ = () => setDraft(d => ({ ...d, questions: [...d.questions, { id: nextId('q'), q: '', type: 'Pass / Fail / N/A', frequency: 'Annual' }] }));
   const removeQ = (qId) => setDraft(d => ({ ...d, questions: d.questions.filter(x => x.id !== qId) }));
-  const saveQ = (qId, nq) => { const clean = { ...nq }; delete clean.__isNew; setDraft(d => ({ ...d, questions: d.questions.map(x => x.id === qId ? { ...clean, id: qId } : x) })); };
-  const addNewQ = (nq) => { const clean = { ...nq }; delete clean.__isNew; setDraft(d => ({ ...d, questions: [...d.questions, { ...clean, id: nextId('q') }] })); };
   const toggleApplies = (typeId) => setDraft(d => {
     const has = (d.appliesTo || []).includes(typeId);
     return { ...d, appliesTo: has ? d.appliesTo.filter(x => x !== typeId) : [...(d.appliesTo || []), typeId] };
@@ -168,7 +151,7 @@ function QuestionsLibrary({ emptyMode }) {
     return null;
   };
   const computeHint = (clientY) => {
-    const rows = listRef.current ? [...listRef.current.querySelectorAll('.qedit-row')] : [];
+    const rows = listRef.current ? [...listRef.current.querySelectorAll('.qset-qrow')] : [];
     if (!rows.length) return null;
     for (const row of rows) {
       const id = row.getAttribute('data-qid');
@@ -233,75 +216,76 @@ function QuestionsLibrary({ emptyMode }) {
     : sets;
   const totalQ = sets.reduce((n, s) => n + s.questions.length, 0);
 
-  // Top fields differ by shell: the Add brushaway uses boxed Quimby inputs;
-  // the Edit modal uses the EditModal cform pattern (label-left InlineText rows).
-  const topFieldsBrushaway = draft && (
+  // Shared body (questions + component types) used by BOTH the edit modal and the
+  // add brushaway, so the two shells stay identical inside.
+  const setBodyInner = draft && (
     <>
       <div className="qset-modal__section">
-        {window.QInput && <window.QInput id="qset-desc" label="Description" value={draft.description || ''} onChange={v => setDraftField({ description: v })} multiline />}
+        <div className="qset-modal__sectionhead">
+          <h3 className="qset-modal__sectiontitle">Component types</h3>
+          <span className="qsec__meta">{(draft.appliesTo || []).length} selected</span>
+        </div>
+        <p className="qset-apply__intro">Add the component types that use this question set. These questions appear on inspections for every type listed here.</p>
+        <TypePicker
+          selected={draft.appliesTo || []}
+          currentSetId={draft.id}
+          sets={sets}
+          onAdd={id => toggleApplies(id)}
+          onRemove={id => toggleApplies(id)}
+        />
       </div>
       <div className="qset-modal__section">
-        <div className="qmb-ui-input qmb-ui-input--picker">
-          <TypePicker selected={draft.appliesTo || []} currentSetId={draft.id} sets={sets} onAdd={id => toggleApplies(id)} onRemove={id => toggleApplies(id)} />
-          <label>Allowed component types</label>
-        </div>
-      </div>
-    </>
-  );
-  const topFieldsModal = draft && (
-    <div className="cform qset-cform">
-      <div className="cform__label">Description:</div>
-      <div className="cform__field"><InlineText value={draft.description || ''} placeholder="What this set covers…" multiline onCommit={v => setDraftField({ description: v })} ariaLabel="Description" /></div>
-      <div className="cform__label">Allowed component types:</div>
-      <div className="cform__field">
-        <TypePicker selected={draft.appliesTo || []} currentSetId={draft.id} sets={sets} onAdd={id => toggleApplies(id)} onRemove={id => toggleApplies(id)} />
-      </div>
-    </div>
-  );
-  // Shared questions section (identical in both shells)
-  const questionsSection = draft && (
-      <div className="qset-modal__section qset-modal__section--questions">
         <div className="qset-modal__sectionhead">
           <h3 className="qset-modal__sectiontitle">Questions</h3>
           <span className="qsec__meta">{draft.questions.length} question{draft.questions.length === 1 ? '' : 's'}</span>
         </div>
-        <div className={`qedit-list ${draft.questions.length === 0 ? 'qedit-list--empty' : ''}`} ref={listRef}>
-          {draft.questions.map(qq => {
-            const hint = dropHint && dropHint.qId === qq.id ? ' qrow--drop-' + dropHint.pos : '';
-            return (
-            <div className={`qedit-row ${dragId === qq.id ? 'is-dragging' : ''}${hint}`} key={qq.id} data-qid={qq.id} role="button" tabIndex={0} onClick={() => setQEdit(qq.id)}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setQEdit(qq.id); } }}>
-              <span className="comp-handle" title="Drag to reorder" onPointerDown={e => onGripDown(e, qq.id)} onClick={e => e.stopPropagation()}><i className="fa-light fa-grip-dots-vertical"></i></span>
-              <span className="qedit-row__text">{qq.q ? qq.q : <span className="set-cell-empty">Untitled question</span>}{qq.required && <span className="qedit-row__req" title="Required">*</span>}</span>
-              <span className="qmb-ui-tag qmb-ui-tag--pastry qmb-ui-tag--purple"><span className="qmb-ui-tag__label">{qq.type}</span></span>
-              {(() => { const sec = (window.SECTIONS || []).find(s => s.id === qq.section); return sec ? <span className="qmb-ui-tag qmb-ui-tag--pastry qmb-ui-tag--gray"><span className="qmb-ui-tag__label">{sec.name}</span></span> : null; })()}
-              <span className="qrow__freqtag"><i className="fa-light fa-arrows-rotate"></i>{qq.frequency || 'Annual'}</span>
-              <button className="set-rowact" aria-label="Remove question" title="Remove" onClick={e => { e.stopPropagation(); removeQ(qq.id); }}><i className="fa-light fa-xmark"></i></button>
-            </div>
-            );
-          })}
+        <div className="qmb-ui-table qmb-ui-table--detail qmb-ui-table--x-full qset-qtable">
+          <table>
+            <thead>
+              <tr>
+                <th className="qset-qcol-grip"></th>
+                <th className="table-column--primary">Question</th>
+                <th className="qset-qcol-type">Answer type</th>
+                <th className="qset-qcol-freq">Frequency</th>
+                <th className="qset-qcol-act"></th>
+              </tr>
+            </thead>
+            <tbody ref={listRef}>
+              {draft.questions.map(qq => {
+                const hint = dropHint && dropHint.qId === qq.id ? ' qrow--drop-' + dropHint.pos : '';
+                return (
+                  <tr key={qq.id} data-qid={qq.id} className={`qset-qrow ${dragId === qq.id ? 'is-dragging' : ''}${hint}`}>
+                    <td className="qset-qcol-grip">
+                      <span className="comp-handle" role="button" tabIndex={0} title="Drag to reorder" onPointerDown={e => onGripDown(e, qq.id)}>
+                        <i className="fa-light fa-grip-dots-vertical"></i>
+                      </span>
+                    </td>
+                    <td className="table-column--primary">
+                      <QInlineText value={qq.q} placeholder="Question name…" onCommit={v => setQ_(qq.id, { q: v })} />
+                    </td>
+                    <td className="qset-qcol-type">
+                      <InlineSelect value={qq.type} options={window.QUESTION_TYPES.map(t => ({ value: t, label: t }))} onChange={v => setQ_(qq.id, { type: v })} />
+                    </td>
+                    <td className="qset-qcol-freq">
+                      <InlineSelect value={qq.frequency || 'Annual'} options={FREQUENCIES.map(f => ({ value: f, label: f }))} onChange={v => setQ_(qq.id, { frequency: v })} />
+                    </td>
+                    <td className="qset-qcol-act">
+                      <button className="set-rowact" aria-label="Remove question" title="Remove" onClick={() => removeQ(qq.id)}><i className="fa-light fa-xmark"></i></button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
         {draft.questions.length === 0 && <div className="qsec__empty" style={{ padding: '20px 4px' }}>No questions yet — add the first one below.</div>}
-        <button className="qsec__add" onClick={() => setQEdit('new')}><i className="fa-light fa-plus"></i>Add question</button>
-        {qEdit != null && (() => {
-          const QE = window.QuestionEditor;
-          const cur = qEdit === 'new' ? { q: '', type: 'Pass / Fail / N/A', frequency: 'Annual', section: '', __isNew: true } : draft.questions.find(x => x.id === qEdit);
-          return <QE initial={cur} mode={creating ? 'modal' : 'brushaway'} onClose={() => setQEdit(null)}
-            onDelete={() => { removeQ(qEdit); setQEdit(null); }}
-            onSave={(nq) => { if (qEdit === 'new') addNewQ(nq); else saveQ(qEdit, nq); setQEdit(null); }} />;
-        })()}
+        <button className="qsec__add" onClick={addQ}><i className="fa-light fa-plus"></i>Add question</button>
       </div>
+    </>
   );
-  const setBodyInner = draft && (<>{topFieldsBrushaway}{questionsSection}</>);
 
   return (
-    <div className={`set-body${sets.length === 0 ? ' set-body--empty' : ''}`}>
-      {sets.length === 0 ? (
-        <window.EmptyState icon="fa-clipboard-list" title="No question sets yet"
-          text="Question sets hold the checks your technicians answer during an inspection. Create your first set, then attach it to a component type."
-          actionLabel="Add question set" onAction={addSet} />
-      ) : (
-      <>
+    <div className="set-body">
       <div className="set-toolbar">
         <div className="set-toolbar__search">
           <i className="fa-light fa-magnifying-glass"></i>
@@ -339,19 +323,18 @@ function QuestionsLibrary({ emptyMode }) {
           </tbody>
         </table>
       </div>
-      {filtered.length === 0 && q && <div className="compat-empty" style={{ padding: 24, textAlign: 'center' }}>No question sets match your search.</div>}
-      </>
-      )}
+      {filtered.length === 0 && <div className="compat-empty" style={{ padding: 24, textAlign: 'center' }}>No question sets{q ? ' match your search' : ' yet'}.</div>}
 
       {draft && creating && (
         <Portal>
+          <div className="qmb-ui-brushaway-scrim" onClick={closeModal}></div>
           <div className="qmb-ui-brushaway qset-brushaway" style={{ width: 560 }}>
             <div className="qmb-ui-brushaway__main">
               <div className="qmb-ui-brushaway-header">
                 <div className="qmb-ui-brushaway-header__row qmb-ui-brushaway-header__row--title">
                   <div className="qmb-ui-brushaway-header__title"><span className="qmb-ui-text">New question set</span></div>
                   <div className="qmb-ui-brushaway-header__actions">
-                    <button className="qmb-ui-button comp-iconbtn" aria-label="Close" onClick={closeModal}><i className="fa-light fa-xmark" aria-hidden="true"></i></button>
+                    <button className="qmb-ui-button qmb-ui-button--highlighted comp-iconbtn" aria-label="Close" onClick={closeModal}><i className="fa-light fa-xmark" aria-hidden="true"></i></button>
                   </div>
                 </div>
                 <hr className="qmb-ui-brushaway-header__divider" aria-hidden="true" />
@@ -361,6 +344,12 @@ function QuestionsLibrary({ emptyMode }) {
                   <div className="qmb-ui-input">
                     <input value={draft.name} placeholder=" " autoFocus onChange={e => setDraftField({ name: e.target.value })} />
                     <label>Question set name<span className="req"></span></label>
+                  </div>
+                  <div className="qmb-ui-select">
+                    <select className="qmb-ui-select__trigger" value={draft.category} onChange={e => setDraftField({ category: e.target.value })}>
+                      {Object.keys(window.CATEGORY_COLOR).map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <label>Category</label>
                   </div>
                 </div>
                 {setBodyInner}
@@ -382,30 +371,32 @@ function QuestionsLibrary({ emptyMode }) {
         <Portal>
           <div className="qmb-ui-modal-wrapper">
             <div className="qmb-ui-modal-overlay" onClick={closeModal}></div>
-            <div className="qmb-ui-modal qset-list-modal cmodal" role="dialog" aria-modal="true" aria-label="Edit question set">
+            <div className="qmb-ui-modal qset-list-modal" role="dialog" aria-modal="true" aria-label="Edit question set">
               <header className="qmb-ui-modal-header">
                 <div className="qmb-ui-modal-header__row qmb-ui-modal-header__row--title">
-                  <div className="qmb-ui-modal-header__title cmodal__titlefield">
-                    <span className="qmb-ui-text"><b>Question set:</b></span>
-                    <InlineText value={draft.name} placeholder="Question set name" width="auto" onCommit={v => setDraftField({ name: v })} ariaLabel="Question set name" />
+                  <div className="qmb-ui-modal-header__title">
+                    <input className="qsec__name qset-list-modal__name" value={draft.name} placeholder="Question set name" onChange={e => setDraftField({ name: e.target.value })} />
                   </div>
                   <div className="qmb-ui-modal-header__actions">
                     <button className={`modal-deact ${draft.active === false ? '' : 'is-danger'}`} onClick={() => setDraftField({ active: draft.active === false })}>
                       <i className={`fa-light ${draft.active === false ? 'fa-circle-check' : 'fa-ban'}`}></i>{draft.active === false ? 'Activate' : 'Deactivate'}
                     </button>
-                    <button className="qmb-ui-button comp-iconbtn qmb-ui-modal-header__close" aria-label="Close" onClick={closeModal}><i className="fa-light fa-xmark" aria-hidden="true"></i></button>
+                    <button className="qmb-ui-button qmb-ui-button--highlighted comp-iconbtn qmb-ui-modal-header__close" aria-label="Close" onClick={closeModal}><i className="fa-light fa-xmark" aria-hidden="true"></i></button>
                   </div>
+                </div>
+                <div className="qmb-ui-modal-header__row qset-list-modal__sub">
+                  <span className="header__label">Category:</span>
+                  <InlineSelect value={draft.category} options={Object.keys(window.CATEGORY_COLOR).map(c => ({ value: c, label: c }))} onChange={v => setDraftField({ category: v })} />
                 </div>
                 <hr className="qmb-ui-modal-header__divider" aria-hidden="true" />
               </header>
               <div className="qmb-ui-modal-body qset-list-modal__body">
-                {topFieldsModal}
-                {questionsSection}
+                {setBodyInner}
               </div>
               <footer className="qmb-ui-modal-footer qmb-ui-modal-footer--divider">
                 <div className="qmb-ui-modal-footer__content">
                   <div className="qmb-ui-modal-footer__start">
-                    <button className="qmb-ui-button qmb-ui-button--highlighted" onClick={() => setConfirmDelSet(true)}><i className="fa-light fa-trash-can"></i>Delete set</button>
+                    <button className="qmb-ui-button qmb-ui-button--highlighted" onClick={deleteSet}><i className="fa-light fa-trash-can"></i>Delete set</button>
                   </div>
                   <div className="qmb-ui-modal-footer__actions">
                     <button className="qmb-ui-button" onClick={closeModal}>Cancel</button>
@@ -415,7 +406,6 @@ function QuestionsLibrary({ emptyMode }) {
               </footer>
             </div>
           </div>
-          {confirmDelSet && <ConfirmDialog title="Delete question set?" message={`This deletes “${draft.name || 'this set'}” and removes it from any component types using it. This can't be undone.`} confirmLabel="Delete set" onConfirm={() => { setConfirmDelSet(false); deleteSet(); }} onCancel={() => setConfirmDelSet(false)} />}
         </Portal>
       )}
     </div>

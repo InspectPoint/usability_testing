@@ -24,6 +24,110 @@ function Toggle({ checked, onChange, id }) {
 
 const CATEGORIES = ['Sprinkler','Valve','Alarm','Standpipe','Backflow','Extinguisher','Hood','Pump','Other'];
 
+// Shared empty-state for the Settings tabs (gray canvas + guidance + CTA).
+function EmptyState({ icon, title, text, actionLabel, onAction }) {
+  return (
+    <div className="set-empty">
+      <div className="set-empty__art"><i className={`fa-light ${icon}`}></i></div>
+      <h3 className="set-empty__title">{title}</h3>
+      <p className="set-empty__text">{text}</p>
+      <button className="qmb-ui-button qmb-ui-button--primary" onClick={onAction}><i className="fa-light fa-plus"></i>{actionLabel}</button>
+    </div>
+  );
+}
+window.EmptyState = EmptyState;
+const QUESTION_FREQS = ['Annual','Semi-annual','Quarterly','Monthly','Weekly','3-year','5-year'];
+const FIELD_TYPES = ['Text','Number','Date','Single select','Yes / No'];
+
+// ── Options editor — revealed when an answer/field type is Single/Multi select.
+// Mirrors how Inspect Point asks for the choice list. ──
+function OptionsEditor({ value, onChange }) {
+  const opts = value && value.length ? value : [''];
+  const update = (arr) => onChange(arr);
+  return (
+    <div className="qopts">
+      <div className="qopts__label">Options</div>
+      {opts.map((o, i) => (
+        <div className="qopts__row" key={i}>
+          <i className="fa-light fa-circle-dot qopts__bullet"></i>
+          <input className="qopts__input" value={o} placeholder={`Option ${i + 1}`}
+            onChange={e => update(opts.map((x, j) => j === i ? e.target.value : x))} />
+          <button className="set-rowact" aria-label="Remove option" title="Remove option"
+            onClick={() => update(opts.filter((_, j) => j !== i).length ? opts.filter((_, j) => j !== i) : [''])}><i className="fa-light fa-xmark"></i></button>
+        </div>
+      ))}
+      <button type="button" className="qopts__add" onClick={() => update([...opts, ''])}><i className="fa-light fa-plus"></i>Add option</button>
+    </div>
+  );
+}
+
+// ── Quimby form fields — qmb-ui-input / qmb-ui-select, styled by the existing
+// quimby-components.css implementation (single source of truth). Markup matches its
+// conventions: floating <label> with a `.req` asterisk span, and a `.is-open` /
+// `.is-placeholder` select trigger. ──
+function QInput({ id, label, required, value, onChange, multiline }) {
+  if (multiline) {
+    const taRef = React.useRef(null);
+    React.useLayoutEffect(() => {
+      const el = taRef.current; if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = Math.max(el.scrollHeight, 48) + 'px';
+    }, [value]);
+    return (
+      <div className="qmb-ui-input">
+        <textarea ref={taRef} id={id} className="qmb-ui-input__autogrow" value={value || ''} placeholder=" " required={required} onChange={e => onChange(e.target.value)}></textarea>
+        <label htmlFor={id}>{label}{required && <span className="req"></span>}</label>
+      </div>
+    );
+  }
+  return (
+    <div className="qmb-ui-input">
+      <input id={id} type="text" value={value || ''} placeholder=" " required={required} onChange={e => onChange(e.target.value)} />
+      <label htmlFor={id}>{label}{required && <span className="req"></span>}</label>
+    </div>
+  );
+}
+function QSelect({ id, label, required, value, onChange, options, placeholder = 'Choose…', onCreate, createLabel }) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+  const opts = options.map(o => (o.value != null ? o : { value: o, label: o }));
+  const sel = opts.find(o => o.value === value);
+  return (
+    <div className={`qmb-ui-select ${open ? 'is-open' : ''}`} ref={ref}>
+      <div className={`qmb-ui-select__trigger ${sel ? '' : 'is-placeholder'}`} role="button" tabIndex={0} aria-expanded={open} aria-haspopup="listbox"
+        onClick={() => setOpen(o => !o)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o); } if (e.key === 'Escape') setOpen(false); }}>
+        {sel ? sel.label : placeholder}
+      </div>
+      <label>{label}{required && <span className="req"></span>}</label>
+      {open && (
+        <div className="qmb-ui-select__popup">
+          <div className="qmb-ui-select__options">
+            <ul>
+              {opts.map(o => (
+                <li key={o.value}>
+                  <button type="button" className={`qmb-ui-select__option ${value === o.value ? 'qmb-ui-select__option--selected' : ''}`}
+                    onClick={() => { onChange(o.value); setOpen(false); }}>{o.label}</button>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {onCreate && (
+            <button type="button" className="qmb-ui-select__create" onClick={() => { setOpen(false); onCreate(); }}>
+              <i className="fa-light fa-plus"></i>{createLabel || 'Create new'}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Step 2: Path fork ───────────────────────────────────────────────────────
 function SectionPathFork({ d, set, goId }) {
   const pick = (path) => { set({ path }); if (goId) setTimeout(() => goId('target'), 120); };
@@ -146,65 +250,90 @@ function SectionStart({ d, set, goId }) {
     goId('path');
   };
 
-  const Card = ({ mode, icon, title, desc, onClick, active }) => (
-    <button type="button" className={`fork-card ${active ? 'fork-card--active' : ''}`} onClick={onClick}>
-      <div className="fork-card__icon"><i className={`fa-light ${icon}`}></i></div>
-      <div className="fork-card__title">{title}<span className="fork-card__check"><i className="fa-solid fa-circle-check"></i></span></div>
-      <div className="fork-card__desc">{desc}</div>
-    </button>
-  );
+  const Card = ({ mode, icon, title, desc, onClick, active, disabled, tooltip }) => {
+    const card = (
+      <button type="button" className={`fork-card ${active ? 'fork-card--active' : ''} ${disabled ? 'fork-card--disabled' : ''}`}
+        onClick={disabled ? undefined : onClick} disabled={disabled} aria-disabled={disabled}>
+        <div className="fork-card__icon"><i className={`fa-light ${icon}`}></i></div>
+        <div className="fork-card__title">{title}<span className="fork-card__check"><i className="fa-solid fa-circle-check"></i></span></div>
+        <div className="fork-card__desc">{desc}</div>
+      </button>
+    );
+    if (disabled && tooltip && window.Tooltip) {
+      return <window.Tooltip content={tooltip} position="top" multiline><span className="fork-card__tipwrap">{card}</span></window.Tooltip>;
+    }
+    return card;
+  };
+
+  const closeBrowse = () => setBrowse(null);
 
   return (
     <div>
       <div className="fork">
         <Card mode="blank" icon="fa-file" title="Start blank"
-          active={d.startMode === 'blank' && !browse}
+          active={d.startMode === 'blank'}
           desc="Build everything from scratch with the full step-by-step setup." onClick={startBlank} />
         <Card mode="copy" icon="fa-copy" title="Copy an existing type"
-          active={browse === 'copy' || d.startMode === 'copy'}
+          active={d.startMode === 'copy'}
+          disabled={(window.SETUP_TYPES || []).length === 0}
+          tooltip="You don’t have any component types yet to copy from."
           desc="Start from one of your account’s component types, then rename and tweak." onClick={() => setBrowse('copy')} />
         <Card mode="recommended" icon="fa-wand-magic-sparkles" title="Use a recommended type"
-          active={browse === 'recommended' || d.startMode === 'recommended'}
+          active={d.startMode === 'recommended'}
           desc="Begin from an Inspect Point–curated starter, prefilled with questions and fields." onClick={() => setBrowse('recommended')} />
       </div>
 
-      {browse === 'copy' && (
-        <div className="pick-group" style={{ marginTop: 20 }}>
-          <div className="pick-group__label">Your component types</div>
-          <div className="pick-group__blurb">Copies the placement, fields, compatibility, questions, and defaults. Changes only affect the new type.</div>
-          <div className="pick-grid">
-            {window.SETUP_TYPES.map(t => (
-              <button key={t.id} type="button" className={`pick-opt ${d.copiedFromId === t.id ? 'pick-opt--active' : ''}`} onClick={() => useSource(t, 'copy')}>
-                <span className="pick-opt__icon"><i className="fa-light fa-copy"></i></span>
-                <span>
-                  <span className="pick-opt__name">Copy {t.name}</span>
-                  <span className="pick-opt__blurb">{t.category} · {startPlacement(t)} · in use on {t.inUse.toLocaleString()}</span>
-                </span>
-              </button>
-            ))}
+      {browse && window.Portal && (
+        <window.Portal>
+          <div className="qmb-ui-modal-wrapper" style={{ zIndex: 10084 }}>
+            <div className="qmb-ui-modal-overlay" onClick={closeBrowse}></div>
+            <div className="qmb-ui-modal startpick-modal" role="dialog" aria-modal="true"
+              aria-label={browse === 'copy' ? 'Copy an existing type' : 'Use a recommended type'}
+              style={{ width: 600, maxWidth: 'calc(100vw - 48px)' }}>
+              <header className="qmb-ui-modal-header">
+                <div className="qmb-ui-modal-header__row qmb-ui-modal-header__row--title">
+                  <div className="qmb-ui-modal-header__title"><span className="qmb-ui-text"><b>{browse === 'copy' ? 'Copy an existing type' : 'Use a recommended type'}</b></span></div>
+                  <div className="qmb-ui-modal-header__actions">
+                    <button className="qmb-ui-button comp-iconbtn qmb-ui-modal-header__close" aria-label="Close" onClick={closeBrowse}><i className="fa-light fa-xmark"></i></button>
+                  </div>
+                </div>
+                <hr className="qmb-ui-modal-header__divider" aria-hidden="true" />
+              </header>
+              <div className="qmb-ui-modal-body">
+                <p className="guide-modal__intro">
+                  {browse === 'copy'
+                    ? 'Copies the placement, fields, compatibility, questions, and defaults into a new type. Changes only affect the new type.'
+                    : 'Inspect Point–curated starters, prefilled with questions and fields you can edit. Pick one to begin.'}
+                </p>
+                <div className="pick-grid">
+                  {browse === 'copy' && window.SETUP_TYPES.length === 0 && (
+                    <div className="compat-empty" style={{ padding: '8px 0' }}>You don’t have any component types to copy yet. Start blank or use a recommended type instead.</div>
+                  )}
+                  {browse === 'copy' ? window.SETUP_TYPES.map(t => (
+                    <button key={t.id} type="button" className="pick-opt" onClick={() => { useSource(t, 'copy'); closeBrowse(); }}>
+                      <span className="pick-opt__icon"><i className="fa-light fa-copy"></i></span>
+                      <span>
+                        <span className="pick-opt__name">{t.name}</span>
+                        <span className="pick-opt__blurb">{t.category} · {startPlacement(t)} · in use on {t.inUse.toLocaleString()}</span>
+                      </span>
+                    </button>
+                  )) : window.RECOMMENDED_TYPES.map(t => {
+                    const c = startCounts(t);
+                    return (
+                      <button key={t.id} type="button" className="pick-opt" onClick={() => { useSource(t, 'recommended'); closeBrowse(); }}>
+                        <span className="pick-opt__icon"><i className="fa-light fa-wand-magic-sparkles"></i></span>
+                        <span>
+                          <span className="pick-opt__name">{t.name} <span className="start-rec">(recommended)</span></span>
+                          <span className="pick-opt__blurb">{c.questions} questions · {c.fields} fields{c.qty > 0 ? ` · default ${c.qty}` : ''}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
-
-      {browse === 'recommended' && (
-        <div className="pick-group" style={{ marginTop: 20 }}>
-          <div className="pick-group__label">Recommended types</div>
-          <div className="pick-group__blurb">Inspect Point–curated starters. Prefilled with questions and fields you can edit.</div>
-          <div className="pick-grid">
-            {window.RECOMMENDED_TYPES.map(t => {
-              const c = startCounts(t);
-              return (
-                <button key={t.id} type="button" className={`pick-opt ${d.copiedFromId === t.id ? 'pick-opt--active' : ''}`} onClick={() => useSource(t, 'recommended')}>
-                  <span className="pick-opt__icon"><i className="fa-light fa-wand-magic-sparkles"></i></span>
-                  <span>
-                    <span className="pick-opt__name">Start from {t.name} <span className="start-rec">(recommended)</span></span>
-                    <span className="pick-opt__blurb">{c.questions} questions · {c.fields} fields{c.qty > 0 ? ` · default ${c.qty}` : ''}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        </window.Portal>
       )}
     </div>
   );
@@ -228,43 +357,52 @@ function SectionDetails({ d, set, locked }) {
           </div>
         </div>
       )}
-      <div className="cfg-fields" style={{ marginTop: locked ? 16 : 0 }}>
-        <div className="cfg-field cfg-field--full">
-          <label className="cfg-field__label">Component type name <span className="req">*</span></label>
-          <input className="cfg-input" value={d.name || ''} placeholder="e.g. Wet sprinkler head" onChange={e => set({ name: e.target.value })} />
+      <div className="cfg-fields" style={{ marginTop: locked > 0 ? 16 : 0 }}>
+        <div className="cfg-field--full">
+          <QInput id="ct-name" label="Component type name" required value={d.name} onChange={v => set({ name: v })} />
         </div>
-        <div className="cfg-field">
-          <label className="cfg-field__label">Category <span className="req">*</span></label>
-          <select className="cfg-input" value={d.category || ''} onChange={e => set({ category: e.target.value })}>
-            <option value="" disabled>Choose a category…</option>
-            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-        <div className="cfg-field">
-          <label className="cfg-field__label">Abbreviation</label>
-          <input className="cfg-input" value={d.abbr || ''} placeholder="e.g. SPK" onChange={e => set({ abbr: e.target.value })} />
-        </div>
-        <div className="cfg-field cfg-field--full">
-          <label className="cfg-field__label">Description</label>
-          <textarea className="cfg-input" value={d.description || ''} placeholder="What this type represents and when to use it." onChange={e => set({ description: e.target.value })}></textarea>
+        <QSelect id="ct-category" label="Category" required value={d.category} onChange={v => set({ category: v })} options={CATEGORIES.map(c => ({ value: c, label: c }))} />
+        <QInput id="ct-abbr" label="Abbreviation" value={d.abbr} onChange={v => set({ abbr: v })} />
+        <div className="cfg-field--full">
+          <QInput id="ct-desc" label="Description" multiline value={d.description} onChange={v => set({ description: v })} />
         </div>
       </div>
 
-      {/* custom fields */}
+      {/* custom fields — opt-in: a quiet add button reveals editable rows */}
       <div style={{ marginTop: 18 }}>
-        <div className="cfg-field__label" style={{ marginBottom: 8 }}>Custom fields</div>
-        {fields.length === 0 && <div className="compat-empty">No custom fields yet — add attributes technicians fill in per component (e.g. K-factor, serial number).</div>}
-        <div className="q-list">
-          {fields.map((f, i) => (
-            <div className="q-item" key={i}>
-              <span className="q-item__num">{i + 1}</span>
-              <span className="q-item__text">{f.label}</span>
-              <span className="q-item__type"><STag color="gray">{f.kind}</STag></span>
-              <button className="q-item__x" onClick={() => setFields(fields.filter((_, j) => j !== i))} aria-label="Remove field"><i className="fa-light fa-xmark"></i></button>
-            </div>
-          ))}
+        <div className="cfield-heading">Component-specific fields</div>
+        {fields.length === 0 && <div className="compat-empty">No custom fields. Add attributes technicians fill in per component (e.g. K-factor, serial number).</div>}
+        <div className="cfield-cards">
+          {fields.map((f, i) => {
+            const ITextC = window.InlineText, ISelectC = window.InlineSelect;
+            const upd = (patch) => setFields(fields.map((x, j) => j === i ? { ...x, ...patch } : x));
+            const showLen = f.kind === 'Text' || f.kind === 'Number';
+            return (
+              <div className="cfield-card" key={i}>
+                <button className="cfield-card__del set-rowact" onClick={() => setFields(fields.filter((_, j) => j !== i))} aria-label="Remove field" title="Remove"><i className="fa-light fa-trash-can"></i></button>
+                <div className="cform">
+                  <div className="cform__label">Field label:</div>
+                  <div className="cform__field"><ITextC value={f.label} placeholder="Field label…" onCommit={v => upd({ label: v })} ariaLabel="Field label" /></div>
+                  <div className="cform__label">Field type:</div>
+                  <div className="cform__field"><ISelectC value={f.kind} options={FIELD_TYPES.map(k => ({ value: k, label: k }))} onChange={v => upd({ kind: v })} width="auto" /></div>
+                  {showLen && <>
+                    <div className="cform__label">Max length:</div>
+                    <div className="cform__field"><ITextC value={f.maxLength || ''} placeholder="—" onCommit={v => upd({ maxLength: v.replace(/\D/g, '') })} width="auto" ariaLabel="Max length" /></div>
+                  </>}
+                  <div className="cform__label">Default value:</div>
+                  <div className="cform__field"><ITextC value={f.defaultValue || ''} placeholder="—" onCommit={v => upd({ defaultValue: v })} width="auto" ariaLabel="Default value" /></div>
+                  <div className="cform__checks">
+                    <label className="cfield-check"><Toggle id={`cf-req-${i}`} checked={!!f.required} onChange={v => upd({ required: v })} /><span>Required</span></label>
+                    <label className="cfield-check"><Toggle id={`cf-def-${i}`} checked={!!f.setDefault} onChange={v => upd({ setDefault: v })} /><span>Set as default</span></label>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <AddFieldRow onAdd={(f) => setFields([...fields, f])} />
+        <button type="button" className="qsec__add" onClick={() => setFields([...fields, { label: '', kind: 'Text' }])}>
+          <i className="fa-light fa-plus"></i>Add custom field
+        </button>
       </div>
 
       {/* advanced */}
@@ -283,14 +421,8 @@ function SectionDetails({ d, set, locked }) {
         </summary>
         <div className="qmb-ui-accordion__content">
           <div className="cfg-fields" style={{ padding: '4px 0 8px' }}>
-            <div className="cfg-field">
-              <label className="cfg-field__label">Joint Commission EP code</label>
-              <input className="cfg-input" value={adv.jcCode || ''} placeholder="e.g. EC.02.03.05" onChange={e => setAdv({ jcCode: e.target.value })} />
-            </div>
-            <div className="cfg-field">
-              <label className="cfg-field__label">ServiceTrade line code</label>
-              <input className="cfg-input" value={adv.stCode || ''} placeholder="e.g. ST-114" onChange={e => setAdv({ stCode: e.target.value })} />
-            </div>
+            <QInput id="adv-jc" label="Joint Commission EP code" value={adv.jcCode} onChange={v => setAdv({ jcCode: v })} />
+            <QInput id="adv-st" label="ServiceTrade line code" value={adv.stCode} onChange={v => setAdv({ stCode: v })} />
           </div>
         </div>
       </details>
@@ -313,38 +445,77 @@ function AddFieldRow({ onAdd }) {
   );
 }
 
-// ── Step 5: Compatible sub-components ───────────────────────────────────────
-function SectionCompat({ d, set }) {
-  const selected = d.compatible || [];
-  const selfName = (d.name || '').trim().toLowerCase();
-  const add = (t) => { if (!selected.includes(t)) set({ compatible: [...selected, t] }); };
-  const remove = (t) => set({ compatible: selected.filter(x => x !== t) });
-  const options = window.SUBCOMPONENT_TYPES;
+// ── Generic searchable token input — selected values as removable tags + a filter
+// field that suggests/adds the rest (same pattern as the question-set picker). ──
+function TokenPicker({ selected, options, onAdd, onRemove, placeholder, disabledValue, disabledNote }) {
+  const [query, setQuery] = React.useState('');
+  const [open, setOpen] = React.useState(false);
+  const [active, setActive] = React.useState(0);
+  const wrapRef = React.useRef(null);
+  React.useEffect(() => {
+    const onDoc = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
+  const matches = options
+    .filter(o => !selected.includes(o) && o !== disabledValue)
+    .filter(o => !query || o.toLowerCase().includes(query.toLowerCase()));
+  const add = (o) => { onAdd(o); setQuery(''); setActive(0); setOpen(true); };
   return (
-    <div>
-      {selected.length > 0 ? (
-        <div className="compat-tags">
-          {selected.map(t => (
-            <span className="compat-tag" key={t}>{t}
-              <button className="compat-tag__x" onClick={() => remove(t)} aria-label={`Remove ${t}`}><i className="fa-light fa-xmark"></i></button>
-            </span>
+    <div className="typepick" ref={wrapRef}>
+      <div className={`typepick__control ${open ? 'is-open' : ''}`} onClick={() => { setOpen(true); wrapRef.current.querySelector('input').focus(); }}>
+        {selected.map(t => (
+          <span className="compat-tag" key={t} onClick={e => e.stopPropagation()}>{t}
+            <button className="compat-tag__x" onClick={() => onRemove(t)} aria-label={`Remove ${t}`}><i className="fa-light fa-xmark"></i></button>
+          </span>
+        ))}
+        <input className="typepick__input" value={query} placeholder={selected.length ? 'Add another…' : (placeholder || 'Search…')}
+          onChange={e => { setQuery(e.target.value); setOpen(true); setActive(0); }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={e => {
+            if (e.key === 'ArrowDown') { e.preventDefault(); setActive(a => Math.min(a + 1, matches.length - 1)); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(a => Math.max(a - 1, 0)); }
+            else if (e.key === 'Enter') { e.preventDefault(); if (matches[active]) add(matches[active]); }
+            else if (e.key === 'Backspace' && !query && selected.length) { onRemove(selected[selected.length - 1]); }
+          }} />
+      </div>
+      {open && matches.length > 0 && (
+        <div className="typepick__menu">
+          {matches.map((o, i) => (
+            <button key={o} type="button" className={`typepick__opt ${i === active ? 'is-active' : ''}`}
+              onMouseEnter={() => setActive(i)} onClick={() => add(o)}>
+              <span className="typepick__optname">{o}</span>
+            </button>
           ))}
         </div>
-      ) : (
-        <div className="compat-empty">Nothing nests under this type yet. Pick the sub-component types it can contain.</div>
       )}
-      <div className="compat-add__menu">
-        {options.map(t => {
-          const isSelf = t.toLowerCase() === selfName;             // prevent self
-          const taken = selected.includes(t);
-          return (
-            <button key={t} type="button" className="compat-opt" disabled={isSelf || taken}
-              title={isSelf ? "A type can't contain itself" : undefined} onClick={() => add(t)}>
-              <i className="fa-light fa-plus" style={{ fontSize: 10, marginRight: 6 }}></i>{t}
-            </button>
-          );
-        })}
-      </div>
+      {open && matches.length === 0 && <div className="typepick__menu typepick__menu--empty">{disabledValue && query && disabledValue.toLowerCase().includes(query.toLowerCase()) ? (disabledNote || 'Unavailable.') : `No${query ? ' matching' : ' more'} types.`}</div>}
+    </div>
+  );
+}
+
+// ── Step 5: Compatible sub-components ───────────────────────────────────────
+function SectionCompat({ d, set }) {
+  const norm = (s) => (s || '').trim().toLowerCase().replace(/s$/, '').replace(/\s+/g, ' ');
+  const selfName = norm(d.name);
+  const isSelf = (t) => selfName && norm(t) === selfName;
+  const selfMatch = window.SUBCOMPONENT_TYPES.find(isSelf);
+  // never let a type list itself, even if a copy/recommended preset brought it in
+  const selected = (d.compatible || []).filter(t => !isSelf(t));
+  const add = (t) => { if (!isSelf(t) && !selected.includes(t)) set({ compatible: [...selected, t] }); };
+  const remove = (t) => set({ compatible: selected.filter(x => x !== t) });
+  return (
+    <div>
+      {selected.length === 0 && <div className="compat-empty">Nothing nests under this type yet. Add the sub-component types it can contain.</div>}
+      <TokenPicker
+        selected={selected}
+        options={window.SUBCOMPONENT_TYPES}
+        onAdd={add}
+        onRemove={remove}
+        placeholder="Search sub-component types…"
+        disabledValue={selfMatch}
+        disabledNote="A type can’t contain itself."
+      />
       {selected.length > 0 && (
         <div className="compat-summary">
           <i className="fa-solid fa-diagram-project"></i>
@@ -359,20 +530,324 @@ function SectionCompat({ d, set }) {
   );
 }
 
+// ── Searchable single-select for question sets — a qmb-ui-select trigger that opens
+// a popup with a search field, the reusable sets, and a "Create new set" action. ──
+function SetPicker({ value, creating, onChoose, onCreate }) {
+  const [open, setOpen] = React.useState(false);
+  const [query, setQuery] = React.useState('');
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+  const sets = window.QUESTION_SETS;
+  const sel = sets.find(s => s.id === value);
+  const matches = sets.filter(s => !query || s.name.toLowerCase().includes(query.toLowerCase()) || (s.code || '').toLowerCase().includes(query.toLowerCase()));
+  const triggerText = creating ? 'New question set' : (sel ? sel.name : 'Choose a question set…');
+  return (
+    <div className={`qmb-ui-select setpicker ${open ? 'is-open' : ''}`} ref={ref}>
+      <div className={`qmb-ui-select__trigger ${(sel || creating) ? '' : 'is-placeholder'}`} role="button" tabIndex={0} aria-expanded={open} aria-haspopup="listbox"
+        onClick={() => setOpen(o => !o)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o); } if (e.key === 'Escape') setOpen(false); }}>
+        {triggerText}
+      </div>
+      <label>Question set</label>
+      {open && (
+        <div className="qmb-ui-select__popup">
+          <div className="qmb-ui-select__search">
+            <i className="fa-light fa-magnifying-glass"></i>
+            <input autoFocus value={query} placeholder="Search question sets…" onChange={e => setQuery(e.target.value)} />
+          </div>
+          <div className="qmb-ui-select__options" style={{ maxHeight: 240 }}>
+            <ul>
+              {matches.map(s => (
+                <li key={s.id}>
+                  <button type="button" className={`qmb-ui-select__option ${value === s.id ? 'qmb-ui-select__option--selected' : ''}`}
+                    onClick={() => { onChoose(s.id); setOpen(false); setQuery(''); }}>
+                    <span className="setpicker__name">{s.name}</span>
+                    <span className="setpicker__meta">{s.questions.length} · {s.code}</span>
+                  </button>
+                </li>
+              ))}
+              {matches.length === 0 && <li><div className="qmb-ui-select__option qmb-ui-select__option--empty">No sets match “{query}”.</div></li>}
+            </ul>
+          </div>
+          <button type="button" className="setpicker__create" onClick={() => { onCreate(); setOpen(false); setQuery(''); }}>
+            <i className="fa-light fa-plus"></i>Create new set
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Per-question editor (Brushaway) — type-aware fields: select types reveal an
+// options list; plus frequency, required, and help text. Reused for add + edit. ──
+function QuestionEditor({ initial, onSave, onClose, onDelete, scope, mode = 'brushaway' }) {
+  const [q, setQ] = React.useState(initial);
+  const [confirmDel, setConfirmDel] = React.useState(false);
+  const [addingSection, setAddingSection] = React.useState(false);
+  // While the "add section" modal is open, suppress the editor's own outside-click /
+  // Escape close (the modal renders in a Portal, i.e. outside this panel).
+  const suppressClose = React.useRef(false);
+  const upd = (p) => setQ(s => ({ ...s, ...p }));
+  const isSelect = q.type === 'Single select' || q.type === 'Multi select';
+  const Portal = window.Portal;
+  const valid = !!(q.q && q.q.trim());
+  const isNew = !!initial.__isNew;
+  const title = isNew ? 'Add question' : 'Edit question';
+  const panelRef = React.useRef(null);
+  React.useEffect(() => {
+    const onDoc = (e) => { if (suppressClose.current) return; if (panelRef.current && !panelRef.current.contains(e.target)) onClose(); };
+    const onEsc = (e) => { if (suppressClose.current) return; if (e.key === 'Escape') onClose(); };
+    // defer so the opening click doesn't immediately close it
+    const t = setTimeout(() => document.addEventListener('mousedown', onDoc), 0);
+    document.addEventListener('keydown', onEsc);
+    return () => { clearTimeout(t); document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onEsc); };
+  }, [onClose]);
+
+  const form = (
+    <div className="qedit-form">
+      <QInput id="qe-text" label="Question" required value={q.q} onChange={v => upd({ q: v })} multiline />
+      <QSelect id="qe-type" label="Answer type" required value={q.type} onChange={v => upd({ type: v })} options={window.QUESTION_TYPES.map(t => ({ value: t, label: t }))} />
+      {isSelect && <OptionsEditor value={q.options || []} onChange={o => upd({ options: o })} />}
+      <QSelect id="qe-freq" label="Frequency" value={q.frequency || 'Annual'} onChange={v => upd({ frequency: v })} options={QUESTION_FREQS.map(f => ({ value: f, label: f }))} />
+      <QSelect id="qe-section" label="Section" value={q.section || ''} onChange={v => upd({ section: v })} options={[{ value: '', label: 'No section' }, ...(window.SECTIONS || []).map(s => ({ value: s.id, label: s.name }))]}
+        onCreate={() => { suppressClose.current = true; setAddingSection(true); }} createLabel="Create new section" />
+      <label className="qedit-toggle"><Toggle id="qe-req" checked={q.required} onChange={v => upd({ required: v })} /><span>Required to complete the inspection</span></label>
+      <QInput id="qe-help" label="Help text (optional)" multiline value={q.help} onChange={v => upd({ help: v })} />
+    </div>
+  );
+
+  const bodyInner = (
+    <>
+      {form}
+      {scope && (
+        <div className="q-globalscope">
+          <label className="q-globalscope__opt">
+            <input type="radio" name="qe-scope" checked={scope.value !== 'this'} onChange={() => scope.onChange('global')} />
+            <span className="q-globalscope__text"><b>Update the question set everywhere</b> — changes to “{scope.setName}” apply to all {scope.usedBy} component type{scope.usedBy === 1 ? '' : 's'} that use this question set.</span>
+          </label>
+          <label className="q-globalscope__opt">
+            <input type="radio" name="qe-scope" checked={scope.value === 'this'} onChange={() => scope.onChange('this')} />
+            <span className="q-globalscope__text"><b>Update for this type only</b> — save a separate copy of the question set just for this component type.</span>
+          </label>
+        </div>
+      )}
+    </>
+  );
+  const footerStart = !isNew ? <button className="qmb-ui-button qmb-ui-button--highlighted" onClick={() => setConfirmDel(true)}><i className="fa-light fa-trash-can"></i>Delete</button> : null;
+  const footerActions = (
+    <>
+      <button className="qmb-ui-button" onClick={onClose}>Cancel</button>
+      <button className="qmb-ui-button qmb-ui-button--primary" disabled={!valid} onClick={() => onSave(q)}>{isNew ? 'Add question' : 'Save'}</button>
+    </>
+  );
+  const confirmEl = confirmDel && <ConfirmDialog title="Delete question?" message="This removes the question from the set. This can't be undone." confirmLabel="Delete question" onConfirm={() => { setConfirmDel(false); onDelete(); }} onCancel={() => setConfirmDel(false)} />;
+  const closeSection = () => { setAddingSection(false); suppressClose.current = false; };
+  const sectionModalEl = addingSection && window.SectionAddModal && (
+    <window.SectionAddModal
+      onClose={closeSection}
+      onSave={(sec) => { window.SECTIONS = window.SECTIONS || []; window.SECTIONS.push(sec); upd({ section: sec.id }); closeSection(); }}
+    />
+  );
+
+  if (mode === 'modal') {
+    return (
+      <Portal>
+        <div className="qmb-ui-modal-wrapper qedit-modal-wrap">
+          <div className="qmb-ui-modal-overlay" onClick={onClose}></div>
+          <div className="qmb-ui-modal qedit-modal" role="dialog" aria-modal="true" aria-label={title}>
+            <header className="qmb-ui-modal-header">
+              <div className="qmb-ui-modal-header__row qmb-ui-modal-header__row--title">
+                <div className="qmb-ui-modal-header__title"><span className="qmb-ui-text"><b>{title}</b></span></div>
+                <div className="qmb-ui-modal-header__actions">
+                  <button className="qmb-ui-button comp-iconbtn qmb-ui-modal-header__close" aria-label="Close" onClick={onClose}><i className="fa-light fa-xmark"></i></button>
+                </div>
+              </div>
+              <hr className="qmb-ui-modal-header__divider" aria-hidden="true" />
+            </header>
+            <div className="qmb-ui-modal-body">{bodyInner}</div>
+            <footer className="qmb-ui-modal-footer qmb-ui-modal-footer--divider">
+              <div className="qmb-ui-modal-footer__content">
+                <div className="qmb-ui-modal-footer__start">{footerStart}</div>
+                <div className="qmb-ui-modal-footer__actions">{footerActions}</div>
+              </div>
+            </footer>
+          </div>
+        </div>
+        {confirmEl}
+        {sectionModalEl}
+      </Portal>
+    );
+  }
+
+  return (
+    <Portal>
+      <div className="qmb-ui-brushaway qedit-brushaway" ref={panelRef}>
+        <div className="qmb-ui-brushaway__main">
+          <div className="qmb-ui-brushaway-header">
+            <div className="qmb-ui-brushaway-header__row qmb-ui-brushaway-header__row--title">
+              <div className="qmb-ui-brushaway-header__title"><span className="qmb-ui-text"><b>{title}</b></span></div>
+              <div className="qmb-ui-brushaway-header__actions">
+                <button className="qmb-ui-button comp-iconbtn" aria-label="Close" onClick={onClose}><i className="fa-light fa-xmark"></i></button>
+              </div>
+            </div>
+            <hr className="qmb-ui-brushaway-header__divider" aria-hidden="true" />
+          </div>
+          <div className="qmb-ui-brushaway-body">{bodyInner}</div>
+          <div className="qmb-ui-brushaway-footer">
+            <div className="qmb-ui-brushaway-footer__content">
+              <div className="qmb-ui-brushaway-footer__start">{footerStart}</div>
+              <div className="qmb-ui-brushaway-footer__actions">{footerActions}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {confirmEl}
+      {sectionModalEl}
+    </Portal>
+  );
+}
+window.QuestionEditor = QuestionEditor;
+
+// ── Add-section modal — same fields as the Sections-tab add flow, in a Modal so
+// it can sit above the question editor when assigning a question to a new section. ──
+function SectionAddModal({ onSave, onClose }) {
+  const Portal = window.Portal;
+  const [name, setName] = React.useState('');
+  const [description, setDescription] = React.useState('');
+  const save = () => {
+    if (!name.trim()) return;
+    onSave({ id: 'sec-' + Date.now().toString(36), name: name.trim(), description: description.trim(), questions: 0 });
+  };
+  return (
+    <Portal>
+      <div className="qmb-ui-modal-wrapper" style={{ zIndex: 10095 }}>
+        <div className="qmb-ui-modal-overlay" onClick={onClose}></div>
+        <div className="qmb-ui-modal qedit-modal" role="dialog" aria-modal="true" aria-label="Add section">
+          <header className="qmb-ui-modal-header">
+            <div className="qmb-ui-modal-header__row qmb-ui-modal-header__row--title">
+              <div className="qmb-ui-modal-header__title"><span className="qmb-ui-text"><b>Add section</b></span></div>
+              <div className="qmb-ui-modal-header__actions">
+                <button className="qmb-ui-button comp-iconbtn qmb-ui-modal-header__close" aria-label="Close" onClick={onClose}><i className="fa-light fa-xmark"></i></button>
+              </div>
+            </div>
+            <hr className="qmb-ui-modal-header__divider" aria-hidden="true" />
+          </header>
+          <div className="qmb-ui-modal-body">
+            <p className="cfg-section__desc" style={{ marginTop: 0, marginBottom: 16 }}>Sections group related questions within an inspection form — like “Visual inspection” or “Functional test” — so technicians can work through a report in logical blocks and findings stay organized.</p>
+            <div className="qedit-form">
+              <div className="qmb-ui-input">
+                <input value={name} placeholder=" " autoFocus onChange={e => setName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') save(); }} />
+                <label>Section name<span className="req"></span></label>
+              </div>
+              <div className="qmb-ui-input">
+                <textarea value={description} placeholder=" " onChange={e => setDescription(e.target.value)}></textarea>
+                <label>Description</label>
+              </div>
+            </div>
+          </div>
+          <footer className="qmb-ui-modal-footer qmb-ui-modal-footer--divider">
+            <div className="qmb-ui-modal-footer__content">
+              <div className="qmb-ui-modal-footer__start"></div>
+              <div className="qmb-ui-modal-footer__actions">
+                <button className="qmb-ui-button" onClick={onClose}>Cancel</button>
+                <button className="qmb-ui-button qmb-ui-button--primary" disabled={!name.trim()} onClick={save}>Add section</button>
+              </div>
+            </div>
+          </footer>
+        </div>
+      </div>
+    </Portal>
+  );
+}
+window.SectionAddModal = SectionAddModal;
+
+// ── Quimby ConfirmDialog — destructive-action confirm (qmb-ui-modal). ──
+function ConfirmDialog({ title, message, confirmLabel = 'Delete', variant = 'danger', onConfirm, onCancel }) {
+  const Portal = window.Portal;
+  React.useEffect(() => {
+    const onEsc = (e) => { if (e.key === 'Escape') onCancel(); };
+    document.addEventListener('keydown', onEsc);
+    return () => document.removeEventListener('keydown', onEsc);
+  }, [onCancel]);
+  return (
+    <Portal>
+      <div className="qmb-ui-modal-wrapper qconfirm-wrap">
+        <div className="qmb-ui-modal-overlay" onClick={onCancel}></div>
+        <div className="qmb-ui-modal qconfirm" role="alertdialog" aria-modal="true" aria-label={title}>
+          <header className="qmb-ui-modal-header">
+            <div className="qmb-ui-modal-header__row qmb-ui-modal-header__row--title">
+              <div className="qmb-ui-modal-header__title"><span className="qmb-ui-text"><b>{title}</b></span></div>
+            </div>
+          </header>
+          <div className="qmb-ui-modal-body"><p className="qconfirm__msg">{message}</p></div>
+          <footer className="qmb-ui-modal-footer qmb-ui-modal-footer--divider">
+            <div className="qmb-ui-modal-footer__content">
+              <div className="qmb-ui-modal-footer__start"></div>
+              <div className="qmb-ui-modal-footer__actions">
+                <button className="qmb-ui-button" onClick={onCancel}>Cancel</button>
+                <button className={`qmb-ui-button qmb-ui-button--${variant}`} onClick={onConfirm}>{confirmLabel}</button>
+              </div>
+            </div>
+          </footer>
+        </div>
+      </div>
+    </Portal>
+  );
+}
+window.ConfirmDialog = ConfirmDialog;
+
 // ── Step 6: Inspection questions (attach existing OR create a new set) ───────
 function SectionQuestions({ d, set }) {
   const [showPicker, setShowPicker] = React.useState(false);
+  const [editIdx, setEditIdx] = React.useState(null); // null | index | 'new'
+  // pointer-drag reorder (by index) — mirrors the Question-set modal
+  const qListRef = React.useRef(null);
+  const qDrag = React.useRef(null);
+  const [qDragIdx, setQDragIdx] = React.useState(null);
+  const [qHint, setQHint] = React.useState(null); // { idx, pos }
   const creating = d.questionSetId === '__new';
   const qs = window.QUESTION_SETS.find(q => q.id === d.questionSetId);
   const questions = d.questions || [];
   const setQuestions = (q) => set({ questions: q });
+  const qComputeHint = (clientY) => {
+    const rows = qListRef.current ? [...qListRef.current.querySelectorAll('.qedit-row')] : [];
+    if (!rows.length) return null;
+    for (let i = 0; i < rows.length; i++) {
+      if (i === qDrag.current.idx) continue;
+      const r = rows[i].getBoundingClientRect();
+      if (clientY >= r.top && clientY <= r.bottom) return { idx: i, pos: (clientY - r.top) < r.height / 2 ? 'before' : 'after' };
+    }
+    const f = rows[0].getBoundingClientRect(); if (clientY < f.top) return { idx: 0, pos: 'before' };
+    const l = rows[rows.length - 1].getBoundingClientRect(); if (clientY > l.bottom) return { idx: rows.length - 1, pos: 'after' };
+    return null;
+  };
+  const qMove = (e) => { const st = qDrag.current; if (!st) return; const h = qComputeHint(e.clientY); st.hint = h; setQHint(h); };
+  const qUp = () => {
+    const st = qDrag.current;
+    window.removeEventListener('pointermove', qMove); window.removeEventListener('pointerup', qUp);
+    if (st && st.hint) {
+      const arr = [...questions]; const [moved] = arr.splice(st.idx, 1);
+      let to = st.hint.idx; if (st.hint.pos === 'after') to += 1; if (st.idx < to) to -= 1;
+      arr.splice(Math.max(0, to), 0, moved); setQuestions(arr);
+    }
+    qDrag.current = null; setQDragIdx(null); setQHint(null);
+  };
+  const qGripDown = (e, i) => {
+    e.preventDefault(); e.stopPropagation();
+    qDrag.current = { idx: i, hint: null }; setQDragIdx(i);
+    window.addEventListener('pointermove', qMove); window.addEventListener('pointerup', qUp);
+  };
   const chooseSet = (id) => {
     const s = window.QUESTION_SETS.find(x => x.id === id);
-    set({ questionSetId: id, questions: s ? s.questions.map(x => ({ ...x })) : [], newSetName: '', newSetCategory: '' });
+    set({ questionSetId: id, questions: s ? s.questions.map(x => ({ ...x })) : [], newSetName: '', newSetDescription: '' });
     setShowPicker(false);
   };
-  const startCreate = () => { set({ questionSetId: '__new', questions: [], newSetName: '', newSetCategory: d.category || '' }); setShowPicker(false); };
-  const discard = () => set({ questionSetId: null, questions: [], newSetName: '', newSetCategory: '' });
+  const startCreate = () => { set({ questionSetId: '__new', questions: [], newSetName: '', newSetDescription: '' }); setShowPicker(false); };
+  const discard = () => set({ questionSetId: null, questions: [], newSetName: '', newSetDescription: '' });
   const hasTarget = !!qs || creating;
 
   // When this draft was copied from another type, the source's question set is
@@ -381,7 +856,7 @@ function SectionQuestions({ d, set }) {
   const sourceSet = d.copiedFrom && d.sourceQuestionSet ? window.QUESTION_SETS.find(s => s.id === d.sourceQuestionSet) : null;
   const useShared = () => {
     const s = window.QUESTION_SETS.find(x => x.id === d.sourceQuestionSet);
-    set({ questionMode: 'shared', questionSetId: d.sourceQuestionSet, questions: s ? s.questions.map(x => ({ ...x })) : [], newSetName: '', newSetCategory: '' });
+    set({ questionMode: 'shared', questionSetId: d.sourceQuestionSet, questions: s ? s.questions.map(x => ({ ...x })) : [], newSetName: '', newSetDescription: '' });
   };
   const duplicateForType = () => {
     const s = window.QUESTION_SETS.find(x => x.id === d.sourceQuestionSet);
@@ -404,77 +879,55 @@ function SectionQuestions({ d, set }) {
         </div>
       )}
 
-      {/* attached existing set */}
-      {qs && (
-        <div className="q-attach">
-          <div className="q-attach__icon"><i className="fa-light fa-clipboard-list-check"></i></div>
-          <div className="q-attach__body">
-            <div className="q-attach__name">{qs.name}</div>
-            <div className="q-attach__meta">{questions.length} questions · {qs.code} · reused on {qs.usedBy} other type{qs.usedBy === 1 ? '' : 's'}</div>
-          </div>
-          <div className="q-attach__actions">
-            <button className="qmb-ui-button" onClick={() => setShowPicker(p => !p)}><i className="fa-light fa-arrows-rotate"></i>Change set</button>
-          </div>
-        </div>
+      {/* searchable set picker — replaces the transient pick grid + Change-set button */}
+      <SetPicker value={creating ? null : d.questionSetId} creating={creating} onChoose={chooseSet} onCreate={startCreate} />
+      {qs && !creating && (
+        <div className="q-setmeta">{questions.length} question{questions.length === 1 ? '' : 's'} · {qs.code} · reused on {qs.usedBy} other type{qs.usedBy === 1 ? '' : 's'}</div>
       )}
 
-      {/* authoring a new reusable set (name + category, like the platform) */}
+      {/* authoring a new reusable set (name + description, like the platform) */}
       {creating && (
-        <div className="q-newset-head">
-          <div className="q-attach__icon"><i className="fa-light fa-clipboard-list-check"></i></div>
+        <div className="q-newset">
           <div className="cfg-fields">
-            <div className="cfg-field">
-              <label className="cfg-field__label">New question set name <span className="req">*</span></label>
-              <input className="cfg-input" value={d.newSetName || ''} placeholder="e.g. Dry valve trip test" onChange={e => set({ newSetName: e.target.value })} />
+            <div className="cfg-field--full">
+              <QInput id="newset-name" label="New question set name" required value={d.newSetName} onChange={v => set({ newSetName: v })} />
             </div>
-            <div className="cfg-field">
-              <label className="cfg-field__label">Category</label>
-              <select className="cfg-input" value={d.newSetCategory || ''} onChange={e => set({ newSetCategory: e.target.value })}>
-                <option value="" disabled>Choose…</option>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+            <div className="cfg-field--full">
+              <QInput id="newset-desc" label="Description" multiline value={d.newSetDescription} onChange={v => set({ newSetDescription: v })} />
             </div>
           </div>
         </div>
       )}
 
-      {/* empty / picker */}
-      {!hasTarget && <div className="compat-empty">No questions yet. Reuse an existing set, or create a new reusable set.</div>}
-      {(showPicker || !hasTarget) && (
-        <div className="pick-grid" style={{ marginBottom: 12 }}>
-          {window.QUESTION_SETS.map(s => (
-            <button key={s.id} type="button" className={`pick-opt ${d.questionSetId === s.id ? 'pick-opt--active' : ''}`} onClick={() => chooseSet(s.id)}>
-              <span className="pick-opt__icon"><i className="fa-light fa-clipboard-list"></i></span>
-              <span>
-                <span className="pick-opt__name">{s.name}</span>
-                <span className="pick-opt__blurb">{s.questions.length} questions · {s.code}</span>
-              </span>
-            </button>
-          ))}
-          <button type="button" className={`pick-opt pick-opt--blank ${creating ? 'pick-opt--active' : ''}`} onClick={startCreate}>
-            <span className="pick-opt__icon"><i className="fa-light fa-file"></i></span>
-            <span>
-              <span className="pick-opt__name">Start blank</span>
-              <span className="pick-opt__blurb">Build a new reusable set from scratch.</span>
-            </span>
-          </button>
-        </div>
-      )}
-
-      {/* question editor — for both an attached set and a new one */}
+      {/* question list — compact, reorderable; click a row to edit in a Brushaway */}
       {hasTarget && (
         <>
-          <div className="q-list" style={{ marginTop: 14 }}>
-            {questions.map((q, i) => (
-              <div className="q-item" key={i}>
-                <span className="q-item__num">{i + 1}</span>
-                <span className="q-item__text">{q.q}</span>
-                <span className="q-item__type"><STag color="purple">{q.type}</STag></span>
-                <button className="q-item__x" onClick={() => setQuestions(questions.filter((_, j) => j !== i))} aria-label="Remove question"><i className="fa-light fa-xmark"></i></button>
+          <div className="qedit-list" ref={qListRef} style={{ marginTop: 14 }}>
+            {questions.map((q, i) => {
+              const hint = qHint && qHint.idx === i ? ' qrow--drop-' + qHint.pos : '';
+              return (
+              <div className={`qedit-row ${qDragIdx === i ? 'is-dragging' : ''}${hint}`} key={i} role="button" tabIndex={0} onClick={() => setEditIdx(i)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditIdx(i); } }}>
+                <span className="comp-handle" title="Drag to reorder" onPointerDown={e => qGripDown(e, i)} onClick={e => e.stopPropagation()}><i className="fa-light fa-grip-dots-vertical"></i></span>
+                <span className="qedit-row__text">{q.q ? q.q : <span className="set-cell-empty">Untitled question</span>}{q.required && <span className="qedit-row__req" title="Required">*</span>}</span>
+                <span className="qmb-ui-tag qmb-ui-tag--pastry qmb-ui-tag--purple"><span className="qmb-ui-tag__label">{q.type}</span></span>
+                <span className="qrow__freqtag"><i className="fa-light fa-arrows-rotate"></i>{q.frequency || 'Annual'}</span>
+                <button className="set-rowact" aria-label="Remove question" title="Remove" onClick={e => { e.stopPropagation(); setQuestions(questions.filter((_, j) => j !== i)); }}><i className="fa-light fa-xmark"></i></button>
               </div>
-            ))}
+              );
+            })}
           </div>
-          <AddQuestionRow onAdd={(q) => setQuestions([...questions, q])} />
+          {questions.length === 0 && <div className="qsec__empty">No questions yet — add the first one below.</div>}
+          <button type="button" className="qsec__add" onClick={() => setEditIdx('new')}><i className="fa-light fa-plus"></i>Add question</button>
+          {editIdx != null && (
+            <QuestionEditor
+              initial={editIdx === 'new' ? { q: '', type: 'Pass / Fail / N/A', frequency: 'Annual', __isNew: true } : questions[editIdx]}
+              scope={(qs && !creating) ? { value: d.questionScope || 'global', onChange: (v) => set({ questionScope: v }), usedBy: qs.usedBy, setName: qs.name } : null}
+              onClose={() => setEditIdx(null)}
+              onDelete={() => { setQuestions(questions.filter((_, j) => j !== editIdx)); setEditIdx(null); }}
+              onSave={(nq) => { const clean = { ...nq }; delete clean.__isNew; if (editIdx === 'new') setQuestions([...questions, clean]); else setQuestions(questions.map((x, j) => j === editIdx ? clean : x)); setEditIdx(null); }}
+            />
+          )}
           {creating && (
             <button className="qmb-ui-button q-discard" onClick={discard}><i className="fa-light fa-arrow-left"></i>Discard new set</button>
           )}
@@ -513,14 +966,15 @@ function SectionDefaults({ d, set }) {
   const subTotal = compat.reduce((sum, t) => sum + (subs[t] || 0), 0);
   return (
     <div>
-      <div className="def-row">
-        <Toggle id="def-autoinc" checked={d.autoInclude} onChange={v => set({ autoInclude: v })} />
-        <div className="def-row__body">
-          <div className="def-row__title">Always include this with the system</div>
-          <div className="def-row__desc">Certain items are always present with a system. When on, this component is auto-attached to every building that has {d.path === 'system' ? `a ${sysName} system` : 'this asset'} and can't be removed per-building.</div>
+      {d.path === 'system' && (
+        <div className="def-row">
+          <Toggle id="def-autoinc" checked={d.autoInclude} onChange={v => set({ autoInclude: v })} />
+          <div className="def-row__body">
+            <div className="def-row__title">Always include this with the system</div>
+            <div className="def-row__desc">Certain items are always present with a system. When on, this component is auto-attached to every building that has a {sysName} system and can't be removed per-building.</div>
+          </div>
         </div>
-      </div>
-
+      )}
       <div className="def-row">
         <div className="def-row__icon"><i className="fa-light fa-hashtag"></i></div>
         <div className="def-row__body">
@@ -671,6 +1125,6 @@ function stepDone(id, d, visited) {
 }
 
 Object.assign(window, {
-  STag, Toggle,
+  STag, Toggle, QInput, QSelect, TokenPicker,
   SETUP_SECTIONS, sectionTitle, sectionDesc, stepDone,
 });

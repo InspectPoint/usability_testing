@@ -1,0 +1,27 @@
+# Fly.io config for the usability-test results server.
+# Rename `app` to whatever `fly launch` assigns (or set it before first deploy).
+app = "inspectpoint-usability-results"
+primary_region = "iad"
+
+[build]
+
+[env]
+  DATA_FILE = "/data/results.jsonl"
+
+# Persistent disk so results survive restarts/redeploys.
+[mounts]
+  source = "results_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    method = "get"
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"

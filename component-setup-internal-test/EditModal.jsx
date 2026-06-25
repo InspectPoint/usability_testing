@@ -195,7 +195,7 @@ function EditModal({ comp, systems, components, onClose, onSave, onDeactivate, o
               <button className="modal-deact is-danger" onClick={() => onDeactivate(comp)}>
                 <i className="fa-light fa-ban"></i>Deactivate
               </button>
-              <button className="qmb-ui-button comp-iconbtn" aria-label="Close" onClick={onClose}>
+              <button className="qmb-ui-button qmb-ui-button--highlighted comp-iconbtn" aria-label="Close" onClick={onClose}>
                 <i className="fa-light fa-xmark"></i>
               </button>
             </div>

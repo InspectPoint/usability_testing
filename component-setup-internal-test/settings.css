@@ -41,19 +41,6 @@
 .set-cell-count { font: 600 14px/1 var(--font-ui); font-variant-numeric: tabular-nums; color: var(--gray-800); }
 .set-cell-empty { color: var(--gray-400); }
 
-/* Component Setup tables — uniform Inter 14px cell text (override per-cell chips/counts) */
-.set-page .qmb-ui-table td,
-.set-page .qmb-ui-table td .cell-link,
-.set-page .qmb-ui-table td .cell-muted,
-.set-page .qmb-ui-table td .set-cell-empty,
-.set-page .qmb-ui-table td .set-cell-count,
-.set-page .qmb-ui-table td .set-pathchip {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 20px;
-}
-.set-page .qmb-ui-table td .set-pathchip i { font-size: 13px; }
-
 /* inline row controls (power-user editing in the list) */
 .set-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .set-namecell { display: inline-flex; align-items: center; gap: 8px; }
@@ -72,16 +59,12 @@ tr:hover .set-rowedit { opacity: 1; }
 .set-rowact:active { background: var(--gray-200); }
 
 /* ── Config page: shared chrome ────────────────────────────────────────── */
-/* The .cfg fills .qmb-main; header + right nav stay fixed while only the content
-   column scrolls (deterministic vs page-level sticky). */
-.cfg { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; background: #fff; }
-/* fixed workspace header (flex row at top — .cfg's inner scroll keeps it in place) */
-.cfg-headwrap { flex: 0 0 auto; z-index: 10; }
-.cfg-headwrap .qmb-header--workspace { position: relative; border-bottom: 0; }
-.cfg-headwrap .qmb-header--workspace::after {
-  content: ''; position: absolute; left: 12px; right: 12px; bottom: 0;
-  border-bottom: 1px solid var(--gray-200);
-}
+/* No inner scroll region — the page container (.qmb-main) does the scrolling.
+   The gray area grows with content; min-height fills the viewport when short. */
+.cfg { display: flex; flex-direction: column; min-height: 100%; background: #fff; }
+/* Sticky workspace header (real WorkspaceHeader component) */
+.cfg-headwrap { position: sticky; top: 0; z-index: 10; }
+.cfg-headwrap .qmb-header--workspace { border-bottom: 1px solid var(--gray-200); }
 /* vertically center the title row content (title ↔ progress + Save) */
 .cfg-headwrap .qmb-header__row--main { align-items: center; }
 .cfg-headwrap .qmb-header__actions { display: flex; align-items: center; gap: 8px; }
@@ -129,7 +112,7 @@ tr:hover .set-rowedit { opacity: 1; }
    gray card. Container grows leftward (right edge pinned) — no rescale jank. */
 .cfg-toc {
   grid-column: 2; justify-self: end; align-self: start;
-  position: sticky; top: 16px; z-index: 20;
+  position: sticky; top: calc(var(--cfg-head-h, 0px) + 16px); z-index: 20;
   margin: 16px 16px 0 0;
   display: flex; flex-direction: column; align-items: flex-end;
   padding: 12px; border-radius: 8px;
@@ -167,14 +150,11 @@ tr:hover .set-rowedit { opacity: 1; }
 .cfg-toc:focus-within .cfg-toc__item::after { opacity: 0; transform: translateX(-48px); }
 @media (prefers-reduced-motion: reduce) { .cfg-toc, .cfg-toc__label, .cfg-toc__item::after { transition: none; } }
 
-/* scroll content — form sits in column 1; calmer centered measure. This column is
-   the only scroller, so the TOC in column 2 stays fixed beside it. */
-.cfg-scroll { grid-column: 1; min-width: 0; min-height: 0; overflow-y: auto; padding: 8px 0 48px; scroll-behavior: smooth; }
+/* scroll content — form sits in column 1; calmer centered measure */
+.cfg-scroll { grid-column: 1; min-width: 0; padding: 8px 0 48px; scroll-behavior: smooth; }
 .cfg-canvas { max-width: 760px; margin: 0 auto; padding: 24px; }
 
 /* ── Section block ─────────────────────────────────────────────────────── */
-/* section titles use Quimby's medium heading (20/26, Hanken 700) */
-.cfg-section__head .qmb-section-title__text { font: 700 20px/26px var(--font-ui); }
 .cfg-section { padding: 44px 0; scroll-margin-top: 16px; }
 .cfg-section:last-child { border-bottom: 0; }
 /* Tail space (rail shell only): lets the short final sections scroll up far
@@ -214,24 +194,18 @@ tr:hover .set-rowedit { opacity: 1; }
 .fork { max-width: 712px; }
 .fork { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .fork-card {
-  position: relative;
   text-align: left; appearance: none; cursor: pointer; background: #fff;
   border: 1.5px solid var(--gray-300); border-radius: var(--radius-lg); padding: 20px;
   transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 }
 .fork-card:hover { border-color: #000; box-shadow: var(--shadow-sm); }
 .fork-card:active { background: var(--gray-100); }
-.fork-card--disabled { opacity: .5; cursor: not-allowed; }
-.fork-card--disabled:hover { border-color: var(--gray-300); box-shadow: none; }
-/* Tooltip wrapper must fill the grid cell so the disabled card keeps its width */
-.fork-card__tipwrap, .fork-card__tipwrap > .qmb-ui-tooltip__container { display: block; width: 100%; }
-.fork-card__tipwrap .fork-card { width: 100%; }
 .fork-card--active,
 .fork-card--active:hover { border-color: var(--indigo-500); box-shadow: 0 0 0 4px rgba(61,26,158,.12); }
 .fork-card__icon { width: 40px; height: 40px; border-radius: var(--radius-md); display: grid; place-items: center; background: var(--gray-100); color: var(--gray-500); font-size: 18px; margin-bottom: 12px; }
-.fork-card--active .fork-card__icon { background: var(--indigo-50); color: var(--indigo-500); }
-.fork-card__title { font: 700 16px/22px var(--font-ui); color: #000; display: flex; align-items: center; gap: 8px; }
-.fork-card__check { position: absolute; top: 12px; right: 12px; margin: 0; color: var(--indigo-500); font-size: 16px; opacity: 0; transition: opacity .15s ease; }
+.fork-card--active .fork-card__icon { background: var(--indigo-50); color: var(--indigo-500); }m: 12px; }
+.fork-card__title { font: 600 16px/22px var(--font-ui); color: #000; display: flex; align-items: center; gap: 8px; }
+.fork-card__check { margin-left: auto; color: var(--indigo-500); opacity: 0; transition: opacity .15s ease; }
 .fork-card--active .fork-card__check { opacity: 1; }
 .fork-card__desc { font: 400 13px/19px var(--font-body); color: var(--gray-500); margin: 6px 0 0; }
 
@@ -241,7 +215,6 @@ tr:hover .set-rowedit { opacity: 1; }
 .pick-group__blurb { font: 400 13px/18px var(--font-body); color: var(--gray-500); margin: 2px 0 10px; }
 .pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; max-width: 992px; }
 .pick-opt {
-  position: relative;
   display: flex; align-items: flex-start; gap: 12px; text-align: left; cursor: pointer;
   appearance: none; background: #fff; border: 1.5px solid var(--gray-300); border-radius: var(--radius-md);
   padding: 12px 14px; transition: border-color .15s ease, background .15s ease;
@@ -252,18 +225,15 @@ tr:hover .set-rowedit { opacity: 1; }
 .pick-opt--active:hover { border-color: var(--indigo-500); box-shadow: 0 0 0 4px rgba(61,26,158,.12); }
 .pick-opt__icon { color: var(--gray-500); font-size: 15px; margin-top: 1px; width: 18px; text-align: center; }
 .pick-opt--active .pick-opt__icon { color: var(--indigo-500); }
-.pick-opt--active::after { content: "\f058"; font-family: "Font Awesome 6 Pro"; font-weight: 900; position: absolute; top: 10px; right: 10px; color: var(--indigo-500); font-size: 15px; line-height: 1; }
-.pick-opt { padding-right: 32px; }
 .pick-opt--blank { border-style: dashed; }
-.pick-opt__name { display: block; font: 700 14px/18px var(--font-ui); color: #000; }
-.pick-opt__blurb { display: block; font: 400 12px/16px var(--font-body); color: var(--gray-500); margin-top: 2px; }
+.pick-opt__name { font: 600 14px/18px var(--font-ui); color: #000; }
+.pick-opt__blurb { font: 400 12px/16px var(--font-body); color: var(--gray-500); margin-top: 2px; }
 .pick-more { appearance: none; border: 0; background: none; cursor: pointer; color: var(--fg-link); font: 500 13px/1 var(--font-ui); display: inline-flex; align-items: center; gap: 6px; padding: 6px 0; }
 .pick-more:hover { text-decoration: underline; }
 
 /* ── Template gallery ──────────────────────────────────────────────────── */
 .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: 14px; max-width: 992px; }
 .tpl-card {
-  position: relative;
   text-align: left; appearance: none; cursor: pointer; background: #fff;
   border: 1.5px solid var(--gray-300); border-radius: var(--radius-lg); padding: 16px;
   display: flex; flex-direction: column; gap: 10px; transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
@@ -275,7 +245,7 @@ tr:hover .set-rowedit { opacity: 1; }
 .tpl-card__icon { width: 34px; height: 34px; border-radius: var(--radius-md); display: grid; place-items: center; background: var(--gray-100); color: var(--gray-500); font-size: 15px; flex-shrink: 0; }
 .tpl-card--active .tpl-card__icon { background: var(--indigo-50); color: var(--indigo-500); }
 .tpl-card__name { font: 600 15px/20px var(--font-ui); color: #000; }
-.tpl-card__check { position: absolute; top: 12px; right: 12px; margin: 0; color: var(--indigo-500); opacity: 0; }
+.tpl-card__check { margin-left: auto; color: var(--indigo-500); opacity: 0; }
 .tpl-card--active .tpl-card__check { opacity: 1; }
 .tpl-card__blurb { font: 400 13px/18px var(--font-body); color: var(--gray-500); flex: 1; }
 .tpl-card__includes { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -299,61 +269,6 @@ textarea.cfg-input { height: auto; min-height: 76px; padding: 10px 12px; resize:
 .cfg-input:focus { outline: none; border-color: var(--indigo-500); box-shadow: 0 0 0 3px rgba(61,26,158,.12); }
 select.cfg-input { appearance: none; cursor: pointer; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23777' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center; padding-right: 32px; }
 .cfg-field__hint { font: 400 12px/16px var(--font-body); color: var(--gray-400); }
-
-/* Force the floating-label resting/filled state to 12px (the `font:` shorthand with
-   var() in quimby-components.css doesn't always resolve here); only the empty state
-   floats up to 14px. Scoped to the config page. */
-.cfg-section .qmb-ui-input label { font-size: 12px; }
-.cfg-section .qmb-ui-input input:placeholder-shown ~ label,
-.cfg-section .qmb-ui-input textarea:placeholder-shown ~ label { font-size: 14px; }
-/* white input background inside the Advanced settings accordion (its body is tinted) */
-.cfg-adv-acc .qmb-ui-input input,
-.cfg-adv-acc .qmb-ui-input textarea { background: #fff; }
-
-/* qmb-ui-select popup options (quimby-components.css styles the trigger/label; this
-   covers the dropdown list) */
-.qmb-ui-select__popup {
-  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 50;
-  background: #fff; border: 1px solid var(--gray-200); border-radius: 8px;
-  box-shadow: var(--shadow-lg); overflow: hidden;
-}
-.qmb-ui-select__options { max-height: 280px; overflow-y: auto; padding: 4px; }
-.qmb-ui-select__options ul { list-style: none; margin: 0; padding: 0; }
-.qmb-ui-select__option {
-  display: flex; align-items: center; width: 100%; text-align: left;
-  appearance: none; border: 0; background: transparent; cursor: pointer;
-  color: #000; font: 400 14px/1.5 var(--font-body); padding: 8px 12px; border-radius: var(--radius-sm);
-  transition: background-color 0.15s;
-}
-.qmb-ui-select__option:hover { background: rgba(0,0,0,0.04); }
-.qmb-ui-select__option--selected { background: rgba(61,27,157,0.1); color: var(--indigo-600); font-weight: 500; }
-
-/* custom-field opt-in rows + quiet add button */
-.cfield-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-.cfield-row { display: flex; align-items: center; gap: 8px; }
-.cfield-row__name { flex: 1; min-width: 0; height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); font: 400 14px/1 var(--font-body); background: #fff; color: #000; }
-.cfield-row__name:focus { outline: none; border-color: var(--indigo-500); box-shadow: 0 0 0 3px rgba(61,26,158,.12); }
-.cfield-row__type { flex: 0 0 150px; height: 40px; box-sizing: border-box; appearance: none; cursor: pointer; padding: 0 30px 0 12px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); font: 400 14px/1 var(--font-body); color: var(--gray-700); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23777' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center; }
-.cfield-row__type:focus { outline: none; border-color: var(--indigo-500); box-shadow: 0 0 0 3px rgba(61,26,158,.12); }
-.cfield-row__x { flex: 0 0 auto; width: 32px; height: 32px; border: 0; background: none; cursor: pointer; color: var(--gray-400); border-radius: var(--radius-md); display: grid; place-items: center; }
-.cfield-row__x:hover { background: var(--gray-100); color: var(--red-500); }
-.cfield-add { appearance: none; border: 0; background: none; cursor: pointer; color: var(--fg-link); font: 500 13px/1 var(--font-ui); display: inline-flex; align-items: center; gap: 6px; padding: 6px 0; }
-.cfield-add:hover { text-decoration: underline; }
-
-/* question-set searchable picker */
-.setpicker .qmb-ui-select__trigger { padding-right: 32px; }
-.q-setmeta { font: 400 12px/16px var(--font-body); color: var(--gray-500); margin-top: 6px; }
-.qmb-ui-select__search { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--gray-200); }
-.qmb-ui-select__search i { color: var(--gray-400); font-size: 13px; }
-.qmb-ui-select__search input { flex: 1; border: 0; outline: none; background: transparent; font: 400 14px/1 var(--font-body); color: #000; }
-.qmb-ui-select__create { display: flex; align-items: center; gap: 8px; width: 100%; appearance: none; border: 0; border-top: 1px solid var(--gray-200); background: none; cursor: pointer; color: var(--fg-link); font: 500 14px/1 var(--font-ui); padding: 11px 12px; }
-.qmb-ui-select__create:hover { background: var(--gray-50); }
-.qmb-ui-select__create i { font-size: 12px; }
-.setpicker .qmb-ui-select__option { justify-content: space-between; gap: 12px; }
-.setpicker__name { font-weight: 500; }
-.setpicker__meta { color: var(--gray-400); font-size: 12px; font-variant-numeric: tabular-nums; }
-.setpicker__create { display: flex; align-items: center; gap: 8px; width: 100%; appearance: none; border: 0; border-top: 1px solid var(--gray-200); background: none; cursor: pointer; color: var(--fg-link); font: 600 13px/1 var(--font-ui); padding: 11px 14px; }
-.setpicker__create:hover { background: var(--gray-50); }
 
 /* inline restriction guidance (recovery-before-the-fact) */
 .cfg-guard {
@@ -434,56 +349,11 @@ select.cfg-input { appearance: none; cursor: pointer; background: #fff url("data
 .defsub-row .def-stepper { flex-shrink: 0; }
 .def-row__icon { width: 40px; display: grid; place-items: center; color: var(--purple-500); font-size: 18px; flex-shrink: 0; }
 
-/* new question set authoring — plain fields, no boxed container, no icon */
-.q-newset-head { margin: 14px 0; }
-.q-newset-head .cfg-fields { margin: 0; }
-.q-newset { margin: 14px 0; }
-.q-newset .cfg-fields { margin: 0; }
+/* new question set authoring */
+.q-newset-head { display: flex; gap: 12px; align-items: flex-start; background: var(--indigo-50); border: 1px solid var(--indigo-100); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 16px; }
+.q-newset-head .cfg-fields { flex: 1; margin: 0; }
 .q-createbtn { margin-top: 4px; }
 .q-discard { margin-top: 12px; color: var(--gray-600); }
-
-/* select-type option editor */
-.qset-qrow--opts td { padding-top: 0 !important; padding-bottom: 10px !important; }
-.qopts { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-md); padding: 10px 12px; }
-.qopts__label { font: 600 11px/1 var(--font-ui); letter-spacing: .04em; text-transform: uppercase; color: var(--gray-500); margin-bottom: 8px; }
-.qopts__row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.qopts__bullet { color: var(--gray-400); font-size: 12px; }
-.qopts__input { flex: 1; min-width: 0; height: 34px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); font: 400 14px/1 var(--font-body); background: #fff; color: #000; }
-.qopts__input:focus { outline: none; border-color: var(--indigo-500); box-shadow: 0 0 0 3px rgba(61,26,158,.12); }
-.qopts__add { appearance: none; border: 0; background: none; cursor: pointer; color: var(--fg-link); font: 500 13px/1 var(--font-ui); display: inline-flex; align-items: center; gap: 6px; padding: 4px 0; }
-.qopts__add:hover { text-decoration: underline; }
-
-/* edit-scope prompt (update set globally vs this type only) */
-.q-globalscope { margin-top: 14px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
-.q-globalscope__opt { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
-.q-globalscope__opt input { margin-top: 2px; accent-color: var(--indigo-500); flex-shrink: 0; }
-.q-globalscope__text { font: 400 13px/19px var(--font-body); color: var(--gray-700); }
-.q-globalscope__text b { color: #000; font-weight: 600; }
-
-/* question list (compact rows) + per-question Brushaway editor */
-.qedit-list { display: flex; flex-direction: column; border: 1px solid var(--gray-200); border-radius: var(--radius-md); overflow: hidden; }
-.qedit-list--empty { border: 0; }
-.qedit-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; cursor: pointer; border-bottom: 1px solid var(--gray-100); background: #fff; }
-.qedit-row:last-child { border-bottom: 0; }
-.qedit-row:hover { background: var(--gray-50); }
-.qedit-row:active { background: var(--gray-100); }
-.qedit-row.is-dragging { opacity: .4; }
-.qedit-row.qrow--drop-before { box-shadow: inset 0 2px 0 0 var(--indigo-400); }
-.qedit-row.qrow--drop-after { box-shadow: inset 0 -2px 0 0 var(--indigo-400); }
-.qedit-row .comp-handle { cursor: grab; color: var(--gray-400); display: inline-grid; place-items: center; }
-.qedit-row__text { flex: 1; min-width: 0; font: 500 14px/20px var(--font-body); color: var(--fg-link); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.qedit-row:hover .qedit-row__text { text-decoration: underline; }
-.qedit-row__text .set-cell-empty { color: var(--gray-400); text-decoration: none; }
-.qedit-row__req { color: var(--red-500); font-weight: 700; margin-left: 4px; }
-.qedit-brushaway { width: 460px; max-width: calc(100vw - 32px); z-index: 10080; }
-.qedit-modal-wrap { z-index: 10085; }
-.qedit-modal { width: 520px; max-width: calc(100vw - 48px); }
-.qconfirm-wrap { z-index: 10090; }
-.qconfirm { width: 420px; max-width: calc(100vw - 48px); }
-.qconfirm__msg { font: 400 14px/20px var(--font-body); color: var(--gray-700); margin: 0; }
-.qedit-modal { width: 520px; max-width: calc(100vw - 48px); }
-.qedit-form { display: flex; flex-direction: column; gap: 16px; }
-.qedit-toggle { display: flex; align-items: center; gap: 10px; font: 400 14px/1.4 var(--font-body); color: var(--gray-800); cursor: pointer; }
 
 /* starting-point: recommended tag + copied-from banner + share/duplicate choice */
 .start-rec { color: var(--gray-400); font-weight: 400; }
@@ -557,49 +427,7 @@ select.cfg-input { appearance: none; cursor: pointer; background: #fff url("data
 .qmb-ui-toggle__input:checked + .qmb-ui-toggle__slider::before { transform: translateX(18px); }
 .qmb-ui-toggle__input:focus-visible + .qmb-ui-toggle__slider { box-shadow: 0 0 0 3px rgba(61,26,158,.25); }
 
-/* ── Component-specific (custom) fields — one card per field ───────────── */
-.cfield-heading { font: 700 18px/24px var(--font-ui); color: #000; margin-bottom: 12px; }
-.cfield-cards { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
-.cfield-card { position: relative; background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 16px 16px 12px; }
-.cfield-card__del { position: absolute; top: 12px; right: 12px; }
-.cfield-card .cform { grid-template-columns: 120px minmax(0, 1fr); row-gap: 4px; padding-right: 36px; }
-.cfield-card .cform__checks { grid-column: 1 / -1; display: flex; gap: 24px; margin-top: 8px; }
-.cfield-check { display: inline-flex; align-items: center; gap: 8px; font: 400 14px/1 var(--font-body); color: var(--gray-800); cursor: pointer; }
-/* The tab-content wrapper must pass the flex chain through so an empty tab's
-   gray canvas can grow to fill .set-page (otherwise white shows beneath it). */
-.set-tabwrap { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-/* ── Tab-level empty state (no items at all, not a search miss) ─────────── */
-/* The settings page manages its own insets (header/tabs/body each pad themselves),
-   so drop the .qmb-main padding and let it flex so .set-page fills the viewport. */
-.qmb-main:has(> .set-page) { padding: 0; display: flex; flex-direction: column; }
-/* Full-height gray-50 canvas that fills the remaining viewport below the tabs */
-.set-body--empty { flex: 1 1 auto; min-height: 0; padding: 0; background: var(--gray-50); display: flex; flex-direction: column; }
-/* Center the placeholder block in the available space (text stays as authored) */
-.set-body--empty .set-empty { display: flex; flex-direction: column; flex: 1 1 auto; margin: 0; border: 0; border-radius: 0; align-items: center; justify-content: center; text-align: center; gap: 12px; padding: 64px 24px; }
-/* The set-page must stretch so set-body--empty can grow to fill it */
-.set-page { flex: 1 1 auto; }
-.set-empty__art { width: 64px; height: 64px; border-radius: var(--radius-full); display: grid; place-items: center; background: #fff; border: 1px solid var(--gray-200); color: var(--indigo-400); font-size: 26px; }
-.set-empty__title { font: 600 18px/24px var(--font-ui); color: #000; margin: 4px 0 0; }
-.set-empty__text { font: 400 14px/20px var(--font-body); color: var(--gray-500); margin: 0 0 8px; max-width: 360px; }
-.onb-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 16px 24px 0; padding: 12px 16px; background: var(--indigo-50); border: 1px solid var(--indigo-100); border-radius: var(--radius-lg); }
-.onb-strip__title { font: 700 12px/1 var(--font-ui); letter-spacing: .04em; text-transform: uppercase; color: var(--indigo-600); margin-right: 4px; }
-.onb-step { display: inline-flex; align-items: center; gap: 8px; appearance: none; border: 1px solid var(--gray-200); background: #fff; cursor: pointer; border-radius: var(--radius-full); padding: 6px 14px 6px 8px; font: 500 13px/1 var(--font-ui); color: var(--gray-700); }
-.onb-step:hover { border-color: var(--indigo-300); color: var(--indigo-600); }
-.onb-step__num { width: 20px; height: 20px; border-radius: var(--radius-full); display: grid; place-items: center; background: var(--gray-100); color: var(--gray-500); font: 700 11px/1 var(--font-ui); }
-.onb-step--done { color: var(--gray-500); }
-.onb-step--done .onb-step__num { background: var(--green-50); color: var(--green-700); }
-.onb-welcome__steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font: 400 14px/20px var(--font-body); color: var(--gray-700); }
-.onb-welcome__steps b { color: #000; font-weight: 600; }
-
-/* Shared guide modal (welcome / learn more) — step rows echo the tab placeholders */
-.guide-modal__intro { font: 400 14px/21px var(--font-body); color: var(--gray-600); margin: 0 0 20px; }
-.guide-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
-.guide-step { display: flex; align-items: flex-start; gap: 14px; }
-.guide-step__art { flex-shrink: 0; width: 44px; height: 44px; border-radius: var(--radius-full); display: grid; place-items: center; background: var(--indigo-50); border: 1px solid var(--indigo-100); color: var(--indigo-500); font-size: 18px; }
-.guide-step__body { display: flex; flex-direction: column; gap: 2px; padding-top: 2px; }
-.guide-step__title { display: flex; align-items: center; gap: 8px; font: 600 15px/20px var(--font-ui); color: #000; }
-.guide-step__num { flex-shrink: 0; width: 18px; height: 18px; border-radius: var(--radius-full); display: grid; place-items: center; background: var(--gray-100); color: var(--gray-500); font: 700 10px/1 var(--font-ui); }
-.guide-step__text { font: 400 13px/19px var(--font-body); color: var(--gray-500); }
+/* ── Questions library ─────────────────────────────────────────────────── */
 .qlib-detail { padding: 4px 0; }
 .qlib-detail__row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
 .qlib-detail__row:last-child { border-bottom: 0; }
@@ -653,10 +481,7 @@ select.cfg-input { appearance: none; cursor: pointer; background: #fff url("data
 /* ── question-set modal (set → list of questions) ──────────────────────── */
 .qset-list-modal { width: 760px; max-width: calc(100vw - 48px); height: calc(100vh - 48px); }
 .qset-list-modal__name { max-width: none; width: 100%; font: 700 18px/28px var(--font-ui); padding: 4px 8px; }
-.qset-list-modal__sub { display: flex; flex-flow: row; align-items: flex-start; gap: 12px; padding-top: 4px; }
-.qset-list-modal__sub .header__label { flex-shrink: 0; padding-top: 7px; }
-.qset-list-modal__sub .qmb-ui-inline-edit { flex: 1; min-width: 0; }
-.qset-sub__field { flex: 1; min-width: 0; }
+.qset-list-modal__sub { display: flex; align-items: center; gap: 8px; padding-top: 4px; }
 .qset-list-modal__body { padding: 16px 24px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 /* question list — Quimby detail-variant table (gray-framed default styles) */
 .qset-qtable { max-width: 100%; }
@@ -679,31 +504,16 @@ select.cfg-input { appearance: none; cursor: pointer; background: #fff url("data
 .qset-tabcount { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: var(--radius-full); background: var(--gray-200); color: var(--gray-600); font: 600 11px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 .qmb-ui-tabs__option--current .qset-tabcount { background: var(--indigo-50); color: var(--indigo-600); }
 /* modal sections (stacked questions + component types in one view) */
-.qset-modal__section { padding: 0; }
+.qset-modal__section { padding: 4px 0 20px; }
 /* add-question-set brushaway */
 .qset-row--inactive .cell-link { color: var(--gray-400); }
 .qset-inactive-tag { margin-left: 8px; vertical-align: middle; }
 .qmb-ui-brushaway-scrim { position: fixed; inset: 0; background: rgba(18,18,26,0.5); z-index: 999; }
 .qset-brushaway { max-width: calc(100vw - 32px); }
-.qset-brushaway__top { display: flex; flex-direction: column; gap: 16px; padding-bottom: 16px; margin-bottom: 0; }
-/* self-growing Quimby textarea */
-.qmb-ui-input__autogrow { overflow: hidden; resize: none; }
-/* TypePicker presented as a Quimby input box with a floating label */
-.qmb-ui-input--picker { position: relative; }
-.qmb-ui-input--picker > label { position: absolute; top: 0; left: 0; margin: 0; padding: 8px 10px; font: 400 12px/1 var(--font-ui); color: var(--gray-500); pointer-events: none; z-index: 2; }
-.qmb-ui-input--picker:focus-within > label { color: var(--indigo-600); }
-.qmb-ui-input--picker .typepick__control { padding-top: 26px; min-height: 56px; }
-/* the picker's box IS the field; its inner search input must render as plain
-   placeholder-like text after the tags (override the global .qmb-ui-input input rule) */
-.qmb-ui-input--picker .typepick__input { border: 0; min-height: 0; padding: 2px 0; background: transparent; box-shadow: none; outline: none; }
-.qmb-ui-input--picker .typepick__input::placeholder { color: var(--gray-400); font-size: 14px; }
-.qset-modal__section > .qmb-ui-input { display: block; }
-.qset-modal__section .qmb-ui-input textarea, .qset-modal__section .qmb-ui-input input { display: block; vertical-align: top; }
-.qset-modal__section + .qset-modal__section { padding-top: 16px; }
+.qset-brushaway__top { display: flex; flex-direction: column; gap: 16px; padding-bottom: 20px; margin-bottom: 4px; border-bottom: 1px solid var(--gray-200); }
+.qset-modal__section + .qset-modal__section { border-top: 1px solid var(--gray-200); padding-top: 18px; }
 .qset-modal__sectionhead { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
-.qset-modal__sectiontitle { font: 700 18px/24px var(--font-ui); color: #000; margin: 0; }
-/* extra separation before the Questions block (matches the screenshot hierarchy) */
-.qset-modal__section.qset-modal__section--questions { padding-top: 32px; }
+.qset-modal__sectiontitle { font: 600 15px/20px var(--font-ui); color: #000; margin: 0; }
 .qset-apply__intro { font: 400 14px/20px var(--font-body); color: var(--gray-600); margin: 0 0 16px; }
 /* searchable token input (component-type picker) */
 .typepick { position: relative; }

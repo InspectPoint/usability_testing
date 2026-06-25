@@ -94,94 +94,12 @@ function SystemMenu({ sysMenu, systems, onClose, onAdd, onMoveUp, onMoveDown, on
   );
 }
 
-// ─── System And Assets tab ──────────────────────────────────────────────────
-// Mirrors the Inspect Point building "System And Assets" screen: a Status filter,
-// then a Systems table (Name / Type / per-type component links) and an Assets
-// column. Each component-type link opens the scoped System Components page,
-// pre-filtered to that system + component type.
-function SystemAssets({ systems, components }) {
-  const [status, setStatus] = React.useState('Active');
-  const FIRE_TYPE = { 'sys-fa':'Fire Alarm', 'sys-wet':'Wet', 'sys-dry':'Dry', 'sys-stand':'Standpipe', 'sys-pump':'Fire Pump', 'sys-hood':'Hood' };
-  // Wet 1 — exact category breakdown configured for this building in Inspect Point.
-  const WET_CATS = [
-    { label:'Control Valves', type:'Control Valve' },
-    { label:'Sprinkler Heads', type:'Sprinkler Head' },
-    { label:'Duct Detector', type:'Duct Detector', count:0 },
-    { label:'FDC', type:'FDC', count:0 },
-    { label:'Nozzle Test Point', type:'Nozzle Test Point', count:0 },
-    { label:'Rubbish & Linen Chute Doors', type:'Rubbish & Linen Chute Doors', count:0 },
-    { label:'Sprinkler Box', type:'Sprinkler Box', count:0 },
-    { label:'Sprinkler Head', type:'Sprinkler Head', count:2 },
-    { label:'Sprinkler Head Group', type:'Sprinkler Head Group', count:2 },
-    { label:'Sprinkler Spare', type:'Sprinkler Spare', count:0 },
-    { label:'Supervisory Device', type:'Supervisory Device', count:0 },
-    { label:'Tamper Switch', type:'Tamper Switch', count:0 },
-    { label:'test', type:'test', count:0 },
-    { label:'Water Flow Switch', type:'Water Flow Switch', count:0 },
-  ];
-  const catsFor = (sys) => {
-    if (sys.id === 'sys-wet') return WET_CATS;
-    const counts = {};
-    components.filter(c => c.system === sys.id).forEach(c => { counts[c.type] = (counts[c.type]||0) + (c.quantity != null ? c.quantity : 1); });
-    return Object.keys(counts).sort().map(t => ({ label:t, type:t, count:counts[t] }));
-  };
-  const linkTo = (sysId, type) => 'System Components.html?sys=' + encodeURIComponent(sysId) + (type ? '&type=' + encodeURIComponent(type) : '');
-  const noop = (e) => e.preventDefault();
-  return (
-    <div className="sysassets">
-      <div className="sysassets__status">
-        <label className="sysassets__status-label" htmlFor="sa-status">Status</label>
-        <div className="sysassets__select">
-          <select id="sa-status" value={status} onChange={e=>setStatus(e.target.value)}>
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
-          <i className="fa-light fa-chevron-down sysassets__caret" aria-hidden="true"></i>
-        </div>
-      </div>
-      <div className="sysassets__cols">
-        <section className="sysassets__col">
-          <h2 className="sysassets__h">Systems</h2>
-          <a className="sysassets__masslink" href="#" onClick={noop}>Change Position Mass Edit</a>
-          <table className="sysassets__table">
-            <thead><tr><th>Name</th><th>Type</th><th aria-label="Components"></th></tr></thead>
-            <tbody>
-              {systems.map(sys => (
-                <tr key={sys.id}>
-                  <td><a className="sysassets__link" href={linkTo(sys.id)}>{sys.name}</a></td>
-                  <td>{FIRE_TYPE[sys.id] || sys.type}</td>
-                  <td>
-                    <div className="sysassets__cats">
-                      {catsFor(sys).map(cat => (
-                        <a key={cat.label} className="sysassets__link" href={linkTo(sys.id, cat.type)}>
-                          {cat.label}{cat.count != null ? ' (' + cat.count + ')' : ''}
-                        </a>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-        <section className="sysassets__col">
-          <h2 className="sysassets__h">Assets</h2>
-          <a className="sysassets__masslink" href="#" onClick={noop}>Change Position Mass Edit</a>
-          <div className="sysassets__empty">No building-level assets configured.</div>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BuildingPage({ tw, scopeSystem, scopeType }) {
+function BuildingPage({ tw, scopeSystem }) {
   const [components, setComponents] = React.useState(window.SEED_COMPONENTS);
-  const [tab, setTab] = React.useState(scopeSystem ? 'components' : 'system-assets');
+  const [tab, setTab] = React.useState('components');
   const [search, setSearch] = React.useState('');
   const [editing, setEditing] = React.useState(null);     // component being edited
   const [adding, setAdding] = React.useState(null);       // {systemId, parentId} or null-context object
-  const [creatingType, setCreatingType] = React.useState(null);  // {prefill} when the Add-Type wizard is open
-  const [justCreatedType, setJustCreatedType] = React.useState(null); // name to auto-select back in the brushaway
   const [menu, setMenu] = React.useState(null);           // {x,y,comp}
   const [moveTo, setMoveTo] = React.useState(null);        // {comp, anchor}
   const [sysMenu, setSysMenu] = React.useState(null);      // {sys, anchor}
@@ -201,10 +119,6 @@ function BuildingPage({ tw, scopeSystem, scopeType }) {
   const componentCount = components.length;
   // system-scoped sub-page: show only one system + its components
   const scoped = !!scopeSystem;
-  const scopedTitle = (() => {
-    const nm = (window.SEED_SYSTEMS.find(s => s.id === scopeSystem) || {}).name || 'System';
-    return scopeType ? `${nm} — ${scopeType}` : `${nm} — Components`;
-  })();
   const viewSystems = scoped ? systems.filter(s => s.id === scopeSystem) : systems;
   // show this system's components PLUS any orphaned/top-level (no-system) components, so a
   // component can be dragged out of the system to top level and stay visible as a loose row.
@@ -333,42 +247,20 @@ function BuildingPage({ tw, scopeSystem, scopeType }) {
     setAdding(ctx || { systemId: systems[0].id, parentId: null });
   };
 
-  // Building tabs — mirror the Inspect Point building workspace.
   const tabs = [
-    ['info', 'Info', 'fa-light fa-circle-info'],
-    ['activity', 'Activity', 'fa-light fa-chart-line'],
-    ['sales-team', 'Sales Team', 'fa-light fa-users'],
-    ['system-assets', 'System And Assets', 'fa-light fa-wrench'],
-    ['valves', 'Valves', 'fa-light fa-circle'],
-    ['drain-valves', 'Drain Valves', 'fa-light fa-circle'],
-    ['itv', 'ITV', 'fa-light fa-circle'],
-    ['suppression', 'Suppression', 'fa-light fa-fire'],
-    ['alarm-systems', 'Alarm Systems', 'fa-light fa-bell'],
-    ['special-hazards', 'Special Hazards', 'fa-light fa-bell'],
-    ['components', 'Components', 'fa-light fa-screwdriver-wrench'],
-    ['inspections', 'Inspections', 'fa-light fa-circle-info'],
-    ['inspection-series', 'Inspection Series', 'fa-light fa-circle-info'],
-    ['inspection-notes', 'Inspection Notes', 'fa-light fa-file-lines'],
-    ['invoices', 'Invoices', 'fa-light fa-dollar-sign'],
-    ['fire-extinguishers', 'Fire Extinguishers', 'fa-light fa-fire-extinguisher'],
-    ['exit-signs', 'Exit Signs / Emergency Lights', 'fa-light fa-bullhorn'],
-    ['fire-doors', 'Fire Doors', 'fa-light fa-fire'],
-    ['equipment', 'Equipment', 'fa-light fa-sitemap'],
-    ['attachments', 'Attachments', 'fa-light fa-folder'],
-    ['contacts', 'Contacts', 'fa-light fa-users'],
-    ['sprinkler-sampling', 'Sprinkler Head Sampling', 'fa-light fa-shower'],
-    ['reports', 'Reports', 'fa-light fa-file'],
-    ['reported-deficiencies', 'Reported Deficiencies', 'fa-light fa-circle-exclamation'],
-    ['photos', 'Photos', 'fa-light fa-image'],
-    ['sections', 'Sections', 'fa-light fa-table-cells'],
+    ['details', 'Details'],
+    ['components', 'Components', componentCount],
+    ['inspections', 'Inspections', 6],
+    ['deficiencies', 'Deficiencies', 3],
+    ['attachments', 'Attachments'],
   ];
 
   return (
     <div className={`bldg-page ${scoped ? 'is-scoped' : ''}`}>
       {/* Workspace header — qmb-ui-header (workspace variant) */}
-      <header role="banner" aria-label={scoped ? scopedTitle : 'IP Test Building'} className="qmb-ui-header qmb-ui-header--workspace">
+      <header role="banner" aria-label={scoped ? 'System Components' : 'IP Test Building'} className="qmb-ui-header qmb-ui-header--workspace">
         <div className="header__row">
-          <h1 className="header__title"><span className="header__title-text">{scoped ? scopedTitle : 'IP Test Building'}</span></h1>
+          <h1 className="header__title"><span className="header__title-text">{scoped ? 'System Components' : 'IP Test Building'}</span></h1>
           {!scoped && <nav className="header__actions" aria-label="Workspace actions">
           <div className="header-tools">
             <div className="qmb-ui-toolbar">
@@ -401,20 +293,19 @@ function BuildingPage({ tw, scopeSystem, scopeType }) {
         {scoped && <hr className="header__divider" />}
       </header>
       {/* Sub-tabs — qmb-ui-tabs (hidden on the system-scoped sub-page) */}
-      {!scoped && <div className="bldg-tabbar bldg-tabs-ip">
-        <ul>
-          {tabs.map(([k,l,icon,c]) => (
+      {!scoped && <div className="qmb-ui-tabs bldg-tabview">
+        <ul className="qmb-ui-tabs__list">
+          {tabs.map(([k,l,c]) => (
             <li key={k}>
-              <button className={`bldg-tabs-ip__tab ${tab===k ? 'bldg-tabs-ip__tab--current' : ''}`} onClick={()=>{ if (k===tab) { const m=document.querySelector('.qmb-main'); m && m.scrollTo({ top:0, behavior:'smooth' }); } setTab(k); }}>
-                <i className={icon} aria-hidden="true"></i>
-                <span>{l}</span>
+              <button className={`qmb-ui-tabs__option ${tab===k ? 'qmb-ui-tabs__option--current' : ''}`} onClick={()=>{ if (k===tab) { const m=document.querySelector('.qmb-main'); m && m.scrollTo({ top:0, behavior:'smooth' }); } setTab(k); }}>
+                {l}
               </button>
             </li>
           ))}
         </ul>
       </div>}
 
-      {scoped || tab === 'components' ? (
+      {tab === 'components' ? (
         <ComponentsTab
           systems={viewSystems} components={viewComponents}
           search={search} setSearch={setSearch}
@@ -429,16 +320,14 @@ function BuildingPage({ tw, scopeSystem, scopeType }) {
           onRemoveChild={(c)=>{ handleRemove(c); }}
           onSystemMenu={(e, sys)=>setSysMenu({ sys, anchor: e.currentTarget })}
           tw={tw}
-          stickyBase={0}
+          stickyBase={scoped ? 0 : 64}
         />
-      ) : tab === 'system-assets' ? (
-        <SystemAssets systems={viewSystems} components={viewComponents} />
       ) : (
         <div className="ctab">
           <div className="ctab-empty">
             <i className="fa-light fa-layer-group"></i>
             <h4>{tabs.find(t=>t[0]===tab)[1]}</h4>
-            <p>This tab isn't part of this prototype — open System And Assets or Components.</p>
+            <p>This tab is out of scope for the component-grouping pass — open the Components tab to try the grouping flow.</p>
           </div>
         </div>
       )}
@@ -453,21 +342,7 @@ function BuildingPage({ tw, scopeSystem, scopeType }) {
       )}
       {adding && (
         <AddBrushaway context={adding} systems={viewSystems} components={viewComponents}
-          onClose={()=>setAdding(null)} onCreate={handleCreate}
-          onCreateType={(prefill)=>setCreatingType({ prefill })}
-          justCreatedType={justCreatedType} onConsumedType={()=>setJustCreatedType(null)} />
-      )}
-      {creatingType && window.ConfigPage && window.Portal && (
-        <window.Portal>
-          <window.ConfigPage
-            shell="rail"
-            chrome="modal"
-            initial={(window.__blankTypeDraft ? window.__blankTypeDraft() : { id:'t-'+Date.now(), startMode:'blank', path:null, system:null, attach:null, name: creatingType.prefill||'', category:'', abbr:'', description:'', compatible:[], questionSetId:null, questions:[], autoInclude:false, defaultQty:0, defaultSubs:{}, advanced:{}, customFields:[], inUse:0 })}
-            isEdit={false}
-            onClose={()=>setCreatingType(null)}
-            onSave={(d)=>{ const nm=(d.name||'').trim(); if (nm && window.COMPONENT_TYPES && !window.COMPONENT_TYPES.includes(nm)) window.COMPONENT_TYPES.push(nm); setJustCreatedType(nm); setCreatingType(null); showToast('Component type created'); }}
-          />
-        </window.Portal>
+          onClose={()=>setAdding(null)} onCreate={handleCreate} />
       )}
       <ContextMenu menu={menu} components={viewComponents} onClose={()=>setMenu(null)}
         onEdit={setEditing}
@@ -512,7 +387,6 @@ function App() {
   const params = new URLSearchParams(location.search);
   const view = window.__VIEW || params.get('view') || 'building';
   const scopeSystem = view === 'system' ? (window.__SCOPE_SYSTEM || params.get('sys') || 'sys-wet') : null;
-  const scopeType = view === 'system' ? (params.get('type') || null) : null;
   const sysName = (window.SEED_SYSTEMS.find(s => s.id === scopeSystem) || {}).name || 'System';
   const goBuilding = (e) => { if (e) e.preventDefault(); location.href = 'Component Grouping.html'; };
   // Cross-page nav: Settings has its own prototype page; other routes stay in-page.
@@ -523,7 +397,7 @@ function App() {
         { label: 'Acme Fire & Safety', href: '#' },
         { label: 'Buildings', href: '#' },
         { label: 'IP Test Building', href: 'Component Grouping.html', onClick: goBuilding },
-        { label: `${sysName} — ${scopeType || 'Components'}` },
+        { label: `${sysName} — Components` },
       ]
     : [
         { label: 'Acme Fire & Safety', href: '#' },
@@ -533,8 +407,8 @@ function App() {
   return (
     <Shell user={{ initials:'VG' }} route={route} go={go} crumbs={crumbs} onAI={()=>{}}>
       {route === 'buildings'
-        ? <BuildingPage tw={t} scopeSystem={scopeSystem} scopeType={scopeType} />
-        : <div className="ctab"><div className="ctab-empty"><i className="fa-light fa-compass"></i><h4>Not in this prototype</h4><p>This screen isn't part of this prototype.</p></div></div>}
+        ? <BuildingPage tw={t} scopeSystem={scopeSystem} />
+        : <div className="ctab"><div className="ctab-empty"><i className="fa-light fa-compass"></i><h4>Not in this prototype</h4><p>This prototype focuses on the Buildings → Components grouping flow.</p></div></div>}
       <TweaksPanel>
         <TweakSection label="Hierarchy & polish" />
         <TweakToggle label="Indent guide rails" value={t.rails} onChange={(v)=>setTweak('rails', v)} />

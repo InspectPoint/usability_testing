@@ -1,4 +1,4 @@
-/* usability-test.js — self-contained unmoderated usability-test harness.
+/* usability-test.js — self-contained unmoderated usability-test harness (TEMPLATE).
    Layers a task panel, click/time/success logging, and an end survey on TOP of an
    existing interactive prototype WITHOUT modifying the prototype's own code.
 
@@ -20,29 +20,27 @@
   /* ─────────────────────────── CONFIG — EDIT THIS ─────────────────────────── */
 
   var RESULTS_ENDPOINT = "https://inspectpoint-usability-results.fly.dev/api/results";
-  var TEST_NAME = "Components: Setup";  // labels every result row; keep stable across reruns
+  var TEST_NAME = "Component Setup";  // labels every result row; keep stable across reruns
   var COLLECT_NAME = true;           // ask the participant's name on the intro screen
   var BRAND = { primary: "#3D1B9D", accent: "#EA6952", appName: "Inspect Point" };
   var SUCCESS_TOAST_SELECTOR = ".qmb-ui-toast--success"; // for success type "toast"
 
   var TASKS = [
-    { id: "create", label: "Task 1 of 3",
-      scenario: "You just took on a building with a commercial kitchen, so now you're inspecting its <b>hood suppression</b> — something new for your account. Set it up so your techs can inspect it, including the checks they'll fill out.",
+    { id: "create", label: "Task 1 of 2",
+      scenario: "Your company just landed a contract that requires inspecting <b>tamper switches</b> — a component type you don’t track yet. Set up a brand-new component type called <b>“Tamper Switch”</b> so your inspectors can start logging it.",
+      hint: "Everything you need is on this Settings screen.",
       success: { type: "toast", match: /created|add another/i } },
-    { id: "defaults", label: "Task 2 of 3",
-      scenario: "Your buildings each have dozens of <b>sprinkler heads</b>, and adding them one by one is a pain. Set them up so new buildings start with a typical number already there — much like the sprinkler heads you already inspect.",
-      success: { type: "toast", match: /created|add another|updated/i } },
-    { id: "edit-section", label: "Task 3 of 3",
-      scenario: "An AHJ wants an extra check on your <b>backflow</b> inspections. You'd also like the report to keep the visual checks and the functional tests in separate <b>sections</b>.",
-      success: { type: "manual" } }
+    { id: "edit", label: "Task 2 of 2",
+      scenario: "An inspector tells you the inspection questions for <b>sprinkler heads</b> need a tweak. Open the existing <b>Sprinkler head</b> component type, look at the questions attached to it, make any change you think makes sense, and save.",
+      hint: "Start from the list of component types.",
+      success: { type: "toast", match: /updated/i } }
   ];
 
   var SURVEY = [
-    { name: "ease", type: "scale", label: "Overall, how easy or difficult was it to set these components up?", low: "Very difficult", high: "Very easy" },
-    { name: "unexpected", type: "text", label: "Was there any point where something worked differently than you expected? Please describe what happened." },
-    { name: "organization", type: "text", label: "Did the way this was organized — the components, their questions, and sections — match how you think about your own work? Where did it feel different?" },
-    { name: "change", type: "text", label: "If you could change one thing about this setup process, what would it be?" },
-    { name: "missing", type: "text", label: "Was there anything you expected to be able to do but couldn't find?" }
+    { name: "ease", type: "scale", label: "Overall, how easy or hard was it to set up and edit a component type?", low: "Very hard", high: "Very easy" },
+    { name: "relationship", type: "text", label: "In your own words, how would you describe the relationship between a component type and its questions?" },
+    { name: "unexpected", type: "text", label: "Did anything work differently than you expected? If so, what?" },
+    { name: "confidence", type: "scale", label: "How confident are you that you set things up correctly?", low: "Not at all", high: "Very confident" }
   ];
 
   /* ──────────────────────── END CONFIG — engine below ─────────────────────── */
@@ -118,30 +116,6 @@
     }
   });
 
-  // ── flip the prototype's Tweaks "Demo state" (empty ↔ populated) without a reload ──
-  // The prototype seeds an empty first-run state and only fills the library when its
-  // "Demo state" tweak is set to "populated". That tweak renders as a <select> inside the
-  // Tweaks panel (kept hidden from participants via CSS). We mount the panel via the host
-  // edit-mode message, set the value the React way, fire change, then dismiss.
-  function setDemoState(state, tries) {
-    tries = tries || 0;
-    try { window.postMessage({ type: "__activate_edit_mode" }, "*"); } catch (e) {}
-    setTimeout(function () {
-      var panel = document.querySelector(".twk-panel");
-      var sel = panel && Array.prototype.find.call(panel.querySelectorAll("select"), function (s) {
-        return Array.prototype.some.call(s.options, function (o) { return o.value === state; });
-      });
-      if (sel) {
-        var setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, "value").set;
-        setter.call(sel, state);
-        sel.dispatchEvent(new Event("change", { bubbles: true }));
-        try { window.postMessage({ type: "__deactivate_edit_mode" }, "*"); } catch (e) {}
-      } else if (tries < 12) {
-        setDemoState(state, tries + 1);
-      }
-    }, 70);
-  }
-
   // ── DOM helpers ──
   function el(tag, attrs, html) { var n = document.createElement(tag); if (attrs) for (var k in attrs) n.setAttribute(k, attrs[k]); if (html != null) n.innerHTML = html; return n; }
   function root() { var r = document.getElementById("iput-root"); if (!r) { r = el("div", { id: "iput-root" }); document.body.appendChild(r); } return r; }
@@ -150,12 +124,6 @@
 
   // ── task banner ──
   var banner;
-  // Keep --iput-bar synced to the docked bar's height so the app + overlays reserve space.
-  function syncBarHeight() {
-    var h = (banner && banner.isConnected) ? banner.offsetHeight : 0;
-    document.documentElement.style.setProperty("--iput-bar", h + "px");
-  }
-  var barRO = window.ResizeObserver ? new ResizeObserver(syncBarHeight) : null;
   function showBanner() {
     if (banner) banner.remove();
     var t = TASKS[current], manual = t.success.type === "manual";
@@ -167,8 +135,6 @@
       (manual ? '<button class="iput-banner__done" id="iput-done">I’ve finished this step</button>' : "") +
       '<button class="iput-banner__skip" id="iput-skip">I can’t&nbsp;complete&nbsp;this</button>';
     root().appendChild(banner);
-    if (barRO) { try { barRO.disconnect(); barRO.observe(banner); } catch (e) {} }
-    syncBarHeight();
     if (manual) document.getElementById("iput-done").onclick = function () { completeTask(true, "manual"); };
     document.getElementById("iput-skip").onclick = function () { if (confirm("Mark this task as not completed and move on?")) completeTask(false, "skipped"); };
   }
@@ -186,10 +152,7 @@
     r.done = true; r.completed = success; r.skipped = !success;
     r.seconds = Math.max(1, Math.round((Date.now() - taskStart) / 1000)); r.endVia = how || "";
     send("in-progress");
-    // After Task 1, populate the full library (types/questions/sections) for Tasks 2–3.
-    if (current === 0) setDemoState("populated");
     if (banner) banner.remove();
-    document.documentElement.style.setProperty("--iput-bar", "0px");
     var inner = el("div", { class: "iput-interstitial" });
     inner.innerHTML = '<div class="iput-check ' + (success ? "ok" : "skip") + '">' + (success ? "✓" : "→") + "</div>" +
       "<h2>" + (success ? "Nice — task complete" : "No problem — moving on") + "</h2>" +
@@ -276,14 +239,7 @@
     ".iput-err{color:#DB2B39;font-size:13px;margin-top:8px;min-height:16px}" +
     ".iput-btn{border:0;border-radius:10px;padding:12px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}" +
     ".iput-btn--primary{background:" + PURPLE + ";color:#fff;margin-top:4px}" +
-    ".iput-banner{position:fixed;left:0;right:0;bottom:0;z-index:2147483500;background:#fff;border-top:3px solid " + PURPLE + ";box-shadow:0 -6px 20px rgba(0,0,0,.12);display:flex;gap:16px;align-items:flex-start;padding:14px 18px;font-family:system-ui,sans-serif}" +
-    ":root{--iput-bar:0px}" +
-    ".app{height:calc(100vh - var(--iput-bar))!important}" +
-    "#root>*{max-height:calc(100vh - var(--iput-bar))!important}" +
-    ".qmb-ui-brushaway{top:0!important;bottom:var(--iput-bar)!important;height:auto!important}" +
-    ".qmb-ui-modal-wrapper,.qmb-ui-modal-overlay{bottom:var(--iput-bar)!important;height:auto!important}" +
-    ".qmb-ui-toast{bottom:calc(var(--iput-bar) + 16px)!important}" +
-    ".ai-trigger-button{bottom:calc(var(--iput-bar) + 20px)!important}" +
+    ".iput-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:2147483500;background:#fff;border:1px solid #DBDBE4;border-left:5px solid " + PURPLE + ";border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);display:flex;gap:16px;align-items:flex-start;padding:14px 18px;font-family:system-ui,sans-serif}" +
     ".iput-banner__tag{flex:0 0 auto;background:#F0E2F3;color:" + PURPLE + ";font-weight:600;font-size:12px;padding:4px 10px;border-radius:20px;margin-top:2px}" +
     ".iput-banner__body{flex:1 1 auto;min-width:0}.iput-banner__scenario{font-size:14px;line-height:1.5;color:#23232D}.iput-banner__hint{font-size:12px;color:#8F8FA8;margin-top:5px}" +
     ".iput-banner__done{flex:0 0 auto;background:" + PURPLE + ";border:0;color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer;font-family:inherit}" +
@@ -294,8 +250,7 @@
     ".iput-q textarea{width:100%;border:1px solid #DBDBE4;border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box}" +
     ".iput-scale{display:flex;gap:8px}.iput-scale button{flex:1;aspect-ratio:1;border:1px solid #DBDBE4;background:#fff;border-radius:10px;font-size:16px;font-weight:600;color:#46465A;cursor:pointer;font-family:inherit}" +
     ".iput-scale button.sel{background:" + PURPLE + ";color:#fff;border-color:" + PURPLE + "}" +
-    ".iput-scale-labels{display:flex;justify-content:space-between;font-size:11px;color:#8F8FA8;margin-top:6px}" +
-    ".twk-panel{display:none!important}"; // hide the prototype's Tweaks panel from participants
+    ".iput-scale-labels{display:flex;justify-content:space-between;font-size:11px;color:#8F8FA8;margin-top:6px}";
   document.head.appendChild(el("style", null, css));
 
   // ── boot ──

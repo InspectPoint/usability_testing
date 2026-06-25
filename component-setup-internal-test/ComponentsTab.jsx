@@ -342,7 +342,7 @@ function ComponentsTab({ systems, components, onEdit, onAdd, onMove, onNotify, o
   const [openGroups, setOpenGroups] = React.useState({});
   const [openLoose, setOpenLoose] = React.useState(true);
   const [statusFilter, setStatusFilter] = React.useState('active');
-  const [typeFilter, setTypeFilter] = React.useState(() => { try { return new URLSearchParams(location.search).get('type') || 'all'; } catch (e) { return 'all'; } });
+  const [typeFilter, setTypeFilter] = React.useState('all');
   const [filterMenu, setFilterMenu] = React.useState(null); // { key, anchor }
 
   // pointer drag state
@@ -554,14 +554,6 @@ function ComponentsTab({ systems, components, onEdit, onAdd, onMove, onNotify, o
 
   const addToComponent = (comp) => onAdd({ systemId: comp.system, parentId: comp.id, parentComp: comp });
 
-  // A group should survive a search/type filter if ANY descendant matches — not just
-  // its direct children. Without this, nested groups (e.g. Fire Alarm → Notification
-  // Appliances → NAC circuits) vanish when filtering to a leaf type like Alarm Device.
-  const descendantMatch = (comp) => {
-    const kids = components.filter(c => c.parentId === comp.id);
-    return kids.some(k => matches(k) || descendantMatch(k));
-  };
-
   const renderNode = (comp, depth) => {
     const kids = components.filter(c => c.parentId === comp.id);
     // all rows white — hierarchy is carried by indent + borders, not fills
@@ -573,8 +565,8 @@ function ComponentsTab({ systems, components, onEdit, onAdd, onMove, onNotify, o
       if (!matches(comp)) return null;
       return <LeafRow key={comp.id} c={comp} depth={depth} tier={tier} onEdit={onEdit} onMenu={onMenu} onAdd={addToComponent} onDragStart={onDragStart} onKeyMove={(dir)=>keyMove(comp.id, dir)} hintClass={hintClassFor(comp)} />;
     }
-    if (!matches(comp) && !descendantMatch(comp)) return null;
-    const shownKids = (search || typeFilter !== 'all') ? kids.filter(k => matches(k) || descendantMatch(k)) : kids;
+    if (!matches(comp) && !kids.some(matches)) return null;
+    const shownKids = (search || typeFilter !== 'all') ? kids.filter(matches) : kids;
     const expanded = !!openGroups[comp.id] || (!!(search||typeFilter!=='all') && shownKids.length>0);
     return (
       <GroupAccordion key={comp.id} comp={comp} kids={shownKids} depth={depth} tier={tier}
@@ -672,7 +664,6 @@ function ComponentsTab({ systems, components, onEdit, onAdd, onMove, onNotify, o
         {systems.map(sys => {
           const topLevel = components.filter(c => c.system === sys.id && !c.parentId);
           const count = components.filter(c => c.system === sys.id && matches(c)).length;
-          if (filterActive && count === 0) return null;
           const open = openSystems[sys.id];
           const after = looseAt(sys.id);
           return (
@@ -705,13 +696,6 @@ function ComponentsTab({ systems, components, onEdit, onAdd, onMove, onNotify, o
           );
         })}
         {hint && hint.y != null && <div className="drop-bar" style={hint.x != null ? { top: hint.y, left: hint.x, width: hint.w } : { top: hint.y, left: 0, right: 0 }}></div>}
-        {filterActive && components.filter(matches).length === 0 && (
-          <div className="ctab-filter-empty">
-            <i className="fa-light fa-folder-open"></i>
-            <h4>No {typeFilter !== 'all' ? typeFilter + ' components' : 'matching components'}</h4>
-            <p>{typeFilter !== 'all' ? `There are no ${typeFilter} components in ${systems.length === 1 ? systems[0].name : 'this building'} yet.` : 'Nothing matches your search.'}</p>
-          </div>
-        )}
       </div>
 
       {/* drag ghost */}
