@@ -27,7 +27,7 @@
 
   var TASKS = [
     { id: "create", label: "Task 1 of 3",
-      scenario: "You just took on a building with a commercial kitchen, so now you're inspecting its <b>hood suppression</b> — something new for your account. Set it up so your techs can inspect it, including the checks they'll fill out.",
+      scenario: "Your company is adding <b>fire extinguishers</b> to the things your techs inspect. Set that up so it's ready to use in the field — including the checks a tech fills out.",
       success: { type: "toast", match: /created|add another/i } },
     { id: "defaults", label: "Task 2 of 3",
       scenario: "Your buildings each have dozens of <b>sprinkler heads</b>, and adding them one by one is a pain. Set them up so new buildings start with a typical number already there — much like the sprinkler heads you already inspect.",
