@@ -56,30 +56,22 @@ const ATTACH_MORE = [
 // type. These are full type records (same shape as SETUP_TYPES) used as starting
 // points. Counts shown in the UI are derived from this data, never hardcoded.
 const RECOMMENDED_TYPES = [
-  { id:'rec-wet-head', name:'Wet sprinkler head', path:'system', system:'sys-wet', category:'Sprinkler',
-    questionSet:'qs-sprinkler', compatible:['Sprinkler Head'], defaultQty:0, autoInclude:false, defaultSubs:{},
-    customFields:[{label:'K-factor',kind:'Number'},{label:'Temperature rating',kind:'Single select'},{label:'Response type',kind:'Single select'},{label:'Coverage',kind:'Single select'},{label:'Finish',kind:'Text'},{label:'SIN',kind:'Text'}],
-    blurb:'Standard pendent/upright head with NFPA 25 visual checks.' },
-  { id:'rec-riser', name:'Riser / control valve', path:'system', system:'sys-wet', category:'Valve',
-    questionSet:'qs-valve', compatible:['Control Valve','Alarm Device'], defaultQty:1, autoInclude:true, defaultSubs:{'Alarm Device':1},
-    customFields:[{label:'Valve size',kind:'Single select'},{label:'Valve type',kind:'Single select'},{label:'Location',kind:'Text'},{label:'Supervised',kind:'Yes / No'}],
-    blurb:'Control valve assembly with tamper, gauge, and drain sub-components.' },
-  { id:'rec-facp', name:'Fire alarm control panel', path:'system', system:'sys-fa', category:'Alarm',
-    questionSet:'qs-panel', compatible:['Alarm Device','Control Panel'], defaultQty:1, autoInclude:true, defaultSubs:{},
-    customFields:[{label:'Manufacturer',kind:'Text'},{label:'Model',kind:'Text'},{label:'Battery type',kind:'Single select'},{label:'Zones',kind:'Number'},{label:'Install date',kind:'Date'}],
-    blurb:'Addressable FACP with battery and zone questions.' },
-  { id:'rec-smoke', name:'Smoke / heat detector', path:'system', system:'sys-fa', category:'Alarm',
-    questionSet:'qs-alarm', compatible:[], defaultQty:0, autoInclude:false, defaultSubs:{},
-    customFields:[{label:'Device type',kind:'Single select'},{label:'Address',kind:'Text'},{label:'Location',kind:'Text'},{label:'Sensitivity',kind:'Number'},{label:'Install date',kind:'Date'}],
-    blurb:'Initiating device with sensitivity and location checks.' },
-  { id:'rec-backflow', name:'Backflow preventer', path:'non-system', attach:'asset', category:'Backflow',
-    questionSet:'qs-backflow', compatible:[], defaultQty:0, autoInclude:false, defaultSubs:{},
-    customFields:[{label:'Assembly type',kind:'Single select'},{label:'Size',kind:'Single select'},{label:'Serial number',kind:'Text'},{label:'Location',kind:'Text'}],
-    blurb:'Standalone assembly with annual certification fields.' },
-  { id:'rec-ext', name:'Fire extinguisher', path:'non-system', attach:'building', category:'Extinguisher',
-    questionSet:'qs-ext', compatible:[], defaultQty:0, autoInclude:false, defaultSubs:{},
-    customFields:[{label:'Class',kind:'Single select'},{label:'Size',kind:'Single select'},{label:'Location',kind:'Text'}],
-    blurb:'Portable extinguisher with monthly + annual checks.' },
+  { id:'rec-netcomm', name:'Network Communication Module', category:'Communication',
+    allowedDeviceTypes:['ControlPanel','AdditionalPowerSupply'],
+    path:'system', system:'sys-fa', questionSet:null, compatible:['ControlPanel','AdditionalPowerSupply'],
+    defaultQty:0, autoInclude:false, defaultSubs:{}, customFields:[], blurb:'' },
+  { id:'rec-presgauge', name:'Pressure Gauge', category:'Cylinder Monitoring',
+    allowedDeviceTypes:['Cylinder'],
+    path:'system', system:'sys-clean', questionSet:null, compatible:['Cylinder'],
+    defaultQty:0, autoInclude:false, defaultSubs:{}, customFields:[], blurb:'' },
+  { id:'rec-pressensor', name:'Pressure Sensor', category:'Cylinder Monitoring',
+    allowedDeviceTypes:['Cylinder'],
+    path:'system', system:'sys-clean', questionSet:null, compatible:['Cylinder'],
+    defaultQty:0, autoInclude:false, defaultSubs:{}, customFields:[], blurb:'' },
+  { id:'rec-zoneexp', name:'Zone Expansion Module', category:'Control Panel Expansion',
+    allowedDeviceTypes:['ControlPanel','AdditionalPowerSupply'],
+    path:'system', system:'sys-fa', questionSet:null, compatible:['ControlPanel','AdditionalPowerSupply'],
+    defaultQty:0, autoInclude:false, defaultSubs:{}, customFields:[], blurb:'' },
 ];
 
 // ── Reusable question sets (library + inline attach in step 6) ──────────────
@@ -168,12 +160,14 @@ const SETUP_TYPES = [
 const SUBCOMPONENT_TYPES = [
   'Sprinkler Head','Control Valve','Alarm Device','Control Panel',
   'Backflow','Compressor','Standpipe','Hood','Gauge','Tamper Switch',
+  'ControlPanel','AdditionalPowerSupply','Cylinder',
 ];
 
 // Category accent (tag color) for question sets / types
 const CATEGORY_COLOR = {
   Sprinkler:'blue', Valve:'purple', Alarm:'red', Standpipe:'green',
   Backflow:'yellow', Extinguisher:'orange', Hood:'gray',
+  Communication:'blue', 'Cylinder Monitoring':'purple', 'Control Panel Expansion':'green',
 };
 
 const QUESTION_TYPES = ['Pass / Fail / N/A','Yes / No','Number','Text','Date','Open / Closed','Single select','Multi select'];

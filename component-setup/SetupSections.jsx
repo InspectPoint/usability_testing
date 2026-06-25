@@ -221,6 +221,7 @@ function startPlacement(t) {
 }
 function SectionStart({ d, set, goId }) {
   const [browse, setBrowse] = React.useState(d.startMode === 'copy' ? 'copy' : d.startMode === 'recommended' ? 'recommended' : null);
+  const [recQuery, setRecQuery] = React.useState('');
 
   const startBlank = () => {
     set({
@@ -288,11 +289,11 @@ function SectionStart({ d, set, goId }) {
           <div className="qmb-ui-modal-wrapper" style={{ zIndex: 10084 }}>
             <div className="qmb-ui-modal-overlay" onClick={closeBrowse}></div>
             <div className="qmb-ui-modal startpick-modal" role="dialog" aria-modal="true"
-              aria-label={browse === 'copy' ? 'Copy an existing type' : 'Use a recommended type'}
-              style={{ width: 600, maxWidth: 'calc(100vw - 48px)' }}>
+              aria-label={browse === 'copy' ? 'Copy an existing type' : 'Inspect Point Recommended Component Types'}
+              style={{ width: browse === 'recommended' ? 860 : 600, maxWidth: 'calc(100vw - 48px)' }}>
               <header className="qmb-ui-modal-header">
                 <div className="qmb-ui-modal-header__row qmb-ui-modal-header__row--title">
-                  <div className="qmb-ui-modal-header__title"><span className="qmb-ui-text"><b>{browse === 'copy' ? 'Copy an existing type' : 'Use a recommended type'}</b></span></div>
+                  <div className="qmb-ui-modal-header__title"><span className="qmb-ui-text"><b>{browse === 'copy' ? 'Copy an existing type' : 'Inspect Point Recommended Component Types'}</b></span></div>
                   <div className="qmb-ui-modal-header__actions">
                     <button className="qmb-ui-button comp-iconbtn qmb-ui-modal-header__close" aria-label="Close" onClick={closeBrowse}><i className="fa-light fa-xmark"></i></button>
                   </div>
@@ -300,36 +301,68 @@ function SectionStart({ d, set, goId }) {
                 <hr className="qmb-ui-modal-header__divider" aria-hidden="true" />
               </header>
               <div className="qmb-ui-modal-body">
-                <p className="guide-modal__intro">
-                  {browse === 'copy'
-                    ? 'Copies the placement, fields, compatibility, questions, and defaults into a new type. Changes only affect the new type.'
-                    : 'Inspect Point–curated starters, prefilled with questions and fields you can edit. Pick one to begin.'}
-                </p>
-                <div className="pick-grid">
-                  {browse === 'copy' && window.SETUP_TYPES.length === 0 && (
-                    <div className="compat-empty" style={{ padding: '8px 0' }}>You don’t have any component types to copy yet. Start blank or use a recommended type instead.</div>
-                  )}
-                  {browse === 'copy' ? window.SETUP_TYPES.map(t => (
-                    <button key={t.id} type="button" className="pick-opt" onClick={() => { useSource(t, 'copy'); closeBrowse(); }}>
-                      <span className="pick-opt__icon"><i className="fa-light fa-copy"></i></span>
-                      <span>
-                        <span className="pick-opt__name">{t.name}</span>
-                        <span className="pick-opt__blurb">{t.category} · {startPlacement(t)} · in use on {t.inUse.toLocaleString()}</span>
-                      </span>
-                    </button>
-                  )) : window.RECOMMENDED_TYPES.map(t => {
-                    const c = startCounts(t);
-                    return (
-                      <button key={t.id} type="button" className="pick-opt" onClick={() => { useSource(t, 'recommended'); closeBrowse(); }}>
-                        <span className="pick-opt__icon"><i className="fa-light fa-wand-magic-sparkles"></i></span>
-                        <span>
-                          <span className="pick-opt__name">{t.name} <span className="start-rec">(recommended)</span></span>
-                          <span className="pick-opt__blurb">{c.questions} questions · {c.fields} fields{c.qty > 0 ? ` · default ${c.qty}` : ''}</span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                {browse === 'copy' ? (
+                  <>
+                    <p className="guide-modal__intro">Copies the placement, fields, compatibility, questions, and defaults into a new type. Changes only affect the new type.</p>
+                    <div className="pick-grid">
+                      {window.SETUP_TYPES.length === 0 && (
+                        <div className="compat-empty" style={{ padding: '8px 0' }}>You don’t have any component types to copy yet. Start blank or use a recommended type instead.</div>
+                      )}
+                      {window.SETUP_TYPES.map(t => (
+                        <button key={t.id} type="button" className="pick-opt" onClick={() => { useSource(t, 'copy'); closeBrowse(); }}>
+                          <span className="pick-opt__icon"><i className="fa-light fa-copy"></i></span>
+                          <span>
+                            <span className="pick-opt__name">{t.name}</span>
+                            <span className="pick-opt__blurb">{t.category} · {startPlacement(t)} · in use on {t.inUse.toLocaleString()}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="guide-modal__intro">These are pre-configured component type templates recommended by Inspect Point.</p>
+                    <div className="rec-search">
+                      <input placeholder="Search" value={recQuery} onChange={e => setRecQuery(e.target.value)} />
+                      <i className="fa-light fa-magnifying-glass"></i>
+                    </div>
+                    <div className="qmb-ui-table qmb-ui-table--detail qmb-ui-table--x-full rec-table">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th className="table-column--primary">Type Name</th>
+                            <th>Category</th>
+                            <th>Allowed Device Types</th>
+                            <th className="table-cell--align-right"><span className="set-sr">Import</span></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {window.RECOMMENDED_TYPES
+                            .filter(t => !recQuery || `${t.name} ${t.category}`.toLowerCase().includes(recQuery.toLowerCase()))
+                            .map(t => (
+                              <tr key={t.id}>
+                                <td className="table-column--primary">{t.name}</td>
+                                <td>{t.category}</td>
+                                <td>
+                                  <div className="rec-devtypes">
+                                    {(t.allowedDeviceTypes || []).map(dt => (
+                                      <span key={dt} className="qmb-ui-tag qmb-ui-tag--pastry qmb-ui-tag--gray"><span className="qmb-ui-tag__label">{dt}</span></span>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td className="table-cell--align-right">
+                                  <button type="button" className="rec-import" onClick={() => { useSource(t, 'recommended'); closeBrowse(); }}>Import</button>
+                                </td>
+                              </tr>
+                            ))}
+                          {window.RECOMMENDED_TYPES.filter(t => !recQuery || `${t.name} ${t.category}`.toLowerCase().includes(recQuery.toLowerCase())).length === 0 && (
+                            <tr><td colSpan={4}><div className="compat-empty" style={{ padding: '16px 0', textAlign: 'center' }}>No recommended types match “{recQuery}”.</div></td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
