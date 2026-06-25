@@ -34,7 +34,7 @@
       success: { type: "toast", match: /created|add another|updated/i } },
     { id: "edit-section", label: "Task 3 of 3",
       scenario: "On one of your component types, add or change a question and associate it with a <b>section</b> so it's grouped on the report.",
-      success: { type: "manual" } }
+      success: { type: "submit", match: ".qedit-brushaway .qmb-ui-button--primary, .qedit-modal .qmb-ui-button--primary" } }
   ];
 
   var SURVEY = [
@@ -95,6 +95,11 @@
     if (e.target.closest("#iput-root")) return;
     var r = rec(); if (!r || r.done) return;
     var l = labelFor(e.target); r.clicks++; if (l) r.path.push(l);
+    // "submit" success: complete when a matching Save/submit control is clicked
+    var rule = TASKS[current] && TASKS[current].success;
+    if (rule && rule.type === "submit" && rule.match && e.target.closest(rule.match)) {
+      setTimeout(function () { completeTask(true, "submit"); }, 60); // let the prototype's own save run first
+    }
   }, true);
 
   // ── success detection ──
