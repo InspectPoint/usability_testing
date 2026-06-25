@@ -116,13 +116,14 @@
       if(!rs.length){ main.innerHTML=html+'<div class="empty">No sessions yet.</div>'; return; }
       var done=rs.filter(function(r){return statusOf(r)==='completed';});
       var localQ=qColsForRows(rs);  // only this test's survey questions
+      var numQ=localQ.filter(function(c){return isNumIn(rs,c);});  // numeric (rating) questions
       html+='<div class="cards">'+card('Participants',rs.length)+card('Completed',done.length)+card('Abandoned',count(rs,'abandoned'))+card('Task completion',pct(completion(rs)));
-      localQ.filter(function(c){return isNumIn(rs,c);}).forEach(function(c){ html+=card('Avg '+c.slice(3),(avgQ(done,c)===null?'—':round(avgQ(done,c),1)+' / 5')); });
+      numQ.forEach(function(c){ html+=card('Avg '+c.slice(3),(avgQ(done,c)===null?'—':round(avgQ(done,c),1)+' / 5')); });
       html+='</div>';
 
       // who did what
-      html+='<div class="section-title">Participants</div><table><tr><th>Participant</th><th>PID</th><th>Status</th><th>Last task reached</th><th>Completed</th></tr>';
-      rs.forEach(function(r){ html+='<tr><td>'+esc(r['Name']||'—')+'</td><td class="muted">'+esc(r['PID']||'—')+'</td><td>'+statusPill(statusOf(r))+'</td><td>'+esc(r['Last task reached']||'—')+'</td><td class="muted">'+fmtDT(r['Finished at'])+'</td></tr>'; });
+      html+='<div class="section-title">Participants</div><table><tr><th>Participant</th><th>PID</th><th>Status</th><th>Last task reached</th>'+numQ.map(function(c){return '<th>'+esc(c.slice(3))+'</th>';}).join('')+'<th>Completed</th></tr>';
+      rs.forEach(function(r){ html+='<tr><td>'+esc(r['Name']||'—')+'</td><td class="muted">'+esc(r['PID']||'—')+'</td><td>'+statusPill(statusOf(r))+'</td><td>'+esc(r['Last task reached']||'—')+'</td>'+numQ.map(function(c){return '<td>'+(r[c]===''||r[c]==null?'—':esc(r[c]))+'</td>';}).join('')+'<td class="muted">'+fmtDT(r['Finished at'])+'</td></tr>'; });
       html+='</table>';
 
       // by task
