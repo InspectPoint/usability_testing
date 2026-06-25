@@ -27,7 +27,7 @@
 
   var TASKS = [
     { id: "create", label: "Task 1 of 3",
-      scenario: "Your company is adding <b>tamper switches</b> to the things your techs inspect. Set that up so it's ready to use in the field — including the checks a tech fills out.",
+      scenario: "Your company is adding <b>tamper switches</b> to the things your techs inspect. Set that up so it's ready to use in the field — including the questions a tech answers.",
       success: { type: "toast", match: /created|add another/i } },
     { id: "defaults", label: "Task 2 of 3",
       scenario: "Your buildings each have dozens of <b>sprinkler heads</b>, and adding them one by one is a pain. Set them up so new buildings start with a typical number already there — much like the sprinkler heads you already inspect.",
