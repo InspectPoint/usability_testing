@@ -27,10 +27,10 @@
 
   var TASKS = [
     { id: "create", label: "Task 1 of 3",
-      scenario: "Your company is adding <b>tamper switches</b> to the things your techs inspect. Set that up so it's ready to use in the field — including the questions a tech answers.",
+      scenario: "Set up a new component type for <b>tamper switches</b>. Add at least one component-specific field and at least one question techs will answer.",
       success: { type: "toast", match: /created|add another/i } },
     { id: "defaults", label: "Task 2 of 3",
-      scenario: "Your buildings each have dozens of <b>sprinkler heads</b>, and adding them one by one is a pain. Set them up so new buildings start with a typical number already there — much like the sprinkler heads you already inspect.",
+      scenario: "Open the <b>Sprinkler Head</b> component type. Set it to always be included with the system, and set a default quantity per building.",
       success: { type: "toast", match: /created|add another|updated/i } },
     { id: "edit-section", label: "Task 3 of 3",
       scenario: "On one of your component types, add or change a question and associate it with a <b>section</b> so it's grouped on the report.",
