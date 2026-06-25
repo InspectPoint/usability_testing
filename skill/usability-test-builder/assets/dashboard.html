@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<base target="_top" />
+<style>
+  :root { --purple:#3D1B9D; --coral:#EA6952; --ink:#23232D; --muted:#8F8FA8; --line:#DBDBE4;
+          --bg:#F7F7F9; --green:#019064; --red:#DB2B39; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:18px 24px; }
+  header h1 { font-size:20px; margin:0; }
+  header .sub { color:var(--muted); font-size:13px; margin-top:2px; }
+  .wrap { display:flex; min-height:calc(100vh - 60px); }
+  nav { width:230px; background:#fff; border-right:1px solid var(--line); padding:16px 12px; flex:0 0 auto; }
+  nav button { display:block; width:100%; text-align:left; border:0; background:transparent; padding:10px 12px;
+               border-radius:8px; font-size:14px; color:var(--ink); cursor:pointer; font-family:inherit; margin-bottom:2px; }
+  nav button:hover { background:var(--bg); }
+  nav button.active { background:#F0E2F3; color:var(--purple); font-weight:600; }
+  nav .nav-head { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:14px 12px 6px; }
+  main { flex:1 1 auto; padding:24px; max-width:1000px; }
+  h2 { font-size:18px; margin:0 0 16px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:24px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; }
+  .card .label { font-size:12px; color:var(--muted); margin-bottom:6px; }
+  .card .value { font-size:26px; font-weight:600; }
+  table { width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  th, td { text-align:left; padding:11px 14px; font-size:13px; border-bottom:1px solid var(--line); }
+  th { background:var(--bg); color:var(--muted); font-weight:600; }
+  tr:last-child td { border-bottom:0; }
+  tr.clickable { cursor:pointer; } tr.clickable:hover td { background:var(--bg); }
+  .bar { height:8px; background:var(--line); border-radius:6px; overflow:hidden; min-width:80px; display:inline-block; vertical-align:middle; width:120px; }
+  .bar > span { display:block; height:100%; background:var(--purple); }
+  .barwrap { display:flex; align-items:center; gap:8px; }
+  .pill { font-size:11px; padding:2px 8px; border-radius:20px; font-weight:600; }
+  .pill.good { background:#D9FFF3; color:var(--green); } .pill.bad { background:#FBE5E6; color:var(--red); }
+  .section-title { font-size:14px; font-weight:600; margin:26px 0 10px; }
+  .resp { background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:8px; font-size:14px; line-height:1.5; }
+  .resp .who { font-size:11px; color:var(--muted); margin-top:4px; }
+  .empty { color:var(--muted); font-size:14px; padding:40px; text-align:center; }
+  .muted { color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Usability Test Results</h1>
+  <div class="sub" id="subhead">Internal dashboard · Inspect Point design team</div>
+</header>
+<div class="wrap">
+  <nav id="nav"></nav>
+  <main id="main"></main>
+</div>
+
+<script>
+  // Apps Script injects the sheet data here. (For local preview, replace with mock JSON.)
+  var DATA = <?!= payload ?>;
+
+  // ── helpers ──
+  function num(v){ var n = parseFloat(v); return isNaN(n) ? null : n; }
+  function mean(arr){ var v = arr.filter(function(x){return x!==null;}); return v.length ? v.reduce(function(a,b){return a+b;},0)/v.length : null; }
+  function round(n,d){ if(n===null) return '—'; var f=Math.pow(10,d||0); return Math.round(n*f)/f; }
+  function pct(n){ return n===null ? '—' : Math.round(n*100) + '%'; }
+
+  var rows = (DATA.rows || []);
+  var headers = (DATA.headers || []);
+
+  // task column groups: "Task N completed/seconds/clicks/name"
+  var taskNums = [];
+  headers.forEach(function(h){ var m = /^Task (\d+) completed$/.exec(h); if(m) taskNums.push(parseInt(m[1],10)); });
+  taskNums.sort(function(a,b){return a-b;});
+
+  // survey columns: "Q: <name>" — classify numeric vs text from the data
+  var qCols = headers.filter(function(h){ return h.indexOf('Q: ') === 0; });
+  function isNumericCol(col){
+    var vals = rows.map(function(r){return r[col];}).filter(function(v){return v!=='' && v!=null;});
+    return vals.length>0 && vals.every(function(v){ return num(v)!==null; });
+  }
+
+  // group rows by Test
+  var byTest = {};
+  rows.forEach(function(r){ var t = (r['Test'] || 'Untitled').toString().trim() || 'Untitled'; (byTest[t] = byTest[t] || []).push(r); });
+  var testNames = Object.keys(byTest).sort();
+
+  // per-test completion rate across all task cells
+  function completion(rs){
+    var done=0, total=0;
+    rs.forEach(function(r){ taskNums.forEach(function(n){ var c=r['Task '+n+' completed']; if(c==='Yes'||c==='No'){ total++; if(c==='Yes') done++; } }); });
+    return total ? done/total : null;
+  }
+  function avgQ(rs, col){ return mean(rs.map(function(r){ return num(r[col]); })); }
+  function lastRecorded(rs){ var ds = rs.map(function(r){return r['Recorded at'];}).filter(Boolean).sort(); return ds.length ? String(ds[ds.length-1]).slice(0,10) : '—'; }
+
+  // find the SEQ "ease" column if present (for the overview)
+  var easeCol = qCols.filter(function(c){ return /ease/i.test(c); })[0] || null;
+
+  // ── rendering ──
+  var nav = document.getElementById('nav'), main = document.getElementById('main');
+  function render(view){
+    // nav
+    nav.innerHTML = '<button data-v="overview">Overview</button><div class="nav-head">Tests</div>' +
+      testNames.map(function(t){ return '<button data-v="t:'+encodeURIComponent(t)+'">'+esc(t)+'</button>'; }).join('');
+    Array.prototype.forEach.call(nav.querySelectorAll('button'), function(b){
+      if(b.getAttribute('data-v')===view) b.classList.add('active');
+      b.onclick = function(){ render(b.getAttribute('data-v')); };
+    });
+    if(view==='overview' || !view) renderOverview(); else renderTest(decodeURIComponent(view.slice(2)));
+  }
+
+  function renderOverview(){
+    if(!rows.length){ main.innerHTML = '<div class="empty">No results yet. Once tests start coming in, they\'ll appear here.</div>'; return; }
+    var totalSessions = rows.length;
+    var overallComp = completion(rows);
+    var overallEase = easeCol ? avgQ(rows, easeCol) : null;
+    var html = '<h2>Overview — all tests</h2><div class="cards">' +
+      card('Tests', testNames.length) +
+      card('Total sessions', totalSessions) +
+      card('Task completion', pct(overallComp)) +
+      (easeCol ? card('Avg ease', round(overallEase,1) + ' / 5') : '') +
+      '</div>';
+    html += '<table><tr><th>Test</th><th>Sessions</th><th>Task completion</th>' + (easeCol?'<th>Avg ease</th>':'') + '<th>Last result</th></tr>';
+    testNames.forEach(function(t){
+      var rs = byTest[t], comp = completion(rs);
+      html += '<tr class="clickable" data-go="'+encodeURIComponent(t)+'"><td>'+esc(t)+'</td><td>'+rs.length+'</td>' +
+        '<td>'+barCell(comp)+'</td>' + (easeCol?'<td>'+(avgQ(rs,easeCol)===null?'—':round(avgQ(rs,easeCol),1)+' / 5')+'</td>':'') +
+        '<td class="muted">'+lastRecorded(rs)+'</td></tr>';
+    });
+    html += '</table>';
+    main.innerHTML = html;
+    Array.prototype.forEach.call(main.querySelectorAll('tr[data-go]'), function(tr){
+      tr.onclick = function(){ render('t:'+tr.getAttribute('data-go')); };
+    });
+  }
+
+  function renderTest(name){
+    var rs = byTest[name] || [];
+    var html = '<h2>'+esc(name)+'</h2>';
+    if(!rs.length){ main.innerHTML = html + '<div class="empty">No sessions for this test yet.</div>'; return; }
+    var comp = completion(rs);
+    html += '<div class="cards">' + card('Sessions', rs.length) + card('Task completion', pct(comp));
+    qCols.filter(isNumericCol).forEach(function(c){ html += card('Avg ' + c.slice(3), (avgQ(rs,c)===null?'—':round(avgQ(rs,c),1)+' / 5')); });
+    html += '</div>';
+
+    // per-task table
+    html += '<div class="section-title">By task</div><table><tr><th>Task</th><th>Completion</th><th>Avg time</th><th>Avg clicks</th></tr>';
+    taskNums.forEach(function(n){
+      var done=0,total=0,times=[],clicks=[],label=null;
+      rs.forEach(function(r){ var c=r['Task '+n+' completed']; if(c==='Yes'||c==='No'){total++; if(c==='Yes')done++;}
+        var s=num(r['Task '+n+' seconds']); if(s!==null)times.push(s); var ck=num(r['Task '+n+' clicks']); if(ck!==null)clicks.push(ck);
+        if(!label && r['Task '+n+' name']) label=r['Task '+n+' name']; });
+      var cr = total?done/total:null;
+      html += '<tr><td>'+esc(label||('Task '+n))+'</td><td>'+barCell(cr)+'</td><td>'+(mean(times)===null?'—':round(mean(times),0)+'s')+'</td><td>'+(mean(clicks)===null?'—':round(mean(clicks),1))+'</td></tr>';
+    });
+    html += '</table>';
+
+    // open-text responses
+    var textCols = qCols.filter(function(c){ return !isNumericCol(c); });
+    textCols.forEach(function(c){
+      var answers = rs.map(function(r){ return {a:(r[c]||'').toString().trim(), who:r['Participant']}; }).filter(function(x){return x.a;});
+      html += '<div class="section-title">'+esc(c.slice(3))+'</div>';
+      html += answers.length ? answers.map(function(x){ return '<div class="resp">'+esc(x.a)+'<div class="who">'+esc(x.who||'')+'</div></div>'; }).join('') : '<div class="muted">No responses.</div>';
+    });
+    main.innerHTML = html;
+  }
+
+  function card(label,value){ return '<div class="card"><div class="label">'+esc(label)+'</div><div class="value">'+value+'</div></div>'; }
+  function barCell(frac){ if(frac===null) return '—'; var p=Math.round(frac*100); var cls = p>=70?'good':(p<40?'bad':'');
+    return '<div class="barwrap"><span class="bar"><span style="width:'+p+'%"></span></span><span class="pill '+cls+'">'+p+'%</span></div>'; }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+  render('overview');
+</script>
+</body>
+</html>
