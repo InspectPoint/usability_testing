@@ -80,6 +80,9 @@
     function avgQ(rs,c){ return mean(rs.map(function(r){return num(r[c]);})); }
     function lastRec(rs){ var d=rs.map(function(r){return r['Recorded at'];}).filter(Boolean).sort(); return d.length?String(d[d.length-1]).slice(0,10):'—'; }
     var easeCol=qCols.filter(function(c){return /ease/i.test(c);})[0]||null;
+    // Scope survey columns to a given test's own rows so tests never show each other's questions.
+    function qColsForRows(rs){ return qCols.filter(function(c){ return rs.some(function(r){ return r[c]!==''&&r[c]!=null; }); }); }
+    function isNumIn(rs,c){ var v=rs.map(function(r){return r[c];}).filter(function(x){return x!==''&&x!=null;}); return v.length>0 && v.every(function(x){return num(x)!==null;}); }
 
     var nav=document.getElementById('nav'), main=document.getElementById('main');
     function render(view){
@@ -98,7 +101,7 @@
       var html='<h2>Overview — all tests</h2><div class="cards">'+
         card('Tests',testNames.length)+card('Participants',rows.length)+
         card('Completed',count(rows,'completed'))+card('Abandoned',count(rows,'abandoned'))+
-        (easeCol?card('Avg ease',round(avgQ(rows.filter(function(r){return statusOf(r)==='completed';}),easeCol),1)+' / 5'):'')+'</div>';
+        '</div>';  // per-test averages live in each test's own view (no cross-test mixing)
       html+='<table><tr><th>Test</th><th>Participants</th><th>Completed</th><th>Abandoned</th><th>Task completion</th><th>Last result</th></tr>';
       testNames.forEach(function(t){ var rs=byTest[t];
         html+='<tr class="clickable" data-go="'+encodeURIComponent(t)+'"><td>'+esc(t)+'</td><td>'+rs.length+'</td><td>'+count(rs,'completed')+'</td><td>'+count(rs,'abandoned')+'</td><td>'+barCell(completion(rs))+'</td><td class="muted">'+lastRec(rs)+'</td></tr>';
@@ -112,8 +115,9 @@
       var rs=byTest[name]||[]; var html='<h2>'+esc(name)+'</h2>';
       if(!rs.length){ main.innerHTML=html+'<div class="empty">No sessions yet.</div>'; return; }
       var done=rs.filter(function(r){return statusOf(r)==='completed';});
+      var localQ=qColsForRows(rs);  // only this test's survey questions
       html+='<div class="cards">'+card('Participants',rs.length)+card('Completed',done.length)+card('Abandoned',count(rs,'abandoned'))+card('Task completion',pct(completion(rs)));
-      qCols.filter(isNum).forEach(function(c){ html+=card('Avg '+c.slice(3),(avgQ(done,c)===null?'—':round(avgQ(done,c),1)+' / 5')); });
+      localQ.filter(function(c){return isNumIn(rs,c);}).forEach(function(c){ html+=card('Avg '+c.slice(3),(avgQ(done,c)===null?'—':round(avgQ(done,c),1)+' / 5')); });
       html+='</div>';
 
       // who did what
@@ -130,7 +134,7 @@
       html+='</table>';
 
       // open text (completed + abandoned, whoever answered)
-      qCols.filter(function(c){return !isNum(c);}).forEach(function(c){
+      localQ.filter(function(c){return !isNumIn(rs,c);}).forEach(function(c){
         var ans=rs.map(function(r){return {a:(r[c]||'').toString().trim(),who:who(r)};}).filter(function(x){return x.a;});
         html+='<div class="section-title">'+esc(c.slice(3))+'</div>';
         html+= ans.length? ans.map(function(x){return '<div class="resp">'+esc(x.a)+'<div class="who">'+esc(x.who)+'</div></div>';}).join('') : '<div class="muted">No responses.</div>';
