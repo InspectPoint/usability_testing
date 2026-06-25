@@ -33,7 +33,7 @@
       scenario: "Your buildings each have dozens of <b>sprinkler heads</b>, and adding them one by one is a pain. Set them up so new buildings start with a typical number already there — much like the sprinkler heads you already inspect.",
       success: { type: "toast", match: /created|add another|updated/i } },
     { id: "edit-section", label: "Task 3 of 3",
-      scenario: "An AHJ wants an extra check on your <b>backflow</b> inspections. You'd also like the report to keep the visual checks and the functional tests in separate <b>sections</b>.",
+      scenario: "On one of your component types, add or change a question and associate it with a <b>section</b> so it's grouped on the report.",
       success: { type: "manual" } }
   ];
 
