@@ -371,7 +371,8 @@ function SectionDetails({ d, set, locked }) {
       {/* custom fields — opt-in: a quiet add button reveals editable rows */}
       <div style={{ marginTop: 18 }}>
         <div className="cfield-heading">Component-specific fields</div>
-        {fields.length === 0 && <div className="compat-empty">No custom fields. Add attributes technicians fill in per component (e.g. K-factor, serial number).</div>}
+        <p className="cfg-section__desc" style={{ marginTop: 2 }}>Device attributes technicians record per component — like a sprinkler head's K-factor, a backflow preventer's serial number, or a panel's model. Separate from inspection questions.</p>
+        {fields.length === 0 && <div className="compat-empty">No fields yet — add the attributes your technicians should capture for this component type.</div>}
         <div className="cfield-cards">
           {fields.map((f, i) => {
             const ITextC = window.InlineText, ISelectC = window.InlineSelect;
@@ -414,7 +415,7 @@ function SectionDetails({ d, set, locked }) {
               <span className="qmb-ui-accordion__chevron" aria-hidden="true"><i className="fa-solid fa-chevron-right"></i></span>
               <div className="qmb-ui-accordion__title-container">
                 <span className="qmb-ui-accordion__title">Advanced settings</span>
-                <span className="qmb-ui-accordion__subtitle">Joint Commission, ServiceTrade — most admins skip this</span>
+                <span className="qmb-ui-accordion__subtitle">Joint Commission EP code</span>
               </div>
             </div>
           </div>
@@ -422,7 +423,6 @@ function SectionDetails({ d, set, locked }) {
         <div className="qmb-ui-accordion__content">
           <div className="cfg-fields" style={{ padding: '4px 0 8px' }}>
             <QInput id="adv-jc" label="Joint Commission EP code" value={adv.jcCode} onChange={v => setAdv({ jcCode: v })} />
-            <QInput id="adv-st" label="ServiceTrade line code" value={adv.stCode} onChange={v => setAdv({ stCode: v })} />
           </div>
         </div>
       </details>
