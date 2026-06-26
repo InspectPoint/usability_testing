@@ -89,26 +89,53 @@
     var t = ""; for (var i = 0; i < node.childNodes.length; i++) { var c = node.childNodes[i]; if (c.nodeType === 3) t += c.textContent; }
     return t.replace(/\s+/g, " ").trim();
   }
+  function clsOf(node) { return typeof node.className === "string" ? node.className : (node.getAttribute && node.getAttribute("class")) || ""; }
+  function humanize(s) {
+    s = String(s || "").split(":").pop().replace(/[-_]+/g, " ").trim();
+    s = s.replace(/\s*(select|dropdown|toggle|btn|button|input|picker|field)$/i, "").trim();
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+  }
+  function nameOf(node) {
+    var a = node.getAttribute("aria-label") || node.getAttribute("title");
+    if (a) return a.replace(/\s+/g, " ").trim().slice(0, 50);
+    var primary = node.querySelector('[class*="__name"], [class*="__title"], [class*="-heading"], [class*="__label"]');
+    var txt = ((primary ? primary.textContent : ownText(node)) || "").replace(/\s+/g, " ").trim();
+    if (txt) return txt.slice(0, 50);
+    // controls with no own text (toggles, icon buttons): borrow a title from the surrounding row
+    var row = node.parentElement && node.parentElement.closest('[class*="-row"], [class*="__row"], li');
+    var rt = row && row.querySelector('[class*="__title"], [class*="__name"]');
+    if (rt && rt.textContent.trim()) return rt.textContent.replace(/\s+/g, " ").trim().slice(0, 50);
+    var dt = node.getAttribute("data-track");
+    return dt ? humanize(dt) : "";
+  }
+  // Build a readable "verb + element (+ value)" label for a click.
   function labelFor(el) {
     var node = el.closest("[data-track], button, a, [role=button], [class*=tab], [class*=inline-edit], input, select, textarea, li");
     if (!node) return null;
-    // explicit signal wins: data-track set in the design, else aria-label/title
-    var lab = node.getAttribute("data-track") || node.getAttribute("aria-label") || node.getAttribute("title");
-    if (lab) return lab.replace(/\s+/g, " ").trim().slice(0, 60);
-    var tag = node.tagName.toLowerCase();
-    if (tag === "input" || tag === "textarea" || tag === "select") {
-      return (node.getAttribute("placeholder") || node.value || node.getAttribute("name") || tag).toString().replace(/\s+/g, " ").trim().slice(0, 40) || tag;
-    }
-    // prefer a primary name/title child over concatenated descendant text (skips blurbs/option lists)
-    var primary = node.querySelector('[class*="__name"], [class*="__title"], [class*="-heading"], [class*="__label"]');
-    var txt = ((primary ? primary.textContent : ownText(node)) || node.textContent || "").replace(/\s+/g, " ").trim();
-    // If a tagged dropdown/control is open and this click is choosing its value (an option in a
-    // popup), attribute it to that control so the path reads "control = value" — not a bare value.
+    var tag = node.tagName.toLowerCase(), role = node.getAttribute("role") || "", cls = clsOf(node), dt = node.getAttribute("data-track") || "";
+    // 1) value chosen in an open dropdown/control (option in a popup) → "Set Field → value"
     var openCtl = document.querySelector('[data-track][aria-expanded="true"]');
-    if (openCtl && openCtl !== node && !el.closest('[aria-expanded="true"]') && txt) {
-      return (openCtl.getAttribute("data-track") + " = " + txt).slice(0, 70);
+    if (openCtl && node !== openCtl && !el.closest('[aria-expanded="true"]')) {
+      var pn = node.querySelector('[class*="__name"]');
+      var val = ((pn ? pn.textContent : ownText(node)) || node.textContent || "").replace(/\s+/g, " ").trim().slice(0, 32);
+      if (val) return ('Set ' + (humanize(openCtl.getAttribute("data-track")) || "field") + ' → "' + val + '"').slice(0, 80);
     }
-    return txt.slice(0, 50) || tag;
+    var name = nameOf(node);
+    // 2) toggle / switch
+    if (role === "switch" || (tag === "input" && (node.getAttribute("type") || "").toLowerCase() === "checkbox") || /toggle|switch/i.test(cls)) {
+      var ac = node.getAttribute("aria-checked");
+      return ('Toggled "' + name + '"' + (ac === "true" ? " (on)" : ac === "false" ? " (off)" : "")).slice(0, 80);
+    }
+    // 3) tab
+    if (role === "tab" || /tabs__|(^|[ \-])tab([ \-]|$)/i.test(cls)) return ('Opened ' + name + ' tab').slice(0, 80);
+    // 4) text fields
+    if (tag === "input" || tag === "textarea" || tag === "select") {
+      return ('Edited "' + (node.getAttribute("placeholder") || node.getAttribute("aria-label") || node.getAttribute("name") || name || "field") + '"').replace(/\s+/g, " ").slice(0, 80);
+    }
+    // 5) named verbs by namespace, then defaults
+    if (/^onramp:/.test(dt)) return ('Chose "' + name + '"').slice(0, 80);
+    if (tag === "a") return ('Opened "' + name + '"').slice(0, 80);
+    return (name ? 'Clicked "' + name + '"' : tag).slice(0, 80);
   }
   document.addEventListener("click", function (e) {
     if (e.target.closest("#iput-root")) return;
