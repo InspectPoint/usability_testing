@@ -77,11 +77,24 @@
   window.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") onLeave(); });
 
   // ── click logging ──
+  function ownText(node) {
+    var t = ""; for (var i = 0; i < node.childNodes.length; i++) { var c = node.childNodes[i]; if (c.nodeType === 3) t += c.textContent; }
+    return t.replace(/\s+/g, " ").trim();
+  }
   function labelFor(el) {
-    var node = el.closest("button, a, [role=button], [class*=tab], [class*=inline-edit], input, select, textarea, li");
+    var node = el.closest("[data-track], button, a, [role=button], [class*=tab], [class*=inline-edit], input, select, textarea, li");
     if (!node) return null;
-    var txt = (node.getAttribute("aria-label") || node.textContent || node.value || "").trim().replace(/\s+/g, " ").slice(0, 60);
-    return txt || node.tagName.toLowerCase();
+    // explicit signal wins: data-track set in the design, else aria-label/title
+    var lab = node.getAttribute("data-track") || node.getAttribute("aria-label") || node.getAttribute("title");
+    if (lab) return lab.replace(/\s+/g, " ").trim().slice(0, 60);
+    var tag = node.tagName.toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") {
+      return (node.getAttribute("placeholder") || node.value || node.getAttribute("name") || tag).toString().replace(/\s+/g, " ").trim().slice(0, 40) || tag;
+    }
+    // prefer a primary name/title child over concatenated descendant text (skips blurbs/option lists)
+    var primary = node.querySelector('[class*="__name"], [class*="__title"], [class*="-heading"], [class*="__label"]');
+    var txt = ((primary ? primary.textContent : ownText(node)) || node.textContent || "").replace(/\s+/g, " ").trim();
+    return txt.slice(0, 50) || tag;
   }
   document.addEventListener("click", function (e) {
     if (e.target.closest("#iput-root")) return;

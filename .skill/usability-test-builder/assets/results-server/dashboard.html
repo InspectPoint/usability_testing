@@ -42,6 +42,12 @@
   .resp .who { font-size:11px; color:var(--muted); margin-top:4px; }
   .empty { color:var(--muted); font-size:14px; padding:40px; text-align:center; }
   .muted { color:var(--muted); }
+  tr.prow { cursor:pointer; } tr.prow:hover td { background:var(--bg); }
+  .pname { font-weight:600; color:var(--purple); }
+  tr.pdetail td { background:#FBFBFD; }
+  .ppath { font-size:12px; line-height:1.7; padding:2px 0; }
+  .ppath .ptask { display:inline-block; min-width:90px; font-weight:600; color:var(--ink); margin-right:8px; }
+  .parrow { color:var(--muted); margin:0 2px; }
 </style>
 </head>
 <body>
@@ -122,8 +128,13 @@
       html+='</div>';
 
       // who did what
-      html+='<div class="section-title">Participants</div><table><tr><th>Participant</th><th>PID</th><th>Status</th><th>Last task reached</th>'+numQ.map(function(c){return '<th>'+esc(c.slice(3))+'</th>';}).join('')+'<th>Completed</th></tr>';
-      rs.forEach(function(r){ html+='<tr><td>'+esc(r['Name']||'—')+'</td><td class="muted">'+esc(r['PID']||'—')+'</td><td>'+statusPill(statusOf(r))+'</td><td>'+esc(r['Last task reached']||'—')+'</td>'+numQ.map(function(c){return '<td>'+(r[c]===''||r[c]==null?'—':esc(r[c]))+'</td>';}).join('')+'<td class="muted">'+fmtDT(r['Finished at'])+'</td></tr>'; });
+      var pcols=5+numQ.length;
+      html+='<div class="section-title">Participants <span class="muted" style="font-weight:400">— click a name to see the path they took</span></div><table><tr><th>Participant</th><th>PID</th><th>Status</th><th>Last task reached</th>'+numQ.map(function(c){return '<th>'+esc(c.slice(3))+'</th>';}).join('')+'<th>Completed</th></tr>';
+      rs.forEach(function(r,ri){
+        html+='<tr class="prow" data-ri="'+ri+'"><td><span class="pname">&#9656; '+esc(r['Name']||'—')+'</span></td><td class="muted">'+esc(r['PID']||'—')+'</td><td>'+statusPill(statusOf(r))+'</td><td>'+esc(r['Last task reached']||'—')+'</td>'+numQ.map(function(c){return '<td>'+(r[c]===''||r[c]==null?'—':esc(r[c]))+'</td>';}).join('')+'<td class="muted">'+fmtDT(r['Finished at'])+'</td></tr>';
+        var paths=taskNums.map(function(n){ var p=(r['Task '+n+' click path']||'').toString().trim(); if(!p) return ''; var nm=r['Task '+n+' name']||('Task '+n); var steps=p.split(' > ').map(function(s){return esc(s);}).join(' <span class="parrow">&#8594;</span> '); return '<div class="ppath"><span class="ptask">'+esc(nm)+'</span>'+steps+'</div>'; }).filter(Boolean).join('');
+        html+='<tr class="pdetail" data-ri="'+ri+'" style="display:none"><td colspan="'+pcols+'">'+(paths||'<span class="muted">No click path recorded.</span>')+'</td></tr>';
+      });
       html+='</table>';
 
       // by task
@@ -141,6 +152,11 @@
         html+= ans.length? ans.map(function(x){return '<div class="resp">'+esc(x.a)+'<div class="who">'+esc(x.who)+'</div></div>';}).join('') : '<div class="muted">No responses.</div>';
       });
       main.innerHTML=html;
+      Array.prototype.forEach.call(main.querySelectorAll('tr.prow'),function(tr){ tr.onclick=function(){
+        var d=main.querySelector('tr.pdetail[data-ri="'+tr.getAttribute('data-ri')+'"]'); if(!d) return;
+        var open=d.style.display!=='none'; d.style.display=open?'none':'table-row';
+        var nm=tr.querySelector('.pname'); if(nm) nm.innerHTML=(open?'&#9656; ':'&#9662; ')+nm.textContent.replace(/^[▸▾]\s*/,'');
+      }; });
     }
 
     render('overview');
