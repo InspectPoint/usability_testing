@@ -28,13 +28,13 @@
   var TASKS = [
     { id: "create", label: "Task 1 of 3",
       scenario: "Set up a new component type for <b>tamper switches</b>. Add at least one component-specific field and at least one question techs will answer.",
-      success: { type: "toast", match: /created|add another/i } },
+      success: { type: "submit", match: '[data-track^="save:type"]', check: function () { return document.querySelectorAll(".cfield-card").length >= 1 && document.querySelectorAll(".qedit-row").length >= 1; }, hint: "Add at least one component-specific field and one question before saving." } },
     { id: "defaults", label: "Task 2 of 3",
       scenario: "Open the <b>Sprinkler Head</b> component type. Set it to always be included with the system, and set a default quantity per building.",
-      success: { type: "toast", match: /created|add another|updated/i } },
+      success: { type: "submit", match: '[data-track^="save:type"]', check: function () { var t = document.querySelector('[data-track="defaults:auto-include"]'); var q = document.querySelector(".def-qty input"); return !!(t && t.checked) && !!(q && parseInt((q.value || "0").replace(/\D/g, ""), 10) > 0); }, hint: "Turn on 'Always include with the system' and set a quantity above 0 before saving." } },
     { id: "edit-section", label: "Task 3 of 3",
       scenario: "On one of your component types, add or change a question and associate it with a <b>section</b> so it's grouped on the report.",
-      success: { type: "submit", match: ".qedit-brushaway .qmb-ui-button--primary, .qedit-modal .qmb-ui-button--primary" } }
+      success: { type: "submit", match: ".qedit-brushaway .qmb-ui-button--primary, .qedit-modal .qmb-ui-button--primary", check: function () { var s = document.querySelector('[data-track="question:section-select"]'); var t = s ? (s.textContent || "").replace(/\s+/g, " ").trim() : ""; return !!t && !/no section|choose/i.test(t); }, hint: "Put the question in a section before saving." } }
   ];
 
   var SURVEY = [
@@ -144,6 +144,15 @@
     // "submit" success: complete when a matching Save/submit control is clicked
     var rule = TASKS[current] && TASKS[current].success;
     if (rule && rule.type === "submit" && rule.match && e.target.closest(rule.match)) {
+      if (typeof rule.check === "function" && !rule.check()) {
+        var bn = document.getElementById("iput-banner");
+        if (bn && rule.hint) {
+          var hh = bn.querySelector(".iput-banner__hint");
+          if (!hh) { hh = el("div", { class: "iput-banner__hint" }); var bd = bn.querySelector(".iput-banner__body"); if (bd) bd.appendChild(hh); }
+          hh.textContent = rule.hint; hh.style.color = CORAL;
+        }
+        return; // task requirement not met — don't complete yet
+      }
       setTimeout(function () { completeTask(true, "submit"); }, 60); // let the prototype's own save run first
     }
   }, true);

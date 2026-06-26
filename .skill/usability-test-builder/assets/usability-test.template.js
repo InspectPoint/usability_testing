@@ -133,6 +133,22 @@
     if (e.target.closest("#iput-root")) return;
     var r = rec(); if (!r || r.done) return;
     var l = labelFor(e.target); r.clicks++; if (l) r.path.push(l);
+    // "submit" success: complete when a matching Save/submit control is clicked. Optional
+    // success.check() (a function reading the live DOM) must pass first — so a task only
+    // counts when the user actually did what it asked; otherwise show success.hint and wait.
+    var rule = TASKS[current] && TASKS[current].success;
+    if (rule && rule.type === "submit" && rule.match && e.target.closest(rule.match)) {
+      if (typeof rule.check === "function" && !rule.check()) {
+        var bn = document.getElementById("iput-banner");
+        if (bn && rule.hint) {
+          var hh = bn.querySelector(".iput-banner__hint");
+          if (!hh) { hh = el("div", { class: "iput-banner__hint" }); var bd = bn.querySelector(".iput-banner__body"); if (bd) bd.appendChild(hh); }
+          hh.textContent = rule.hint; hh.style.color = CORAL;
+        }
+        return; // task requirement not met — don't complete yet
+      }
+      setTimeout(function () { completeTask(true, "submit"); }, 60); // let the prototype's own save run first
+    }
   }, true);
 
   // ── success detection ──
