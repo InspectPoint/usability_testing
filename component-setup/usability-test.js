@@ -102,6 +102,12 @@
     // prefer a primary name/title child over concatenated descendant text (skips blurbs/option lists)
     var primary = node.querySelector('[class*="__name"], [class*="__title"], [class*="-heading"], [class*="__label"]');
     var txt = ((primary ? primary.textContent : ownText(node)) || node.textContent || "").replace(/\s+/g, " ").trim();
+    // If a tagged dropdown/control is open and this click is choosing its value (an option in a
+    // popup), attribute it to that control so the path reads "control = value" — not a bare value.
+    var openCtl = document.querySelector('[data-track][aria-expanded="true"]');
+    if (openCtl && openCtl !== node && !el.closest('[aria-expanded="true"]') && txt) {
+      return (openCtl.getAttribute("data-track") + " = " + txt).slice(0, 70);
+    }
     return txt.slice(0, 50) || tag;
   }
   document.addEventListener("click", function (e) {

@@ -44,12 +44,20 @@
   .muted { color:var(--muted); }
   tr.prow { cursor:pointer; } tr.prow:hover td { background:var(--bg); }
   .pname { font-weight:600; color:var(--purple); }
-  tr.prow.open .pname { text-decoration:underline; }
-  tr.pdetail td { background:#FBFBFD; padding:8px 14px; }
-  .ppath { margin:0 0 10px; } .ppath:last-child { margin-bottom:0; }
-  .ppath .ptask { font-size:12px; font-weight:600; color:var(--ink); margin:0 0 4px; }
-  .psteps { margin:0; padding-left:20px; }
-  .psteps li { font-size:12px; line-height:1.6; color:var(--muted); }
+  .pchev { display:inline-block; width:10px; margin-right:8px; color:var(--muted); font-weight:700; transform:rotate(0deg); transition:transform .15s ease; }
+  tr.prow.open .pchev { transform:rotate(90deg); }
+  tr.pdetail td { background:#FBFBFD; padding:6px 20px; }
+  .ppath { border-top:1px solid var(--line); } .ppath:first-child { border-top:0; }
+  .ptask { display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:transparent; border:0; cursor:pointer; font-family:inherit; padding:10px 0; color:var(--purple); }
+  .ptask .tchev { display:inline-block; width:10px; color:var(--muted); font-weight:700; transform:rotate(0deg); transition:transform .15s ease; }
+  .ppath.open .ptask .tchev { transform:rotate(90deg); }
+  .ptask-name { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+  .tcount { margin-left:auto; font-size:11px; font-weight:400; color:var(--muted); }
+  .psteps { counter-reset:step; list-style:none; margin:0 0 12px; padding:0 0 0 2px; }
+  .psteps li { counter-increment:step; position:relative; padding:0 0 12px 30px; font-size:13px; line-height:1.45; color:var(--ink); }
+  .psteps li:last-child { padding-bottom:0; }
+  .psteps li::before { content:counter(step); position:absolute; left:0; top:-1px; width:20px; height:20px; border-radius:50%; background:var(--purple); color:#fff; font-size:10px; font-weight:700; line-height:20px; text-align:center; }
+  .psteps li:not(:last-child)::after { content:""; position:absolute; left:9px; top:20px; bottom:0; width:2px; background:var(--line); }
 </style>
 </head>
 <body>
@@ -133,8 +141,8 @@
       var pcols=5+numQ.length;
       html+='<div class="section-title">Participants <span class="muted" style="font-weight:400">— click a name to see the path they took</span></div><table><tr><th>Participant</th><th>PID</th><th>Status</th><th>Last task reached</th>'+numQ.map(function(c){return '<th>'+esc(c.slice(3))+'</th>';}).join('')+'<th>Completed</th></tr>';
       rs.forEach(function(r,ri){
-        html+='<tr class="prow" data-ri="'+ri+'"><td><span class="pname">'+esc(r['Name']||'—')+'</span></td><td class="muted">'+esc(r['PID']||'—')+'</td><td>'+statusPill(statusOf(r))+'</td><td>'+esc(r['Last task reached']||'—')+'</td>'+numQ.map(function(c){return '<td>'+(r[c]===''||r[c]==null?'—':esc(r[c]))+'</td>';}).join('')+'<td class="muted">'+fmtDT(r['Finished at'])+'</td></tr>';
-        var paths=taskNums.map(function(n){ var p=(r['Task '+n+' click path']||'').toString().trim(); if(!p) return ''; var nm=r['Task '+n+' name']||('Task '+n); var items=p.split(' > ').map(function(s){return '<li>'+esc(s)+'</li>';}).join(''); return '<div class="ppath"><div class="ptask">'+esc(nm)+'</div><ol class="psteps">'+items+'</ol></div>'; }).filter(Boolean).join('');
+        html+='<tr class="prow" data-ri="'+ri+'"><td><span class="pchev" aria-hidden="true">&#8250;</span><span class="pname">'+esc(r['Name']||'—')+'</span></td><td class="muted">'+esc(r['PID']||'—')+'</td><td>'+statusPill(statusOf(r))+'</td><td>'+esc(r['Last task reached']||'—')+'</td>'+numQ.map(function(c){return '<td>'+(r[c]===''||r[c]==null?'—':esc(r[c]))+'</td>';}).join('')+'<td class="muted">'+fmtDT(r['Finished at'])+'</td></tr>';
+        var paths=taskNums.map(function(n){ var p=(r['Task '+n+' click path']||'').toString().trim(); if(!p) return ''; var nm=r['Task '+n+' name']||('Task '+n); var stepArr=p.split(' > '); var items=stepArr.map(function(s){return '<li>'+esc(s)+'</li>';}).join(''); return '<div class="ppath"><button type="button" class="ptask"><span class="tchev" aria-hidden="true">&#8250;</span><span class="ptask-name">'+esc(nm)+'</span><span class="tcount">'+stepArr.length+' step'+(stepArr.length===1?'':'s')+'</span></button><ol class="psteps" hidden>'+items+'</ol></div>'; }).filter(Boolean).join('');
         html+='<tr class="pdetail" data-ri="'+ri+'" style="display:none"><td colspan="'+pcols+'">'+(paths||'<span class="muted">No click path recorded.</span>')+'</td></tr>';
       });
       html+='</table>';
@@ -159,6 +167,7 @@
         d.style.display = d.style.display==='none' ? 'table-row' : 'none';
         tr.classList.toggle('open');
       }; });
+      Array.prototype.forEach.call(main.querySelectorAll('.ptask'),function(btn){ btn.onclick=function(e){ e.stopPropagation(); var ol=btn.nextElementSibling; if(!ol) return; var wasHidden=ol.hasAttribute('hidden'); if(wasHidden) ol.removeAttribute('hidden'); else ol.setAttribute('hidden',''); btn.parentNode.classList.toggle('open', wasHidden); }; });
     }
 
     render('overview');
