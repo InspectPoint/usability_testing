@@ -217,18 +217,25 @@
     var inner = el("div", { class: "iput-survey" });
     var html = "<h1>A few quick questions</h1>";
     SURVEY.forEach(function (q) {
-      html += '<div class="iput-q"><label>' + q.label + "</label>";
+      html += '<div class="iput-q"><label>' + q.label + (q.type === "scale" ? ' <span class="iput-req">*</span>' : "") + "</label>";
       html += q.type === "scale" ? scale(q) : '<textarea data-name="' + q.name + '" rows="3" placeholder="Type your answer…"></textarea>';
       html += "</div>";
     });
     html += '<button class="iput-btn iput-btn--primary" id="iput-finish">Finish</button>';
+    html += '<div class="iput-err" id="iput-survey-err"></div>';
     inner.innerHTML = html; overlay(inner);
     inner.querySelectorAll(".iput-scale").forEach(function (sc) {
       sc.querySelectorAll("button").forEach(function (b) {
-        b.onclick = function () { sc.querySelectorAll("button").forEach(function (x) { x.classList.remove("sel"); }); b.classList.add("sel"); session.survey[sc.getAttribute("data-name")] = parseInt(b.getAttribute("data-v"), 10); };
+        b.onclick = function () { sc.querySelectorAll("button").forEach(function (x) { x.classList.remove("sel"); }); b.classList.add("sel"); session.survey[sc.getAttribute("data-name")] = parseInt(b.getAttribute("data-v"), 10); sc.classList.remove("iput-scale--err"); var er = document.getElementById("iput-survey-err"); if (er) er.textContent = ""; };
       });
     });
     document.getElementById("iput-finish").onclick = function () {
+      var missing = SURVEY.filter(function (q) { return q.type === "scale" && (session.survey[q.name] === undefined || session.survey[q.name] === null); });
+      if (missing.length) {
+        var er = document.getElementById("iput-survey-err"); if (er) er.textContent = "Please choose a rating (1–5) before finishing.";
+        var sc = inner.querySelector('.iput-scale[data-name="' + missing[0].name + '"]'); if (sc) { sc.classList.add("iput-scale--err"); sc.scrollIntoView({ block: "center", behavior: "smooth" }); }
+        return;
+      }
       inner.querySelectorAll("textarea").forEach(function (t) { session.survey[t.getAttribute("data-name")] = t.value.trim(); });
       finish();
     };
@@ -281,7 +288,9 @@
     ".iput-q textarea{width:100%;border:1px solid #DBDBE4;border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box}" +
     ".iput-scale{display:flex;gap:8px}.iput-scale button{flex:1;aspect-ratio:1;border:1px solid #DBDBE4;background:#fff;border-radius:10px;font-size:16px;font-weight:600;color:#46465A;cursor:pointer;font-family:inherit}" +
     ".iput-scale button.sel{background:" + PURPLE + ";color:#fff;border-color:" + PURPLE + "}" +
-    ".iput-scale-labels{display:flex;justify-content:space-between;font-size:11px;color:#8F8FA8;margin-top:6px}";
+    ".iput-scale-labels{display:flex;justify-content:space-between;font-size:11px;color:#8F8FA8;margin-top:6px}" +
+    ".iput-scale--err button{border-color:#DB2B39}" +
+    ".iput-req{color:#DB2B39;font-weight:700;margin-left:2px}";
   document.head.appendChild(el("style", null, css));
 
   // ── one-completion gate (stops retakes) ──
