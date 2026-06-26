@@ -56,7 +56,7 @@ function InlineText({ value, onCommit, placeholder = '', multiline = false, widt
 }
 
 // ─── InlineSelect — dropdown trigger + Popup action list ──────────────────────
-function InlineSelect({ value, options, onChange, placeholder = 'None', label, width = 'full', disabled = false, includeNone = false }) {
+function InlineSelect({ value, options, onChange, placeholder = 'None', label, width = 'full', disabled = false, includeNone = false, track }) {
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef(null);
   const opts = options.map(o => (typeof o === 'string' ? { value: o, label: o } : o));
@@ -77,6 +77,7 @@ function InlineSelect({ value, options, onChange, placeholder = 'None', label, w
         tabIndex={disabled ? -1 : 0}
         aria-haspopup="listbox"
         aria-expanded={open}
+        data-track={track}
         onClick={() => !disabled && setOpen(o => !o)}
         onKeyDown={(e) => { if (!disabled && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setOpen(o => !o); } }}>
         {label ? <span style={{ color: 'var(--gray-500)', marginRight: 4 }}>{label}: </span> : null}

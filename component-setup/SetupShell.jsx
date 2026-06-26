@@ -6,14 +6,14 @@
 // Inline-edit select — faithful to Quimby's InlineSelect (molecules/inputs/inline):
 // a `qmb-ui-inline-edit--dropdown` trigger rendering "Label: value", opening a real
 // qmb-ui-popup action list. Mirrors Inspect Point's Deficiency-brushaway header.
-function InlineSelect({ label, value, options, placeholder, onChange }) {
+function InlineSelect({ label, value, options, placeholder, onChange, track }) {
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef(null);
   const cur = options.find(o => o.value === value);
   return (
     <span className="qmb-ui-inline-select">
       <span ref={anchorRef} className="qmb-ui-inline-edit qmb-ui-inline-edit--dropdown" tabIndex={0}
-        role="button" aria-haspopup="listbox" aria-expanded={open}
+        role="button" aria-haspopup="listbox" aria-expanded={open} data-track={track}
         onClick={() => setOpen(o => !o)}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o); } }}>
         <span className={`selectValue ${cur ? '' : 'selectValue--empty'}`}>{cur ? cur.label : (placeholder || 'Choose…')}</span>
@@ -160,7 +160,7 @@ function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNe
         </div>
       )}
       <button className="qmb-ui-button" onClick={requestClose}>Cancel</button>
-      <button className="qmb-ui-button qmb-ui-button--primary" disabled={!canSave} onClick={() => onSave(d)}>
+      <button className="qmb-ui-button qmb-ui-button--primary" data-track="save:type" disabled={!canSave} onClick={() => onSave(d)}>
         <i className="fa-light fa-check"></i>{isEdit ? 'Save changes' : 'Save type'}
       </button>
     </>
@@ -272,7 +272,7 @@ function ConfigPage({ shell = 'rail', initial, isEdit, onClose, onSave, onSaveNe
                 </div>
                 <div className="qmb-ui-modal-footer__actions">
                   <button className="qmb-ui-button" onClick={requestClose}>Cancel</button>
-                  <button className="qmb-ui-button qmb-ui-button--primary" disabled={!canSave} onClick={() => onSave(d)}><i className="fa-light fa-check"></i>Save type</button>
+                  <button className="qmb-ui-button qmb-ui-button--primary" data-track="save:type" disabled={!canSave} onClick={() => onSave(d)}><i className="fa-light fa-check"></i>Save type</button>
                 </div>
               </div>
             </footer>

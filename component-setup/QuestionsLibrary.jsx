@@ -369,7 +369,7 @@ function QuestionsLibrary({ emptyMode }) {
                 <div className="qmb-ui-brushaway-footer__content">
                   <div className="qmb-ui-brushaway-footer__actions" style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                     <button className="qmb-ui-button" onClick={closeModal}>Cancel</button>
-                    <button className="qmb-ui-button qmb-ui-button--primary" disabled={!draft.name.trim()} onClick={saveModal}>Create set</button>
+                    <button className="qmb-ui-button qmb-ui-button--primary" data-track="save:set" disabled={!draft.name.trim()} onClick={saveModal}>Create set</button>
                   </div>
                 </div>
               </div>
@@ -409,7 +409,7 @@ function QuestionsLibrary({ emptyMode }) {
                   </div>
                   <div className="qmb-ui-modal-footer__actions">
                     <button className="qmb-ui-button" onClick={closeModal}>Cancel</button>
-                    <button className="qmb-ui-button qmb-ui-button--primary" onClick={saveModal}>Save set</button>
+                    <button className="qmb-ui-button qmb-ui-button--primary" data-track="save:set" onClick={saveModal}>Save set</button>
                   </div>
                 </div>
               </footer>

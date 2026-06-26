@@ -240,13 +240,13 @@ function SettingsApp() {
               <div className="qmb-ui-tabs set-tabview">
                 <ul className="qmb-ui-tabs__list">
                   <li>
-                    <button className={`qmb-ui-tabs__option ${tab === 'types' ? 'qmb-ui-tabs__option--current' : ''}`} onClick={() => setTab('types')}>Types</button>
+                    <button data-track="tab:types" className={`qmb-ui-tabs__option ${tab === 'types' ? 'qmb-ui-tabs__option--current' : ''}`} onClick={() => setTab('types')}>Types</button>
                   </li>
                   <li>
-                    <button className={`qmb-ui-tabs__option ${tab === 'questions' ? 'qmb-ui-tabs__option--current' : ''}`} onClick={() => setTab('questions')}>Questions</button>
+                    <button data-track="tab:questions" className={`qmb-ui-tabs__option ${tab === 'questions' ? 'qmb-ui-tabs__option--current' : ''}`} onClick={() => setTab('questions')}>Questions</button>
                   </li>
                   <li>
-                    <button className={`qmb-ui-tabs__option ${tab === 'sections' ? 'qmb-ui-tabs__option--current' : ''}`} onClick={() => setTab('sections')}>Sections</button>
+                    <button data-track="tab:sections" className={`qmb-ui-tabs__option ${tab === 'sections' ? 'qmb-ui-tabs__option--current' : ''}`} onClick={() => setTab('sections')}>Sections</button>
                   </li>
                 </ul>
               </div>

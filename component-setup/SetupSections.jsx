@@ -13,10 +13,10 @@ function STag({ color = 'gray', icon, children }) {
 }
 
 // ── Quimby toggle ───────────────────────────────────────────────────────────
-function Toggle({ checked, onChange, id }) {
+function Toggle({ checked, onChange, id, track }) {
   return (
     <label className="qmb-ui-toggle" htmlFor={id}>
-      <input id={id} className="qmb-ui-toggle__input" type="checkbox" checked={!!checked} onChange={e => onChange(e.target.checked)} />
+      <input id={id} className="qmb-ui-toggle__input" type="checkbox" checked={!!checked} data-track={track} onChange={e => onChange(e.target.checked)} />
       <span className="qmb-ui-toggle__slider"></span>
     </label>
   );
@@ -87,7 +87,7 @@ function QInput({ id, label, required, value, onChange, multiline }) {
     </div>
   );
 }
-function QSelect({ id, label, required, value, onChange, options, placeholder = 'Choose…', onCreate, createLabel }) {
+function QSelect({ id, label, required, value, onChange, options, placeholder = 'Choose…', onCreate, createLabel, track, createTrack }) {
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef(null);
   React.useEffect(() => {
@@ -99,7 +99,7 @@ function QSelect({ id, label, required, value, onChange, options, placeholder = 
   const sel = opts.find(o => o.value === value);
   return (
     <div className={`qmb-ui-select ${open ? 'is-open' : ''}`} ref={ref}>
-      <div className={`qmb-ui-select__trigger ${sel ? '' : 'is-placeholder'}`} role="button" tabIndex={0} aria-expanded={open} aria-haspopup="listbox"
+      <div className={`qmb-ui-select__trigger ${sel ? '' : 'is-placeholder'}`} role="button" tabIndex={0} aria-expanded={open} aria-haspopup="listbox" data-track={track}
         onClick={() => setOpen(o => !o)}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o); } if (e.key === 'Escape') setOpen(false); }}>
         {sel ? sel.label : placeholder}
@@ -118,7 +118,7 @@ function QSelect({ id, label, required, value, onChange, options, placeholder = 
             </ul>
           </div>
           {onCreate && (
-            <button type="button" className="qmb-ui-select__create" onClick={() => { setOpen(false); onCreate(); }}>
+            <button type="button" className="qmb-ui-select__create" data-track={createTrack} onClick={() => { setOpen(false); onCreate(); }}>
               <i className="fa-light fa-plus"></i>{createLabel || 'Create new'}
             </button>
           )}
@@ -132,7 +132,7 @@ function QSelect({ id, label, required, value, onChange, options, placeholder = 
 function SectionPathFork({ d, set, goId }) {
   const pick = (path) => { set({ path }); if (goId) setTimeout(() => goId('target'), 120); };
   const Card = ({ value, icon, title, desc }) => (
-    <button type="button" className={`fork-card ${d.path === value ? 'fork-card--active' : ''}`} onClick={() => pick(value)}>
+    <button type="button" data-track={value === 'system' ? 'path:system' : 'path:non-system'} className={`fork-card ${d.path === value ? 'fork-card--active' : ''}`} onClick={() => pick(value)}>
       <div className="fork-card__icon"><i className={`fa-light ${icon}`}></i></div>
       <div className="fork-card__title">{title}<span className="fork-card__check"><i className="fa-solid fa-circle-check"></i></span></div>
       <div className="fork-card__desc">{desc}</div>
@@ -154,7 +154,7 @@ function SectionTarget({ d, set, goId }) {
   const advance = () => { if (goId) setTimeout(() => goId('details'), 120); };
   if (d.path === 'non-system') {
     const Opt = (o) => (
-      <button key={o.id} type="button" className={`pick-opt ${d.attach === o.id ? 'pick-opt--active' : ''}`} onClick={() => { set({ attach: o.id }); advance(); }}>
+      <button key={o.id} type="button" data-track={`attach:${o.id}`} className={`pick-opt ${d.attach === o.id ? 'pick-opt--active' : ''}`} onClick={() => { set({ attach: o.id }); advance(); }}>
         <span className="pick-opt__icon"><i className="fa-light fa-location-dot"></i></span>
         <span>
           <span className="pick-opt__name">{o.name}</span>
@@ -179,7 +179,7 @@ function SectionTarget({ d, set, goId }) {
           </div>
         )}
         {!showMore && (
-          <button type="button" className="pick-more" onClick={() => setShowMore(true)}>
+          <button type="button" data-track="attach:show-more" className="pick-more" onClick={() => setShowMore(true)}>
             <i className="fa-light fa-plus"></i>Show more types ({window.ATTACH_MORE.length})
           </button>
         )}
@@ -190,7 +190,7 @@ function SectionTarget({ d, set, goId }) {
   return (
     <div className="pick-grid">
       {window.SETUP_SYSTEMS.map(s => (
-        <button key={s.id} type="button" className={`pick-opt ${d.system === s.id ? 'pick-opt--active' : ''}`} onClick={() => { set({ system: s.id }); advance(); }}>
+        <button key={s.id} type="button" data-track="placement:system" className={`pick-opt ${d.system === s.id ? 'pick-opt--active' : ''}`} onClick={() => { set({ system: s.id }); advance(); }}>
           <span className="pick-opt__icon"><i className={`fa-light ${s.icon}`}></i></span>
           <span>
             <span className="pick-opt__name">{s.name}</span>
@@ -253,7 +253,7 @@ function SectionStart({ d, set, goId }) {
 
   const Card = ({ mode, icon, title, desc, onClick, active, disabled, tooltip }) => {
     const card = (
-      <button type="button" className={`fork-card ${active ? 'fork-card--active' : ''} ${disabled ? 'fork-card--disabled' : ''}`}
+      <button type="button" data-track={mode === 'blank' ? 'onramp:blank' : mode === 'copy' ? 'onramp:copy' : 'onramp:recommended'} className={`fork-card ${active ? 'fork-card--active' : ''} ${disabled ? 'fork-card--disabled' : ''}`}
         onClick={disabled ? undefined : onClick} disabled={disabled} aria-disabled={disabled}>
         <div className="fork-card__icon"><i className={`fa-light ${icon}`}></i></div>
         <div className="fork-card__title">{title}<span className="fork-card__check"><i className="fa-solid fa-circle-check"></i></span></div>
@@ -309,7 +309,7 @@ function SectionStart({ d, set, goId }) {
                         <div className="compat-empty" style={{ padding: '8px 0' }}>You don’t have any component types to copy yet. Start blank or use a recommended type instead.</div>
                       )}
                       {window.SETUP_TYPES.map(t => (
-                        <button key={t.id} type="button" className="pick-opt" onClick={() => { useSource(t, 'copy'); closeBrowse(); }}>
+                        <button key={t.id} type="button" data-track="copy:pick" className="pick-opt" onClick={() => { useSource(t, 'copy'); closeBrowse(); }}>
                           <span className="pick-opt__icon"><i className="fa-light fa-copy"></i></span>
                           <span>
                             <span className="pick-opt__name">{t.name}</span>
@@ -351,7 +351,7 @@ function SectionStart({ d, set, goId }) {
                                   </div>
                                 </td>
                                 <td className="table-cell--align-right">
-                                  <button type="button" className="rec-import" onClick={() => { useSource(t, 'recommended'); closeBrowse(); }}>Import</button>
+                                  <button type="button" data-track="recommended:pick" className="rec-import" onClick={() => { useSource(t, 'recommended'); closeBrowse(); }}>Import</button>
                                 </td>
                               </tr>
                             ))}
@@ -394,7 +394,7 @@ function SectionDetails({ d, set, locked }) {
         <div className="cfg-field--full">
           <QInput id="ct-name" label="Component type name" required value={d.name} onChange={v => set({ name: v })} />
         </div>
-        <QSelect id="ct-category" label="Category" required value={d.category} onChange={v => set({ category: v })} options={CATEGORIES.map(c => ({ value: c, label: c }))} />
+        <QSelect id="ct-category" track="details:category" label="Category" required value={d.category} onChange={v => set({ category: v })} options={CATEGORIES.map(c => ({ value: c, label: c }))} />
         <QInput id="ct-abbr" label="Abbreviation" value={d.abbr} onChange={v => set({ abbr: v })} />
         <div className="cfg-field--full">
           <QInput id="ct-desc" label="Description" multiline value={d.description} onChange={v => set({ description: v })} />
@@ -418,7 +418,7 @@ function SectionDetails({ d, set, locked }) {
                   <div className="cform__label">Field label:</div>
                   <div className="cform__field"><ITextC value={f.label} placeholder="Field label…" onCommit={v => upd({ label: v })} ariaLabel="Field label" /></div>
                   <div className="cform__label">Field type:</div>
-                  <div className="cform__field"><ISelectC value={f.kind} options={FIELD_TYPES.map(k => ({ value: k, label: k }))} onChange={v => upd({ kind: v })} width="auto" /></div>
+                  <div className="cform__field"><ISelectC track="field:kind" value={f.kind} options={FIELD_TYPES.map(k => ({ value: k, label: k }))} onChange={v => upd({ kind: v })} width="auto" /></div>
                   {showLen && <>
                     <div className="cform__label">Max length:</div>
                     <div className="cform__field"><ITextC value={f.maxLength || ''} placeholder="—" onCommit={v => upd({ maxLength: v.replace(/\D/g, '') })} width="auto" ariaLabel="Max length" /></div>
@@ -434,7 +434,7 @@ function SectionDetails({ d, set, locked }) {
             );
           })}
         </div>
-        <button type="button" className="qsec__add" onClick={() => setFields([...fields, { label: '', kind: 'Text' }])}>
+        <button type="button" data-track="field:add" className="qsec__add" onClick={() => setFields([...fields, { label: '', kind: 'Text' }])}>
           <i className="fa-light fa-plus"></i>Add custom field
         </button>
       </div>
@@ -596,7 +596,7 @@ function SetPicker({ value, creating, onChoose, onCreate }) {
             <ul>
               {matches.map(s => (
                 <li key={s.id}>
-                  <button type="button" className={`qmb-ui-select__option ${value === s.id ? 'qmb-ui-select__option--selected' : ''}`}
+                  <button type="button" data-track="questionset:pick" className={`qmb-ui-select__option ${value === s.id ? 'qmb-ui-select__option--selected' : ''}`}
                     onClick={() => { onChoose(s.id); setOpen(false); setQuery(''); }}>
                     <span className="setpicker__name">{s.name}</span>
                     <span className="setpicker__meta">{s.questions.length} · {s.code}</span>
@@ -606,7 +606,7 @@ function SetPicker({ value, creating, onChoose, onCreate }) {
               {matches.length === 0 && <li><div className="qmb-ui-select__option qmb-ui-select__option--empty">No sets match “{query}”.</div></li>}
             </ul>
           </div>
-          <button type="button" className="setpicker__create" onClick={() => { onCreate(); setOpen(false); setQuery(''); }}>
+          <button type="button" data-track="questionset:create-new" className="setpicker__create" onClick={() => { onCreate(); setOpen(false); setQuery(''); }}>
             <i className="fa-light fa-plus"></i>Create new set
           </button>
         </div>
@@ -643,10 +643,10 @@ function QuestionEditor({ initial, onSave, onClose, onDelete, scope, mode = 'bru
   const form = (
     <div className="qedit-form">
       <QInput id="qe-text" label="Question" required value={q.q} onChange={v => upd({ q: v })} multiline />
-      <QSelect id="qe-type" label="Answer type" required value={q.type} onChange={v => upd({ type: v })} options={window.QUESTION_TYPES.map(t => ({ value: t, label: t }))} />
+      <QSelect id="qe-type" track="question:type" label="Answer type" required value={q.type} onChange={v => upd({ type: v })} options={window.QUESTION_TYPES.map(t => ({ value: t, label: t }))} />
       {isSelect && <OptionsEditor value={q.options || []} onChange={o => upd({ options: o })} />}
       <QSelect id="qe-freq" label="Frequency" value={q.frequency || 'Annual'} onChange={v => upd({ frequency: v })} options={QUESTION_FREQS.map(f => ({ value: f, label: f }))} />
-      <QSelect id="qe-section" label="Section" value={q.section || ''} onChange={v => upd({ section: v })} options={[{ value: '', label: 'No section' }, ...(window.SECTIONS || []).map(s => ({ value: s.id, label: s.name }))]}
+      <QSelect id="qe-section" track="question:section-select" createTrack="section:create-new" label="Section" value={q.section || ''} onChange={v => upd({ section: v })} options={[{ value: '', label: 'No section' }, ...(window.SECTIONS || []).map(s => ({ value: s.id, label: s.name }))]}
         onCreate={() => { suppressClose.current = true; setAddingSection(true); }} createLabel="Create new section" />
       <label className="qedit-toggle"><Toggle id="qe-req" checked={q.required} onChange={v => upd({ required: v })} /><span>Required to complete the inspection</span></label>
       <QInput id="qe-help" label="Help text (optional)" multiline value={q.help} onChange={v => upd({ help: v })} />
@@ -674,7 +674,7 @@ function QuestionEditor({ initial, onSave, onClose, onDelete, scope, mode = 'bru
   const footerActions = (
     <>
       <button className="qmb-ui-button" onClick={onClose}>Cancel</button>
-      <button className="qmb-ui-button qmb-ui-button--primary" disabled={!valid} onClick={() => onSave(q)}>{isNew ? 'Add question' : 'Save'}</button>
+      <button className="qmb-ui-button qmb-ui-button--primary" data-track="question:save" disabled={!valid} onClick={() => onSave(q)}>{isNew ? 'Add question' : 'Save'}</button>
     </>
   );
   const confirmEl = confirmDel && <ConfirmDialog title="Delete question?" message="This removes the question from the set. This can't be undone." confirmLabel="Delete question" onConfirm={() => { setConfirmDel(false); onDelete(); }} onCancel={() => setConfirmDel(false)} />;
@@ -787,7 +787,7 @@ function SectionAddModal({ onSave, onClose }) {
               <div className="qmb-ui-modal-footer__start"></div>
               <div className="qmb-ui-modal-footer__actions">
                 <button className="qmb-ui-button" onClick={onClose}>Cancel</button>
-                <button className="qmb-ui-button qmb-ui-button--primary" disabled={!name.trim()} onClick={save}>Add section</button>
+                <button className="qmb-ui-button qmb-ui-button--primary" data-track="save:section" disabled={!name.trim()} onClick={save}>Add section</button>
               </div>
             </div>
           </footer>
@@ -951,7 +951,7 @@ function SectionQuestions({ d, set }) {
             })}
           </div>
           {questions.length === 0 && <div className="qsec__empty">No questions yet — add the first one below.</div>}
-          <button type="button" className="qsec__add" onClick={() => setEditIdx('new')}><i className="fa-light fa-plus"></i>Add question</button>
+          <button type="button" data-track="question:add" className="qsec__add" onClick={() => setEditIdx('new')}><i className="fa-light fa-plus"></i>Add question</button>
           {editIdx != null && (
             <QuestionEditor
               initial={editIdx === 'new' ? { q: '', type: 'Pass / Fail / N/A', frequency: 'Annual', __isNew: true } : questions[editIdx]}
@@ -1001,7 +1001,7 @@ function SectionDefaults({ d, set }) {
     <div>
       {d.path === 'system' && (
         <div className="def-row">
-          <Toggle id="def-autoinc" checked={d.autoInclude} onChange={v => set({ autoInclude: v })} />
+          <Toggle id="def-autoinc" track="defaults:auto-include" checked={d.autoInclude} onChange={v => set({ autoInclude: v })} />
           <div className="def-row__body">
             <div className="def-row__title">Always include this with the system</div>
             <div className="def-row__desc">Certain items are always present with a system. When on, this component is auto-attached to every building that has a {sysName} system and can't be removed per-building.</div>
@@ -1015,9 +1015,9 @@ function SectionDefaults({ d, set }) {
           <div className="def-row__desc">How many of these to pre-populate on each building so it isn't built by hand.</div>
           <div className="def-qty">
             <div className="def-stepper">
-              <button onClick={() => setQty(qty - 1)} disabled={qty <= 0} aria-label="Decrease"><i className="fa-light fa-minus"></i></button>
+              <button data-track="defaults:qty-decrease" onClick={() => setQty(qty - 1)} disabled={qty <= 0} aria-label="Decrease"><i className="fa-light fa-minus"></i></button>
               <input type="text" inputMode="numeric" value={qty} onChange={e => setQty(parseInt(e.target.value.replace(/\D/g, ''), 10) || 0)} />
-              <button onClick={() => setQty(qty + 1)} aria-label="Increase"><i className="fa-light fa-plus"></i></button>
+              <button data-track="defaults:qty-increase" onClick={() => setQty(qty + 1)} aria-label="Increase"><i className="fa-light fa-plus"></i></button>
             </div>
             <span className="cfg-field__hint">Set 0 to add them manually instead.</span>
           </div>

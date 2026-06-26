@@ -117,7 +117,7 @@ function SectionsLibrary({ emptyMode }) {
                   <div className="qmb-ui-brushaway-footer__start"></div>
                   <div className="qmb-ui-brushaway-footer__actions">
                     <button className="qmb-ui-button" onClick={close}>Cancel</button>
-                    <button className="qmb-ui-button qmb-ui-button--primary" disabled={!draft.name.trim()} onClick={save}>Add section</button>
+                    <button className="qmb-ui-button qmb-ui-button--primary" data-track="save:section" disabled={!draft.name.trim()} onClick={save}>Add section</button>
                   </div>
                 </div>
               </div>
@@ -156,7 +156,7 @@ function SectionsLibrary({ emptyMode }) {
                   <div className="qmb-ui-modal-footer__start"></div>
                   <div className="qmb-ui-modal-footer__actions">
                     <button className="qmb-ui-button" onClick={close}>Cancel</button>
-                    <button className="qmb-ui-button qmb-ui-button--primary" onClick={save}>Save section</button>
+                    <button className="qmb-ui-button qmb-ui-button--primary" data-track="save:section" onClick={save}>Save section</button>
                   </div>
                 </div>
               </footer>
