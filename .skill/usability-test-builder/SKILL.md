@@ -1,6 +1,6 @@
 ---
 name: usability-test-builder
-description: Turn an interactive prototype (a Claude-built HTML/JS prototype, an exported design bundle, or any client-side web prototype) into a self-contained, unmoderated usability test, with scenario-based tasks, click/time/success logging, and an end survey baked right into the page. Use this whenever someone wants to user-test, usability-test, or put a prototype in front of users without a live facilitator, including setting up an unmoderated test, wrapping a prototype with tasks and a survey, measuring whether users can complete flows, testing a clickable prototype remotely, or running a prototype through usability testing. Trigger even if the person does not say unmoderated. If they have a prototype and want to see if people can use it on their own, this is the skill. Built for a 2-person fire-and-life-safety design team (Inspect Point) but works for any prototype.
+description: Turn an interactive prototype (a Claude-built HTML/JS prototype, an exported design bundle, or any client-side web prototype) into a self-contained, unmoderated usability test, with scenario-based tasks, click/time/success logging (including instrumenting the prototype with `data-track` for clean click-paths), and an end survey baked right into the page. Use this whenever someone wants to user-test, usability-test, or put a prototype in front of users without a live facilitator, including setting up an unmoderated test, wrapping a prototype with tasks and a survey, measuring whether users can complete flows, testing a clickable prototype remotely, or running a prototype through usability testing. Trigger even if the person does not say unmoderated. If they have a prototype and want to see if people can use it on their own, this is the skill. Built for a 2-person fire-and-life-safety design team (Inspect Point) but works for any prototype.
 user-invocable: true
 ---
 
@@ -41,6 +41,14 @@ serve the folder (`python3 -m http.server`) and open it. Read the prototype's ma
 scripts it imports so you understand the flows and — crucially — what happens on screen when an
 action succeeds (a toast, a confirmation screen, a URL change). That success moment becomes each
 task's completion signal.
+
+**Then instrument it for clean tracking (once per prototype).** Check whether the prototype's key
+controls carry `data-track` attributes. If they do, you're set — the harness logs clean labels and
+you move on. If not, this is the moment to add them: identify the funnel-critical controls, generate
+a prompt for Claude Design to tag them, and have the user apply it there and re-export — **the tags
+must live in the design, because every export overwrites local edits.** This makes click-paths
+readable for *this* test and every future one (so it's a once-per-prototype step, not per-test).
+Full walkthrough, the standard taxonomy, and the manual round-trip are in `references/event-tracking.md`.
 
 ### 3. Define the tasks (interview the user)
 
@@ -119,6 +127,9 @@ dashboard is set up, it surfaces these automatically per test and across all tes
 - `assets/google-sheet-receiver.gs.txt` + `assets/results-dashboard.gs.txt` — legacy Google Apps
   Script receiver + dashboard, kept only as a fallback if the Fly server can't be used. (Subject to
   the Workspace anonymous-access gotcha.)
+- `references/event-tracking.md` — instrumenting a prototype with `data-track` for clean
+  click-paths: the standard taxonomy, the Claude Design prompt, and the manual round-trip. Read
+  during step 2 (once per prototype).
 - `references/best-practices.md` — decision-first, task-writing rules, survey design, participant
   count, analysis. Read before steps 3–4.
 - `references/harness-and-hosting.md` — customizing the harness, choosing success signals,
