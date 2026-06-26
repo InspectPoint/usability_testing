@@ -13,7 +13,7 @@ The harness logs a click path per task by reading each control's label. Untagged
 3. **Confirm the list + values** with the user, using the standard taxonomy below.
 4. **Generate the Claude Design prompt** — one paste-ready block listing each element (by visible label / role / location) and its exact `data-track` value, instructing Claude Design to add *only* the attribute and keep values stable.
 5. **⚠️ User does this manually:** open the prototype in Claude Design, paste the prompt, let it apply the tags, re-export/download.
-6. **Bring it back; integrate + verify.** Diff the new export, pull in the changed files (preserving the harness + Test.html), commit/push/deploy, and **grep to confirm the tags actually landed**. If any are missing, loop step 5 for just those.
+6. **Bring it back; integrate + verify (carefully).** Diff the new export, pull in the changed files (preserving the harness + Test.html), commit/push/deploy. **Do not rely on a literal-string grep** to confirm tags — they're often applied as JSX expressions or a shared `track` prop, e.g. `data-track={track}`, `data-track={mode === 'blank' ? 'onramp:blank' : …}`, or computed `data-track={`attach:${id}`}`. So searching for `data-track="value"` gives false negatives, and computed values (like `attach:building`) never string-match at all. Instead: grep for `data-track` in **any** form (both `data-track="` and `data-track={`) to confirm the control is wired, and **prove it in the running prototype** — open the test, click the control, and check the click-path entry reads as the tag. A quick practice pass is the real verification. Only loop step 5 if a control genuinely isn't wired.
 
 ## Scalability rules
 - **Tag only ambiguous, funnel-critical controls.** The fallback labels handle the obvious ones.
@@ -30,6 +30,9 @@ The harness logs a click path per task by reading each control's label. Untagged
 - `attach:` — placement/targets (`attach:building`, `attach:show-more`)
 - `save:` — every save/submit (`save:type`, `save:set`, `save:section`)
 - `pick:` — selecting from a list/picker (`recommended:pick`, `copy:pick`)
+
+## Verification gotcha
+`data-track` can be a literal attribute **or** a JSX expression / shared `track` prop that only resolves at runtime (`data-track={track}`, ternaries, computed `` `attach:${id}` `` values). The harness reads the rendered DOM attribute, so prop/expression tags work perfectly — but they will **not** show up in a naive `grep 'data-track="…"'`, and dynamic values never match their final form in source. Always confirm against the **running** prototype (or grep for `data-track` in any form), never a literal-string search of the file — that produces false "missing tag" reports.
 
 ## Note
 There is currently **no way to make Claude Design emit `data-track` automatically** — the manual round-trip is required whenever those controls are first added or reworded. Tag early and avoid rewording tagged controls to keep re-trips rare. (The harness already prefers `data-track`; no harness change is needed per test.)
