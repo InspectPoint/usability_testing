@@ -48,7 +48,9 @@ you move on. If not, this is the moment to add them: identify the funnel-critica
 a prompt for Claude Design to tag them, and have the user apply it there and re-export — **the tags
 must live in the design, because every export overwrites local edits.** This makes click-paths
 readable for *this* test and every future one (so it's a once-per-prototype step, not per-test).
-Full walkthrough, the standard taxonomy, and the manual round-trip are in `references/event-tracking.md`.
+**Re-run this check whenever the prototype gains or renames controls** — new ones come back untagged
+and get their own prompt, while existing tags are left alone. Full walkthrough, the standard
+taxonomy, and the manual round-trip are in `references/event-tracking.md`.
 
 ### 3. Define the tasks (interview the user)
 
