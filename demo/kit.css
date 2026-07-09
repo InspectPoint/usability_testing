@@ -1,0 +1,1027 @@
+/* Inspect Point Web — shared styles. QMB tokens; class names mirror storybook. */
+@import url("./colors_and_type.css");
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { font: var(--text-body); color: var(--fg-1); background: var(--bg-subtle); }
+
+/* ─── App layout: left vertical nav + main + bottom global header ───────── */
+/* Per /Global/section: nav 240px expanded / 64px collapsed,
+   global header 64px tall pinned below the main outlet. */
+.qmb-app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: 64px 1fr;
+  grid-template-areas:
+    "nav  global"
+    "nav  main";
+  height: 100vh;
+}
+.qmb-app--nav-collapsed { grid-template-columns: 64px 1fr; }
+
+.qmb-main { grid-area: main; overflow: auto; padding: 24px; background: transparent; }
+/* Per-page background opt-in. */
+body.qmb-page--white .qmb-main { background: #fff; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   QMB Global Left Nav — qmb-global-nav (canonical, from /Global/section)
+   ════════════════════════════════════════════════════════════════════════ */
+.qmb-global-nav {
+  grid-area: nav;
+  position: relative;
+  display: flex; flex-direction: column;
+  width: 240px;
+  height: 100%;
+  background: #fff;
+  box-shadow: 1px 0 0 rgba(0,0,0,0.16), 4px 0 0 rgba(0,0,0,0.04);
+  overflow: hidden;
+  flex-shrink: 0;
+  z-index: 6;
+}
+.qmb-global-nav--collapsed { width: 64px; }
+
+/* Header band */
+.qmb-global-nav__header {
+  position: relative;
+  height: 64px;
+  background: #EA6952;
+  flex-shrink: 0;
+  display: flex; align-items: center;
+}
+.qmb-global-nav__header-corner {
+  position: absolute;
+  top: 0; right: 0;
+  width: 64px; height: 64px;
+  background: #B14F6B;
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+}
+.qmb-global-nav--collapsed .qmb-global-nav__header-corner { left: 0; right: auto; }
+
+.qmb-global-nav__logo-mark {
+  position: relative; z-index: 1;
+  width: 24px; height: 33px;
+  margin-left: 20px;
+  color: #fff;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.qmb-global-nav__logo-mark svg { width: 100%; height: 100%; display: block; }
+
+.qmb-global-nav__logo-text {
+  position: relative; z-index: 1;
+  margin-left: 12px;
+  color: #fff;
+  font: 700 13px/14px var(--font-ui);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.qmb-global-nav--collapsed .qmb-global-nav__logo-text { display: none; }
+
+/* Group + divider */
+.qmb-global-nav__group {
+  display: flex; flex-direction: column;
+  padding: 10px 0;
+  flex-shrink: 0;
+}
+.qmb-global-nav__group--scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.qmb-global-nav__hr {
+  height: 1px;
+  margin: 0 12px;
+  background: var(--gray-200);
+  border: 0;
+  flex-shrink: 0;
+}
+
+/* Link */
+.qmb-global-nav__link {
+  position: relative;
+  display: flex; align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 13px 24px;
+  box-sizing: border-box;
+  color: var(--gray-700);
+  font: 500 14px/100% var(--font-ui);
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  transition: background-color 120ms var(--ease-standard);
+}
+.qmb-global-nav--collapsed .qmb-global-nav__link {
+  justify-content: center;
+  padding: 13px 0;
+}
+.qmb-global-nav--collapsed .qmb-global-nav__link-label,
+.qmb-global-nav--collapsed .qmb-global-nav__link-badge { display: none; }
+
+.qmb-global-nav__link-icon {
+  width: 16px; height: 16px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--gray-700);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.qmb-global-nav__link-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qmb-global-nav__link:hover { background: rgba(0,0,0,0.04); color: #000; }
+.qmb-global-nav__link:hover .qmb-global-nav__link-icon { color: #000; }
+.qmb-global-nav__link:active,
+.qmb-global-nav__link.is-pressed { background: var(--gray-100); color: #000; }
+.qmb-global-nav__link:active .qmb-global-nav__link-icon,
+.qmb-global-nav__link.is-pressed .qmb-global-nav__link-icon { color: #000; }
+.qmb-global-nav__link:focus-visible {
+  outline: 2px solid var(--brand-02, #3D1B9D);
+  outline-offset: -2px;
+}
+
+/* Current */
+.qmb-global-nav__link--current { color: #B14F6B; font-weight: 700; }
+.qmb-global-nav__link--current .qmb-global-nav__link-icon { color: #B14F6B; }
+.qmb-global-nav__link--current::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0;
+  width: 3px; height: 100%;
+  background: #B14F6B;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Notification */
+.qmb-global-nav__link-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-left: auto;
+}
+.qmb-global-nav__link-badge-count {
+  min-width: 14px; height: 13px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 2px;
+  background: #EA6952;
+  color: #fff;
+  font: 700 10px/13px var(--font-ui);
+  text-align: center;
+}
+.qmb-global-nav__link-indicator {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: #EA6952;
+}
+.qmb-global-nav--collapsed .qmb-global-nav__link.has-notification::after {
+  content: "";
+  position: absolute;
+  top: 8px; right: 18px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #EA6952;
+  border: 1.5px solid #fff;
+}
+
+/* Footer cluster */
+.qmb-global-nav__footer {
+  display: flex; flex-direction: column;
+  flex-shrink: 0;
+}
+.qmb-global-nav__toggle-row {
+  padding: 0 16px 24px;
+  display: flex;
+}
+.qmb-global-nav--collapsed .qmb-global-nav__toggle-row { justify-content: center; padding: 0 0 24px; }
+.qmb-global-nav__toggle {
+  width: 32px; height: 32px;
+  border-radius: 4px;
+  border: 0; background: transparent;
+  color: var(--gray-700);
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: background-color 120ms var(--ease-standard);
+}
+.qmb-global-nav__toggle:hover { background: rgba(0,0,0,0.04); }
+.qmb-global-nav__toggle:active { background: var(--gray-100); }
+
+/* ─── Global Header — qmb-global-header (top indigo breadcrumb bar) ─────────
+   Per /Global/global__header: 64px tall, indigo #3D1B9D, pinned to the top of
+   the app shell. Purple-500 corner triangle sits at the upper-left, hypotenuse
+   running from top-right corner of the triangle down to bottom-left. White
+   Inter 14 crumbs separated by skewed purple-400 slashes. */
+.qmb-global-header {
+  grid-area: global;
+  position: relative;
+  display: flex; align-items: center;
+  padding: 0 32px 0 80px;         /* leave room for the corner triangle */
+  background: #3D1B9D;            /* brand-02 / han purple */
+  color: #fff;
+  overflow: hidden;
+  z-index: 5;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.16), 0 4px 0 rgba(0,0,0,0.04);
+}
+.qmb-global-header__corner {
+  position: absolute; left: 0; top: 0;
+  width: 64px; height: 64px;
+  background: #763584;            /* purple-500 */
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+.qmb-global-header__crumbs {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; align-items: center;
+  gap: 16px;
+  font: 400 14px/100% var(--font-body);   /* Inter 14, white */
+}
+.qmb-crumb a {
+  color: #fff;
+  text-decoration: none;
+  opacity: 0.85;
+  transition: opacity 120ms var(--ease-standard);
+}
+.qmb-crumb a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
+.qmb-crumb--current { font-weight: 500; }
+.qmb-crumb__sep {
+  color: #724FD4;                  /* purple-400 slash */
+  font-weight: 400;
+  user-select: none;
+  transform: skewX(-20deg);
+  display: inline-block;
+}
+
+/* ─── Workspace Header (qmb-header--workspace) ─────────────────────────────
+   /Headers/section: 24/32 medium "Title" + light "Context", action buttons,
+   optional fields row (Label: Value pairs), optional bottom hr. */
+.qmb-header.qmb-header--workspace {
+  background: #fff;
+  display: flex; flex-direction: column;
+  gap: 8px;
+  padding: 16px 24px;
+  position: relative;
+  border-bottom: 1px solid transparent;
+}
+.qmb-header__row { display: flex; align-items: center; gap: 12px 24px; }
+.qmb-header__row--main { justify-content: space-between; align-items: flex-start; }
+.qmb-header__title {
+  display: flex; align-items: baseline; gap: 12px;
+  flex: 1;
+  font: 500 24px/32px var(--font-display);
+  color: #000;
+}
+.qmb-header__title-text { flex: 0 0 auto; }
+.qmb-header__context {
+  font: 400 16px/100% var(--font-body);
+  color: rgb(25,103,210);          /* link blue, per /Buttons TypeStandalone */
+  text-decoration: none;
+  cursor: pointer;
+}
+.qmb-header__context:hover { text-decoration: underline; text-underline-offset: 3px; }
+.qmb-header__actions {
+  display: flex; gap: 8px; align-items: flex-start; flex-shrink: 0;
+}
+.qmb-header__row--fields {
+  flex-wrap: wrap;
+  padding: 4px 0;
+  gap: 24px;
+}
+.qmb-field {
+  display: inline-flex; align-items: baseline; gap: 8px;
+  font: var(--text-body);
+}
+.qmb-field__label {
+  color: var(--gray-500);
+  font-weight: 400;
+}
+.qmb-field__value {
+  color: var(--gray-900);
+  font-weight: 500;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.qmb-header--split { border-bottom-color: rgba(0,0,0,0.1); }
+.qmb-header__split { display: none; }   /* the border-bottom does the work */
+
+/* ─── Section title (in-page sub-header, per /Headers/section "Hello" row) ─ */
+.qmb-section-title {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 0;
+}
+.qmb-section-title__text {
+  font: 700 18px/18px var(--font-display);
+  color: #000;
+  flex-shrink: 0;
+}
+.qmb-section-title__hr {
+  flex: 1;
+  border: 0; border-top: 1.5px solid rgba(0,0,0,0.1);
+  margin: 0;
+}
+.qmb-section-title__actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* ─── qmb-ui-button — canonical port of frontend/ui/atoms/Button ──────────
+   Mirrors components-buttons.html. Variants: default, primary, secondary,
+   tertiary (destructive red), highlighted (borderless purple), danger.
+   Modifiers: --menu (chevron), --icon (square 32px), --ghost (kit-only). */
+.qmb-ui-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: var(--gray-700);
+  display: inline-flex;
+  font: 500 14px/1 var(--font-ui);
+  gap: 8px;
+  min-height: 32px;
+  min-width: 32px;
+  padding: 4px 8px;
+  justify-content: center;
+  user-select: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-hover) var(--ease-standard), color var(--dur-hover) var(--ease-standard);
+}
+.qmb-ui-button:hover, .qmb-ui-button:focus-visible {
+  background: var(--gray-100); color: #000; outline: none;
+}
+.qmb-ui-button:focus-visible {
+  box-shadow: 0 0 0 1px #fff, 0 0 0 2px #1967D2, 0 0 0 4px rgba(185,211,247,1);
+}
+.qmb-ui-button:active { background: var(--gray-100); }
+.qmb-ui-button:disabled,
+.qmb-ui-button:disabled:hover,
+.qmb-ui-button:disabled:active {
+  cursor: not-allowed; background: transparent; color: var(--gray-400);
+}
+.qmb-ui-button [class^="fa-"], .qmb-ui-button [class*=" fa-"] { font-size: 16px; }
+
+/* Variants */
+.qmb-ui-button--primary { background: var(--purple-500); color: #fff; }
+.qmb-ui-button--primary:hover, .qmb-ui-button--primary:focus-visible { background: var(--purple-600); color: #fff; }
+.qmb-ui-button--primary:active { background: var(--purple-700); }
+.qmb-ui-button--primary:disabled,
+.qmb-ui-button--primary:disabled:hover { background: var(--gray-100); color: var(--gray-400); }
+
+.qmb-ui-button--secondary {
+  background: transparent;
+  outline: 1px solid var(--gray-200); outline-offset: -1px;
+  color: var(--purple-500);
+}
+.qmb-ui-button--secondary:hover, .qmb-ui-button--secondary:focus-visible {
+  background: var(--purple-50); outline-color: var(--gray-300); color: var(--purple-600);
+}
+.qmb-ui-button--secondary:active { background: var(--purple-100); outline-color: var(--gray-400); color: var(--purple-700); }
+.qmb-ui-button--secondary:disabled,
+.qmb-ui-button--secondary:disabled:hover { background: var(--gray-100); outline: none; color: var(--gray-400); }
+
+.qmb-ui-button--tertiary { background: var(--red-500); color: #fff; }
+.qmb-ui-button--tertiary:hover, .qmb-ui-button--tertiary:focus-visible { background: var(--red-600); color: #fff; }
+.qmb-ui-button--tertiary:active { background: var(--red-700); }
+
+.qmb-ui-button--highlighted { background: transparent; color: var(--purple-500); }
+.qmb-ui-button--highlighted:hover, .qmb-ui-button--highlighted:focus-visible { background: var(--gray-100); color: var(--purple-600); }
+.qmb-ui-button--highlighted:active { background: var(--gray-100); color: var(--purple-700); }
+
+.qmb-ui-button--danger { background: var(--red-500); color: #fff; }
+.qmb-ui-button--danger:hover, .qmb-ui-button--danger:focus-visible { background: var(--red-600); }
+.qmb-ui-button--danger:active { background: var(--red-700); }
+
+/* Menu modifier — adds chevron */
+.qmb-ui-button--menu { position: relative; padding-right: 25px; }
+.qmb-ui-button--menu::after {
+  content: "\f078"; font: 900 10px/1 "Font Awesome 6 Pro", "Font Awesome 6 Free", sans-serif;
+  color: rgba(0,0,0,0.48);
+  position: absolute; right: 8px; top: 50%; margin-top: -5px;
+}
+.qmb-ui-button--primary.qmb-ui-button--menu::after,
+.qmb-ui-button--tertiary.qmb-ui-button--menu::after,
+.qmb-ui-button--danger.qmb-ui-button--menu::after { color: rgba(255,255,255,0.7); }
+
+/* Kit modifiers */
+.qmb-ui-button--icon { width: 32px; padding: 0; min-width: 32px; }
+.qmb-ui-button--ghost { color: var(--gray-700); }
+.qmb-ui-button--ghost:hover { background: var(--gray-100); }
+.qmb-ui-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 9999px;
+  color: #fff; font: 600 11px/1 var(--font-ui);
+}
+
+/* ─── WorkspaceHeader (qmb-ui-header--workspace) — faithful port ─── */
+.qmb-ui-header--workspace.qmb-ui-header--transparent { background: transparent; padding-left: 0; padding-right: 0; }
+.qmb-ui-header.qmb-ui-header--workspace {
+  background: #fff;
+  display: flex; flex-flow: column;
+  gap: 8px;
+  min-height: 64px;
+  padding: 16px 12px;
+  position: relative;
+  width: 100%;
+  backdrop-filter: blur(5px);
+}
+.qmb-ui-header--workspace > .header__row {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 12px 24px;
+  padding: 0 12px;
+  width: 100%;
+}
+.qmb-ui-header--workspace > .header__row:first-child {
+  align-items: flex-start; flex-wrap: nowrap;
+}
+.qmb-ui-header--workspace .header__title {
+  color: #000;
+  display: flex; flex: 1; flex-wrap: wrap;
+  font: 500 24px/32px var(--font-display);
+  gap: 0 12px;
+  margin: 0;
+}
+.qmb-ui-header--workspace .header__title-text { flex: 0 0 auto; }
+.qmb-ui-header--workspace .header__context {
+  color: var(--gray-500);
+  font: 300 24px/32px var(--font-display);
+  text-decoration: none;
+}
+.qmb-ui-header--workspace .header__context:hover { text-decoration: underline; text-underline-offset: 2px; }
+.qmb-ui-header--workspace .header__actions {
+  display: flex; align-items: flex-start; flex-shrink: 0; gap: 8px;
+}
+.qmb-ui-header--workspace .header__divider {
+  border: 0; border-top: 1px solid var(--gray-200);
+  position: absolute; bottom: 0; left: 12px; right: 12px;
+  margin: 0; width: auto;
+}
+
+/* page contents area */
+.qmb-page { padding: 24px; }
+.page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.page-h h1 { font: var(--text-h1); margin: 0; }
+.page-h .sub { color: var(--fg-2); margin-left: 8px; }
+
+/* ─── Buttons (legacy aliases used by Pages.jsx) ─── */
+.btn { font: 500 14px/24px var(--font-ui); border-radius: 4px; padding: 4px 12px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid transparent; cursor: pointer; height: 32px; white-space: nowrap; transition: background var(--dur-hover) var(--ease-standard), color var(--dur-hover) var(--ease-standard); }
+.btn-primary { background: var(--purple-500); color: #fff; }
+.btn-primary:hover { background: var(--purple-600); }
+.btn-secondary { background: #fff; color: var(--gray-700); border-color: var(--border-default); }
+.btn-secondary:hover { background: var(--bg-subtle); }
+.btn-ghost { background: transparent; color: var(--gray-700); }
+.btn-ghost:hover { background: var(--bg-muted); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: var(--danger-ink); }
+.btn-icon { width: 32px; padding: 0; justify-content: center; }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--purple-500); }
+
+/* ─── Inputs ─── */
+.field { display: flex; flex-direction: column; gap: 3px; }
+.field label { font: 500 12px/16px var(--font-ui); color: var(--gray-700); }
+.field input, .field select, .field textarea { height: 36px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: 4px; font: var(--text-body); color: var(--fg-1); background: #fff; outline: none; }
+.field textarea { height: auto; min-height: 80px; resize: vertical; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--purple-500); box-shadow: 0 0 0 3px rgba(118,53,132,0.15); }
+
+/* ─── Cards ─── */
+.card { background: #fff; border: 1px solid var(--border-default); border-radius: 8px; box-shadow: var(--shadow-sm); padding: 16px; }
+.card.interactive:hover { box-shadow: var(--shadow-md); border-color: var(--gray-300); }
+.card-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.card-h .k { font: 500 12px/16px var(--font-ui); color: var(--fg-2); }
+.card-v { font: 500 24px/32px var(--font-display); color: var(--fg-1); }
+.card-sub { font: var(--text-body-sm); color: var(--fg-2); margin-top: 2px; }
+
+/* ─── Tags ─── */
+.tag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 16px; font: 500 12px/16px var(--font-ui); }
+.tag-danger { background: var(--danger); color: #fff; }
+.tag-success { background: var(--success); color: #fff; }
+.tag-warn { background: var(--warning); color: var(--gray-800); }
+.tag-info { background: var(--info); color: #fff; }
+.tag-purple { background: var(--purple-500); color: #fff; }
+.tag-muted { background: var(--bg-muted); color: var(--gray-700); }
+.tag-danger-soft { background: var(--danger-bg); color: var(--danger-ink); }
+.tag-success-soft { background: var(--success-bg); color: var(--success-ink); }
+.tag-info-soft { background: var(--info-bg); color: var(--info-ink); }
+.tag-purple-soft { background: var(--purple-50); color: var(--purple-700); }
+
+/* ─── Tabs ─── */
+.tabs { display: flex; gap: 24px; border-bottom: 1px solid var(--border-default); margin-bottom: 20px; }
+.tab { font: 500 14px/20px var(--font-ui); color: var(--fg-2); padding: 12px 0; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: flex; align-items: center; gap: 6px; }
+.tab.active { color: var(--purple-500); border-color: var(--purple-500); }
+.tab .count { background: var(--bg-muted); color: var(--gray-700); padding: 1px 6px; border-radius: 9999px; font-size: 11px; }
+.tab.active .count { background: var(--purple-50); color: var(--purple-700); }
+
+/* ─── Table (qmb-table — per /Tables/section "Example new table") ───────────
+   Spec: thead is white (32px tall) with HK Grotesk 700 12px gray-500 headings.
+   tbody sits on a gray-50 (rgb(247,247,249)) field; rows are 64px tall, white
+   cells separated by 1.5px vertical dividers (rgba(0,0,0,0.2) on the right edge
+   of each cell except the last), with a faint horizontal divider below each row
+   (rgba(0,0,0,0.08)). The first cell in a row is the "primary" column and uses
+   blue link text (rgb(25,103,210) = info-500) for its Value. */
+.tbl {
+  width: 100%;
+  border-collapse: separate;        /* keep per-cell box edges */
+  border-spacing: 0;
+  background: rgb(247,247,249);     /* gray-50 field for tbody */
+  border-radius: 1px;
+  overflow: hidden;
+  font: var(--text-body);
+}
+.tbl thead { background: #fff; }
+.tbl thead tr { height: 32px; }
+.tbl th {
+  text-align: left;
+  background: #fff;
+  color: var(--gray-500);
+  font: 700 12px/100% var(--font-ui);
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 8px 12px 8px 8px;
+  vertical-align: middle;
+  border-right: 1.5px solid #fff;   /* dividers between heading cells are white-on-white */
+}
+.tbl th:first-child { padding-left: 16px; }
+.tbl th:last-child { border-right: 0; }
+
+.tbl tbody { background: rgb(247,247,249); }
+.tbl tbody tr { height: 64px; }
+.tbl td {
+  padding: 16px 12px;
+  vertical-align: middle;
+  background: transparent;
+  border-right: 1.5px solid rgba(0,0,0,0.2);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  font: 400 14px/100% var(--font-body);
+  color: var(--gray-900);
+}
+.tbl td:first-child {
+  padding-left: 16px;
+  color: rgb(25,103,210);            /* primary column = blue link text */
+}
+.tbl td:last-child { border-right: 0; }
+.tbl tbody tr:last-child td { border-bottom: 0; }
+
+/* Trailing actions cell — small icon controls (edit/delete), right-aligned. */
+.tbl td.tbl__actions {
+  width: 96px;
+  padding: 16px 12px;
+  text-align: right;
+  white-space: nowrap;
+}
+.tbl td.tbl__actions .qmb-control { margin-left: 4px; }
+
+/* Legacy hooks that older Pages.jsx markup used. Keep them harmless. */
+.tbl .id { color: rgb(25,103,210); font-weight: 400; cursor: pointer; }
+.tbl tbody tr:hover td { background: rgba(0,0,0,0.02); }
+
+/* ─── Table (qmb-ui-table) — port of frontend/ui/molecules/Table ───────────
+   The proper QMB table molecule. Two visual variants:
+   • --listing : white rows, gray header band (#f2f2f6) — for index pages.
+   • --detail  : smoke (#f7f7f9) tray with outlined cells — for detail tabs.
+   Both support sortable headers, a primary column with a sticky right rule,
+   row selection via the --selector column, and selected/active row tints. */
+.qmb-ui-table {
+  width: fit-content;
+  max-width: calc(100% + 24px);
+  border-bottom: 0;
+  border-radius: 0;
+  overflow-x: auto;
+  padding: 8px 12px;
+  position: relative;
+}
+.qmb-ui-table--x-full { width: 100%; }
+.qmb-ui-table--x-full table { min-width: 100%; width: fit-content; }
+
+.qmb-ui-table table { color: #000; border-collapse: collapse; position: relative; width: 100%; }
+.qmb-ui-table th, .qmb-ui-table td {
+  background: transparent;
+  padding: 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+.qmb-ui-table td { font-family: var(--font-body); font-size: 14px; line-height: 20px; }
+.qmb-ui-table th { vertical-align: bottom; }
+.qmb-ui-table th:first-child,
+.qmb-ui-table td:first-child { padding-left: 24px; }
+.qmb-ui-table th.table-column--selector,
+.qmb-ui-table td.table-column--selector { padding-left: 12px; padding-right: 0; width: 28px; }
+
+.qmb-ui-table th {
+  color: var(--gray-500);
+  font: 600 12px/1.5 var(--font-ui);
+  padding-top: 4px;
+  border-bottom: 8px solid var(--gray-50);
+}
+.qmb-ui-table tr + tr td { border-top: 1px solid var(--gray-200); }
+
+.qmb-ui-table .table-cell--align-right  { text-align: right !important; }
+.qmb-ui-table .table-cell--align-center { text-align: center !important; }
+
+.qmb-ui-table td.table-column--primary { position: relative; }
+.qmb-ui-table td.table-column--primary::after {
+  content: ''; position: absolute; top: 0; bottom: 0; right: 0;
+  width: 1px; background: var(--gray-300); z-index: 3;
+}
+.qmb-ui-table td.table-column--primary ~ td,
+.qmb-ui-table th.table-column--primary ~ th { padding: 12px 12px 12px 16px; }
+
+.qmb-ui-sortable-header {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0; border: none; background: transparent;
+  cursor: pointer; font: inherit; color: inherit; white-space: nowrap;
+}
+.qmb-ui-sortable-header:hover { color: #3D1B9D; }
+.qmb-ui-sortable-header--active { color: #3D1B9D; font-weight: 600; }
+.qmb-ui-sortable-header__icon { display: inline-flex; align-items: center; font-size: 12px; opacity: 0.5; }
+.qmb-ui-sortable-header--active .qmb-ui-sortable-header__icon { opacity: 1; }
+
+.qmb-ui-table tr.table-row--selected td { background: #E9E3FA; border-top-color: var(--gray-200); }
+.qmb-ui-table tr.table-row--selected:hover td { background: #E9E3FA !important; }
+.qmb-ui-table tr.table-row--active td { background: var(--gray-200); }
+.qmb-ui-table tr.table-row--clickable { cursor: pointer; }
+
+/* Listing variant */
+.qmb-ui-table--listing { padding: 0; }
+.qmb-ui-table--listing tr:not(.table-row--selected, .table-row--active):hover td { background: var(--gray-100) !important; }
+.qmb-ui-table--listing thead { background: #f2f2f6; }
+.qmb-ui-table--listing thead th {
+  border-bottom: 1px solid var(--gray-300);
+  border-right: 1px solid var(--gray-200);
+  font-size: 13px;
+}
+.qmb-ui-table--listing thead th:last-child,
+.qmb-ui-table--listing thead th.table-column--selector,
+.qmb-ui-table--listing thead th.table-column--primary { border-right: none; }
+.qmb-ui-table--listing tbody td { border-right: 1px solid var(--gray-200); }
+.qmb-ui-table--listing tbody td:last-child,
+.qmb-ui-table--listing tbody td.table-column--selector,
+.qmb-ui-table--listing tbody td.table-column--primary { border-right: none; }
+.qmb-ui-table--listing th.table-column--primary,
+.qmb-ui-table--listing td.table-column--primary { padding-left: 16px; }
+.qmb-ui-table--listing th.table-column--primary { position: relative; }
+.qmb-ui-table--listing th.table-column--primary::after {
+  content: ''; position: absolute; top: 0; bottom: 0; right: 0;
+  width: 1px; background: var(--gray-300); z-index: 3;
+}
+
+/* Detail variant */
+.qmb-ui-table--detail { max-width: calc(100% - 24px); }
+.qmb-ui-table--detail tr:not(.table-row--selected, .table-row--active):hover td { background: var(--gray-100) !important; }
+.qmb-ui-table--detail tbody { background: #f7f7f9; outline: 12px solid #f7f7f9; }
+.qmb-ui-table--detail td { border-right: 1px solid var(--gray-200); }
+.qmb-ui-table--detail td:last-child,
+.qmb-ui-table--detail td.table-column--selector,
+.qmb-ui-table--detail td.table-column--primary { border-right: none; }
+.qmb-ui-table--detail th.table-column--primary,
+.qmb-ui-table--detail td.table-column--primary { padding-left: 12px; }
+
+/* Cell content helpers */
+.qmb-ui-table .cell-link { color: var(--fg-link); font-weight: 500; text-decoration: none; cursor: pointer; }
+.qmb-ui-table .cell-link:hover { color: var(--fg-link-hover); text-decoration: underline; }
+.qmb-ui-table .cell-muted { color: var(--gray-500); }
+.qmb-ui-table .cell-mono { font-family: var(--font-mono); font-size: 12px; color: var(--gray-700); }
+.qmb-ui-table .cell-due-overdue { color: #DB2B39; font-weight: 500; }
+
+/* Status pill (matches the table preview) */
+.qmb-ui-table .status-pill {
+  display: inline-flex; align-items: center;
+  padding: 2px 10px; border-radius: 16px;
+  font: 500 12px/16px var(--font-ui);
+}
+.qmb-ui-table .status-pill--overdue   { background: #DB2B39; color: #fff; }
+.qmb-ui-table .status-pill--scheduled { background: #E4EEFA; color: #0F4EA7; }
+.qmb-ui-table .status-pill--inprogress{ background: #EFE9FE; color: #3D1B9D; }
+.qmb-ui-table .status-pill--passed    { background: #E4FBF4; color: #00996B; }
+.qmb-ui-table .status-pill--duesoon   { background: #FFF4E0; color: #8A5A00; }
+.qmb-ui-table .status-pill--draft     { background: var(--gray-200); color: var(--gray-700); }
+
+/* Inline row action (qmb-control style) */
+.qmb-ui-table .row-action {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 24px; padding: 0 6px;
+  border: 0; background: transparent;
+  color: var(--gray-500); cursor: pointer;
+  border-radius: 3px; margin: -4px 0;
+}
+.qmb-ui-table .row-action:hover { background: rgba(0,0,0,0.06); color: var(--gray-900); }
+
+/* Checkbox stand-in */
+.qmb-ui-table .qmb-checkbox {
+  appearance: none; -webkit-appearance: none;
+  width: 16px; height: 16px; margin: 0;
+  border: 1px solid var(--gray-400); border-radius: 2px;
+  background: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; vertical-align: middle; position: relative;
+}
+.qmb-ui-table .qmb-checkbox:checked { background: #3D1B9D; border-color: #3D1B9D; }
+.qmb-ui-table .qmb-checkbox:checked::after {
+  content: ''; width: 4px; height: 8px;
+  border: solid #fff; border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+.qmb-ui-table .qmb-checkbox:indeterminate { background: #3D1B9D; border-color: #3D1B9D; }
+.qmb-ui-table .qmb-checkbox:indeterminate::after {
+  content: ''; width: 8px; height: 2px; background: #fff; border: 0; transform: none;
+}
+
+/* Full-bleed page hook — used by listing screens to span the .qmb-main padding. */
+.qmb-page--full-bleed { margin: -24px; padding: 0; background: #fff; min-height: 100%; }
+.qmb-page--full-bleed > .qmb-header--workspace { background: #fff; }
+.qmb-page--full-bleed .qmb-filters--detail { background: #fff; padding: 12px 24px; }
+.qmb-page--full-bleed .qmb-filters--detail .filters__search input,
+.qmb-page--full-bleed .qmb-filters--detail .qmb-input--search { background: #fff; }
+.qmb-page--full-bleed .qmb-ui-table--detail { max-width: 100%; padding: 0; }
+.qmb-page--full-bleed .qmb-ui-table--detail tbody { outline: none; box-shadow: none; border-radius: 0; background: #fff; }
+.qmb-page--full-bleed .qmb-ui-table--detail thead th { padding-left: 24px; padding-right: 24px; }
+.qmb-page--full-bleed .qmb-ui-table--detail th:first-child,
+.qmb-page--full-bleed .qmb-ui-table--detail td:first-child { padding-left: 24px; }
+.qmb-page--full-bleed .qmb-ui-table--detail th:last-child,
+.qmb-page--full-bleed .qmb-ui-table--detail td:last-child { padding-right: 24px; }
+
+/* qmb-filters--detail variant — used on listing screens. Sits on the same
+   white surface as the workspace header and the table so the three regions
+   read as one continuous viewport. */
+.qmb-filters.qmb-filters--detail { background: #fff; }
+
+/* legacy avatar (Pages.jsx uses .av) */
+.av { width: 32px; height: 32px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; color: #fff; font: 500 13px/1 var(--font-ui); }
+
+/* ─── Modal ─── */
+.backdrop { position: fixed; inset: 0; background: rgba(15,6,40,0.32); display: flex; align-items: center; justify-content: center; z-index: 100; animation: fadein 150ms var(--ease-standard); }
+.modal { background: #fff; border-radius: 12px; width: 560px; max-width: calc(100vw - 32px); box-shadow: var(--shadow-lg); overflow: hidden; }
+.modal-h { padding: 20px 24px 12px; display: flex; justify-content: space-between; align-items: center; }
+.modal-h h3 { font: var(--text-h3); margin: 0; }
+.modal-b { padding: 8px 24px 16px; display: flex; flex-direction: column; gap: 12px; }
+.modal-f { padding: 16px 24px; background: var(--bg-subtle); border-top: 1px solid var(--border-default); display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ─── Drawer ─── */
+.drawer { position: fixed; right: 0; top: 0; bottom: 0; width: 480px; max-width: 100vw; background: #fff; box-shadow: var(--shadow-lg); z-index: 80; display: flex; flex-direction: column; animation: slide 250ms var(--ease-standard); }
+.drawer-h { padding: 16px 20px; border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center; }
+.drawer-h h3 { font: var(--text-h3); margin: 0; }
+.drawer-b { padding: 20px; flex: 1; overflow: auto; }
+
+/* ─── Toast ─── */
+.toast { position: fixed; bottom: 20px; right: 20px; background: #fff; border-radius: 8px; box-shadow: var(--shadow-lg); padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; border-left: 4px solid var(--success); max-width: 380px; z-index: 90; animation: slide 250ms var(--ease-standard); }
+
+/* ─── AI launcher — verbatim AITriggerButtonStyles.scss ─── */
+.ai-trigger-button {
+  position: fixed;
+  z-index: 999;
+  bottom: 20px;
+  right: 20px;
+  display: flex; align-items: center; justify-content: center;
+  width: 64px; height: 64px;
+  padding: 0;
+  border: 3px solid var(--gray-100);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1835D9, #763584);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.ai-trigger-button:hover { transform: scale(1.07); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+.ai-trigger-button:active { transform: scale(0.95); }
+.ai-trigger-button__inner {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%; border-radius: 50%;
+}
+
+/* ─── Login ─── */
+.login-shell { height: 100vh; display: grid; place-items: center; background: #fff; background-image: linear-gradient(rgba(24,53,217,0) 0%, rgba(24,53,217,0.06) 100%); }
+.login-card { width: 380px; background: #fff; border: 1px solid var(--border-default); border-radius: 12px; box-shadow: var(--shadow-md); padding: 32px; }
+
+/* ─── Misc ─── */
+.crumbs { font: var(--text-body-sm); color: var(--fg-2); display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.crumbs a { color: var(--fg-2); cursor: pointer; }
+.crumbs .sep { color: var(--gray-300); }
+
+.row { display: flex; gap: 12px; align-items: center; }
+.col { display: flex; flex-direction: column; gap: 12px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.muted { color: var(--fg-2); }
+.spacer { flex: 1; }
+.sep-v { width: 1px; height: 20px; background: var(--border-default); margin: 0 4px; }
+
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide { from { transform: translateX(12px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* legacy `.main` and `.app` aliases — kept so Pages.jsx still works */
+.app { display: grid; grid-template-columns: 244px 1fr; grid-template-rows: 56px 1fr; height: 100vh; }
+.main { overflow: auto; padding: 0; }
+
+/* ─── Filter Bar (qmb-filters) — per /Filters/section + /Filters/Filters ───
+   Spec: white bar, 16px padding, gap 16 between groups. Inside:
+     • filters__label  — 13px gray-500 ("Filter:")
+     • filters__group  — flex row of options, gap 16
+     • filters__group--push — push-right group (search input lives here),
+       gets margin-left:auto so it floats to the bar's far end.
+     • filters__option — 48px tall, radius 4, HK Grotesk 700 15px gray-700.
+         · idle (Type=Select): transparent
+         · idle (Type=Text):   gray-50 fill
+         · hover:              rgba(0,0,0,0.08)
+         · active:             rgba(61,27,157,0.08) + purple text;
+                               Type=Text gets an 8px halo of rgba(61,27,157,0.04).
+       When active, content stacks: 13px purple label on top + 14px Inter value below.
+     • qmb-control — small icon/caret button used between options. */
+.qmb-filters {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,0.06);
+  margin-bottom: 12px;
+}
+.filters__label {
+  font: 400 13px/100% var(--font-display);
+  color: var(--gray-500);
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+.filters__group {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-items: center;
+}
+/* Push group — anchored to the RIGHT of the bar (search input lives here),
+   per /Filters/section. Claims remaining horizontal space. */
+.filters__group--push { margin-left: auto; }
+
+/* Add-filter trigger — qmb-ui-button --highlighted, icon-only.
+   Used inside the main group to open the manage-filters popup. */
+.filters__add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--purple-700, #763584);
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.filters__add:hover,
+.filters__add:focus-visible {
+  background: var(--gray-100, #EFEFF4);
+  color: var(--purple-800, #652D71);
+  outline: none;
+}
+.filters__add:active {
+  background: var(--gray-100);
+  color: var(--purple-900, #54265E);
+}
+.filters__add i { font-size: 16px; }
+
+.filters__option {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  height: 48px;
+  padding: 0 16px 0 8px;
+  border: 0;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font: 700 15px/100% var(--font-ui);
+  color: var(--gray-700);
+  text-align: left;
+  white-space: nowrap;
+  transition: background var(--dur-hover) var(--ease-standard),
+              box-shadow var(--dur-hover) var(--ease-standard),
+              color var(--dur-hover) var(--ease-standard);
+}
+.filters__option:hover { background: rgba(0,0,0,0.08); }
+.filters__option:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--purple-500); }
+
+.filters__option--text { background: rgba(0,0,0,0.03); }     /* Type=Text idle */
+.filters__option--text:hover { background: rgba(0,0,0,0.08); }
+
+.filters__option-label { font: 700 15px/100% var(--font-ui); color: inherit; }
+.filters__option-value { display: none; }
+
+/* Active — both types share the purple tint; --text gets a soft outer halo. */
+.filters__option--active {
+  background: rgba(61,27,157,0.08);
+  padding: 0 16px 0 8px;
+}
+.filters__option--active.filters__option--text {
+  box-shadow: 0 0 0 8px rgba(61,27,157,0.04);
+}
+.filters__option--active .filters__option-label {
+  font: 700 13px/13px var(--font-ui);
+  color: var(--purple-600);
+}
+.filters__option--active .filters__option-value {
+  display: block;
+  font: 400 14px/100% var(--font-body);
+  color: #000;
+}
+
+/* Small icon-only button sometimes nested between filter options. */
+.qmb-control {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 4px;
+  background: transparent;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-standard);
+}
+.qmb-control:hover { background: var(--gray-100); color: var(--gray-900); }
+
+/* Search input variant used inside filters__group--push. */
+.qmb-input--search {
+  position: relative;
+  display: inline-flex; align-items: center;
+  width: 240px; height: 40px;
+}
+.qmb-input--search input {
+  width: 100%; height: 40px;
+  padding: 0 12px 0 36px;
+  font: 400 14px/40px var(--font-body);
+  color: var(--gray-900);
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.2);
+  border-radius: 4px;
+  outline: none;
+  transition: border-color var(--dur-hover) var(--ease-standard),
+              box-shadow var(--dur-hover) var(--ease-standard);
+}
+.qmb-input--search input::placeholder { color: var(--gray-500); font-style: italic; }
+.qmb-input--search input:focus {
+  border-color: var(--purple-500);
+  box-shadow: 0 0 0 3px rgba(118,53,132,0.15);
+}
+.qmb-input--search > i {
+  position: absolute; left: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-500);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* Manage-Filters popup — qmb-dialog--popup. Triggered by the qmb-control
+   to the right of the bar (or from a column header). 240px wide card. */
+.qmb-dialog--popup {
+  position: absolute;
+  z-index: 40;
+  width: 240px;
+  background: #fff;
+  border-radius: 1px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.16), 0 0 0 4px rgba(0,0,0,0.04);
+  overflow: hidden;
+  animation: fadein 120ms var(--ease-standard);
+}
+.popup__section { padding: 8px 0; display: flex; flex-direction: column; }
+.popup__section--group .popup__title {
+  padding: 4px 16px;
+  font: 700 13px/12px var(--font-display);
+  color: var(--gray-500);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.popup__split { height: 1px; background: var(--gray-200); border: 0; margin: 0; }
+
+.qmb-checkbox--menu {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; height: 32px;
+  padding: 0 16px;
+  background: transparent; border: 0;
+  font: 400 14px/100% var(--font-body);
+  color: var(--gray-900);
+  cursor: pointer;
+  text-align: left;
+}
+.qmb-checkbox--menu:hover { background: var(--gray-50); }
+.qmb-checkbox--menu input[type="checkbox"] {
+  width: 14px; height: 14px;
+  margin: 0;
+  accent-color: var(--purple-500);
+  flex-shrink: 0;
+}
+.qmb-checkbox--menu .button__count {
+  margin-left: auto;
+  font: 400 12px/10px var(--font-display);
+  color: var(--gray-500);
+}
+
+.qmb-button--menu {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; height: 32px;
+  padding: 0 16px;
+  background: transparent; border: 0;
+  font: 500 13px/100% var(--font-display);
+  color: var(--gray-700);
+  cursor: pointer;
+  text-align: left;
+}
+.qmb-button--menu:hover { background: var(--gray-50); color: var(--gray-900); }
+.qmb-button--menu i { width: 14px; color: var(--gray-500); }
