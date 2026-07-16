@@ -8,7 +8,15 @@ dashboard. Recommended by IT as the place to host this (vs. a third-party form t
 - `POST /api/results` — receives a finished test session (open, so anonymous participants can
   submit; this is what the test harness's `RESULTS_ENDPOINT` points at).
 - `GET /api/results` — returns all results as JSON (Basic Auth — internal only).
-- `GET /` — the dashboard: holistic overview + per-test drill-down (Basic Auth — internal only).
+- `DELETE /api/results?session=<id>` (or `?test=<t>&pid=<p>`) — removes every stored line for
+  one session (Basic Auth). Powers the dashboard's per-row **Delete** button, for cleaning up
+  dual entries.
+- `POST /api/participant` `{test, participantName}` — creates an "invited" participant stub with
+  an auto-generated, test-unique PID and returns `{pid}` (Basic Auth). Powers the dashboard's
+  **New participant** modal.
+- `GET /` — the dashboard: holistic overview + per-test drill-down, with per-row **Copy link**
+  (builds `<test-url>?pid=<pid>`), **Delete**, and a **New participant** button (Basic Auth —
+  internal only).
 
 Data is stored as one JSON line per session in `DATA_FILE`, on a Fly **volume** so it survives
 restarts.

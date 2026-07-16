@@ -58,6 +58,34 @@
   .psteps li:last-child { padding-bottom:0; }
   .psteps li::before { content:counter(step); position:absolute; left:0; top:-1px; width:20px; height:20px; border-radius:50%; background:var(--purple); color:#fff; font-size:10px; font-weight:700; line-height:20px; text-align:center; }
   .psteps li:not(:last-child)::after { content:""; position:absolute; left:9px; top:20px; bottom:0; width:2px; background:var(--line); }
+  .pill.invited { background:#EDEBFF; color:var(--purple); }
+  .pacts { display:flex; gap:6px; }
+  .btn { font-family:inherit; font-size:12px; font-weight:600; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:8px; padding:5px 10px; cursor:pointer; white-space:nowrap; }
+  .btn:hover { background:var(--bg); }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .btn.danger { color:var(--red); border-color:#F3C6C9; }
+  .btn.danger:hover { background:#FBE5E6; }
+  .btn.primary { background:var(--purple); color:#fff; border-color:var(--purple); }
+  .btn.primary:hover { background:#54265E; }
+  .btn.copied { background:#D9FFF3; color:var(--green); border-color:#9ee9d0; }
+  .section-title .newp { float:right; margin-top:-4px; }
+  .modal-backdrop { position:fixed; inset:0; background:rgba(35,35,45,.45); display:flex; align-items:center; justify-content:center; padding:24px; z-index:50; }
+  .modal { background:#fff; border-radius:14px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,.25); overflow:hidden; }
+  .modal .m-head { padding:18px 20px; border-bottom:1px solid var(--line); }
+  .modal .m-head h3 { margin:0; font-size:16px; }
+  .modal .m-head .sub { color:var(--muted); font-size:12px; margin-top:3px; }
+  .modal .m-body { padding:20px; }
+  .modal .field { margin-bottom:16px; }
+  .modal .field:last-child { margin-bottom:0; }
+  .modal label { display:block; font-size:12px; font-weight:600; color:var(--muted); margin:0 0 6px; }
+  .modal input[type=text] { width:100%; padding:10px 12px; font-size:14px; border:1px solid var(--line); border-radius:9px; font-family:inherit; color:var(--ink); }
+  .modal input[type=text]:focus { outline:none; border-color:var(--purple); }
+  .modal input[readonly] { background:var(--bg); }
+  .modal .hint { font-size:12px; color:var(--muted); margin:6px 0 0; line-height:1.4; }
+  .modal .urlbox { display:flex; gap:8px; align-items:center; }
+  .modal .urlbox input { flex:1 1 auto; }
+  .modal .m-foot { display:flex; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--line); background:var(--bg); }
+  .modal .m-err { color:var(--red); font-size:12px; margin:12px 0 0; min-height:14px; }
 </style>
 </head>
 <body>
@@ -69,6 +97,7 @@
   <nav id="nav"></nav>
   <main id="main"><div class="empty">Loading results…</div></main>
 </div>
+<div id="modal-root"></div>
 
 <!--RESULTS_DATA-->
 <script>
@@ -112,6 +141,88 @@
     function barCell(f){ if(f===null) return '—'; var p=Math.round(f*100); var cls=p>=70?'good':(p<40?'bad':''); return '<div class="barwrap"><span class="bar"><span style="width:'+p+'%"></span></span><span class="pill '+cls+'">'+p+'%</span></div>'; }
     function statusPill(st){ return '<span class="pill '+st+'">'+st+'</span>'; }
 
+    // Test name → participant link base. Keep in sync with the tests listed in index.html.
+    // The copy-link button and the New-participant modal both build "<base>?pid=<pid>" from this.
+    var TEST_URLS = {
+      "Components: Setup": "https://inspectpoint.github.io/usability_testing/component-setup/Component%20Setup%20%E2%80%94%20Test.html",
+      "Demo": "https://inspectpoint.github.io/usability_testing/demo/Demo%20%E2%80%94%20Test.html",
+      "Component Setup": "https://inspectpoint.github.io/usability_testing/component-setup-internal-test/Component%20Setup%20%E2%80%94%20Test.html"
+    };
+    function baseFor(test){ return TEST_URLS[test] || ''; }
+    function pidUrl(base, pid){ if(!base||!pid) return ''; return base + (base.indexOf('?')>=0?'&':'?') + 'pid=' + encodeURIComponent(pid); }
+
+    function copyText(text){
+      if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+      return new Promise(function(resolve,reject){
+        try { var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+          document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); resolve(); }
+        catch(e){ reject(e); }
+      });
+    }
+    function flashCopied(btn){ var t=btn.textContent; btn.textContent='Copied!'; btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent=t; btn.classList.remove('copied'); }, 1400); }
+
+    var modalRoot=document.getElementById('modal-root');
+    function closeModal(){ modalRoot.innerHTML=''; }
+    modalRoot.addEventListener('click', function(e){ if(e.target===modalRoot.firstChild) closeModal(); });
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
+
+    function openNewParticipant(test){
+      modalRoot.innerHTML =
+        '<div class="modal-backdrop"><div class="modal">'+
+          '<div class="m-head"><h3>New participant</h3><div class="sub">'+esc(test)+'</div></div>'+
+          '<div class="m-body">'+
+            '<div class="field"><label for="np-name">Name <span style="font-weight:400">(optional)</span></label>'+
+              '<input type="text" id="np-name" placeholder="e.g. Jordan at Acme Fire" autocomplete="off" /></div>'+
+            '<div class="field"><label for="np-base">Test link</label>'+
+              '<input type="text" id="np-base" value="'+esc(baseFor(test))+'" />'+
+              '<p class="hint">The PID is generated on save and appended to this link automatically.</p></div>'+
+            '<div class="m-err" id="np-err"></div>'+
+          '</div>'+
+          '<div class="m-foot"><button type="button" class="btn" id="np-cancel">Cancel</button>'+
+            '<button type="button" class="btn primary" id="np-create">Create &amp; get link</button></div>'+
+        '</div></div>';
+      var nameEl=document.getElementById('np-name'), baseEl=document.getElementById('np-base'), errEl=document.getElementById('np-err');
+      document.getElementById('np-cancel').onclick=closeModal;
+      nameEl.focus();
+      document.getElementById('np-create').onclick=function(){
+        var btn=this; btn.disabled=true; errEl.textContent='';
+        fetch('/api/participant', { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ test:test, participantName:nameEl.value.trim() }) })
+          .then(function(r){ if(!r.ok) throw new Error('Server returned '+r.status); return r.json(); })
+          .then(function(d){ showCreated(test, d.pid, baseEl.value.trim(), nameEl.value.trim()); })
+          .catch(function(err){ btn.disabled=false; errEl.textContent='Could not create participant — '+err.message; });
+      };
+    }
+
+    function showCreated(test, pid, base, name){
+      var url=pidUrl(base, pid);
+      modalRoot.innerHTML =
+        '<div class="modal-backdrop"><div class="modal">'+
+          '<div class="m-head"><h3>Participant created</h3><div class="sub">'+esc(name||'(no name)')+' · PID '+esc(pid)+'</div></div>'+
+          '<div class="m-body">'+
+            '<div class="field"><label>Link to send</label><div class="urlbox">'+
+              '<input type="text" id="np-url" readonly value="'+esc(url)+'" />'+
+              '<button type="button" class="btn primary" id="np-copy">Copy</button></div>'+
+              '<p class="hint">They appear as “invited” in the table until they start the test.</p></div>'+
+          '</div>'+
+          '<div class="m-foot"><button type="button" class="btn primary" id="np-done">Done</button></div>'+
+        '</div></div>';
+      var urlEl=document.getElementById('np-url');
+      document.getElementById('np-copy').onclick=function(){ var b=this; urlEl.select(); copyText(url).then(function(){ flashCopied(b); }); };
+      document.getElementById('np-done').onclick=function(){ closeModal(); render('t:'+encodeURIComponent(test)); };
+      urlEl.select();
+    }
+
+    function deleteRow(session, test, pid, name){
+      if(!confirm('Delete the result for '+(name||pid||'this participant')+'?\nThis removes it from the data and can\'t be undone.')) return;
+      var qs = session ? 'session='+encodeURIComponent(session) : 'test='+encodeURIComponent(test)+'&pid='+encodeURIComponent(pid);
+      fetch('/api/results?'+qs, { method:'DELETE' })
+        .then(function(r){ if(!r.ok) throw new Error('Server returned '+r.status); return r.json(); })
+        .then(function(){ render('t:'+encodeURIComponent(test)); })
+        .catch(function(err){ alert('Could not delete — '+err.message); });
+    }
+
     function overview(){
       if(!rows.length){ main.innerHTML='<div class="empty">No results yet. Once participants start, they\'ll appear here.</div>'; return; }
       var html='<h2>Overview — all tests</h2><div class="cards">'+
@@ -138,10 +249,13 @@
       html+='</div>';
 
       // who did what
-      var pcols=5+numQ.length;
-      html+='<div class="section-title">Participants <span class="muted" style="font-weight:400">— click a name to see the path they took</span></div><table><tr><th>Participant</th><th>PID</th><th>Status</th><th>Last task reached</th>'+numQ.map(function(c){return '<th>'+esc(c.slice(3))+'</th>';}).join('')+'<th>Completed</th></tr>';
+      var pcols=6+numQ.length;
+      html+='<div class="section-title">Participants <span class="muted" style="font-weight:400">— click a name to see the path they took</span><button type="button" class="btn primary newp" data-newp>+ New participant</button></div><table><tr><th>Participant</th><th>PID</th><th>Status</th><th>Last task reached</th>'+numQ.map(function(c){return '<th>'+esc(c.slice(3))+'</th>';}).join('')+'<th>Completed</th><th>Actions</th></tr>';
       rs.forEach(function(r,ri){
-        html+='<tr class="prow" data-ri="'+ri+'"><td><span class="pchev" aria-hidden="true">&#8250;</span><span class="pname">'+esc(r['Name']||'—')+'</span></td><td class="muted">'+esc(r['PID']||'—')+'</td><td>'+statusPill(statusOf(r))+'</td><td>'+esc(r['Last task reached']||'—')+'</td>'+numQ.map(function(c){return '<td>'+(r[c]===''||r[c]==null?'—':esc(r[c]))+'</td>';}).join('')+'<td class="muted">'+fmtDT(r['Finished at'])+'</td></tr>';
+        var purl=pidUrl(baseFor(name), r['PID']||'');
+        var copyBtn='<button type="button" class="btn" data-copy="'+esc(purl)+'"'+(purl?'':' disabled title="No link configured for this test"')+'>Copy link</button>';
+        var delBtn='<button type="button" class="btn danger" data-del data-session="'+esc(r['Session']||'')+'" data-pid="'+esc(r['PID']||'')+'" data-name="'+esc(r['Name']||'')+'">Delete</button>';
+        html+='<tr class="prow" data-ri="'+ri+'"><td><span class="pchev" aria-hidden="true">&#8250;</span><span class="pname">'+esc(r['Name']||'—')+'</span></td><td class="muted">'+esc(r['PID']||'—')+'</td><td>'+statusPill(statusOf(r))+'</td><td>'+esc(r['Last task reached']||'—')+'</td>'+numQ.map(function(c){return '<td>'+(r[c]===''||r[c]==null?'—':esc(r[c]))+'</td>';}).join('')+'<td class="muted">'+fmtDT(r['Finished at'])+'</td><td><div class="pacts">'+copyBtn+delBtn+'</div></td></tr>';
         var paths=taskNums.map(function(n){ var p=(r['Task '+n+' click path']||'').toString().trim(); if(!p) return ''; var nm=r['Task '+n+' name']||('Task '+n); var stepArr=p.split(' > '); var items=stepArr.map(function(s){return '<li>'+esc(s)+'</li>';}).join(''); return '<div class="ppath"><button type="button" class="ptask"><span class="tchev" aria-hidden="true">&#8250;</span><span class="ptask-name">'+esc(nm)+'</span><span class="tcount">'+stepArr.length+' step'+(stepArr.length===1?'':'s')+'</span></button><ol class="psteps" hidden>'+items+'</ol></div>'; }).filter(Boolean).join('');
         html+='<tr class="pdetail" data-ri="'+ri+'" style="display:none"><td colspan="'+pcols+'">'+(paths||'<span class="muted">No click path recorded.</span>')+'</td></tr>';
       });
@@ -162,11 +276,17 @@
         html+= ans.length? ans.map(function(x){return '<div class="resp">'+esc(x.a)+'<div class="who">'+esc(x.who)+'</div></div>';}).join('') : '<div class="muted">No responses.</div>';
       });
       main.innerHTML=html;
-      Array.prototype.forEach.call(main.querySelectorAll('tr.prow'),function(tr){ tr.onclick=function(){
+      Array.prototype.forEach.call(main.querySelectorAll('tr.prow'),function(tr){ tr.onclick=function(e){
+        if(e.target.closest('.pacts')) return; // don't toggle the path when using the row's buttons
         var d=main.querySelector('tr.pdetail[data-ri="'+tr.getAttribute('data-ri')+'"]'); if(!d) return;
         d.style.display = d.style.display==='none' ? 'table-row' : 'none';
         tr.classList.toggle('open');
       }; });
+      var newpBtn=main.querySelector('[data-newp]'); if(newpBtn) newpBtn.onclick=function(){ openNewParticipant(name); };
+      Array.prototype.forEach.call(main.querySelectorAll('[data-copy]'),function(btn){ btn.onclick=function(e){ e.stopPropagation();
+        var u=btn.getAttribute('data-copy'); if(!u) return; copyText(u).then(function(){ flashCopied(btn); }); }; });
+      Array.prototype.forEach.call(main.querySelectorAll('[data-del]'),function(btn){ btn.onclick=function(e){ e.stopPropagation();
+        deleteRow(btn.getAttribute('data-session'), name, btn.getAttribute('data-pid'), btn.getAttribute('data-name')); }; });
       Array.prototype.forEach.call(main.querySelectorAll('.ptask'),function(btn){ btn.onclick=function(e){ e.stopPropagation(); var ol=btn.nextElementSibling; if(!ol) return; var wasHidden=ol.hasAttribute('hidden'); if(wasHidden) ol.removeAttribute('hidden'); else ol.setAttribute('hidden',''); btn.parentNode.classList.toggle('open', wasHidden); }; });
     }
 

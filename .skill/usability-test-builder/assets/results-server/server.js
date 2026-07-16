@@ -10,6 +10,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const PORT = process.env.PORT || 8080;
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, "data", "results.jsonl");
@@ -127,6 +128,67 @@ const server = http.createServer((req, res) => {
         res.writeHead(500, CORS); res.end("store error"); return;
       }
       res.writeHead(200, { ...CORS, "Content-Type": "text/plain" }); res.end("ok");
+    });
+    return;
+  }
+
+  // Delete a session's records — internal only. A participant reports several times
+  // (start, per-task, finish), so one dashboard row can be many stored lines; drop them
+  // all. Identify by session id, or fall back to test + pid. Used to clean up dual entries.
+  if (req.method === "DELETE" && url === "/api/results") {
+    if (!authed(req)) return requireAuth(res);
+    const params = new URLSearchParams(req.url.split("?")[1] || "");
+    const session = params.get("session") || "";
+    const test = params.get("test") || "", pid = params.get("pid") || "";
+    if (!session && !(test && pid)) { res.writeHead(400); res.end("need session, or test and pid"); return; }
+    let lines;
+    try { lines = fs.readFileSync(DATA_FILE, "utf8").split("\n").filter(Boolean); } catch (e) { lines = []; }
+    let removed = 0;
+    const kept = lines.filter((line) => {
+      let s; try { s = JSON.parse(line); } catch (e) { return true; } // keep unparseable lines untouched
+      const sid = s.sessionId || s.participant || "";
+      const match = session ? sid === session : ((s.test || "") === test && (s.pid || "") === pid);
+      if (match) { removed++; return false; }
+      return true;
+    });
+    try { fs.writeFileSync(DATA_FILE, kept.length ? kept.join("\n") + "\n" : ""); }
+    catch (e) { res.writeHead(500); res.end("store error"); return; }
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ removed }));
+    return;
+  }
+
+  // Create a participant stub manually — internal only. Auto-generates a PID unique within
+  // the test and stores an "invited" row, so the facilitator can copy its link and send it.
+  if (req.method === "POST" && url === "/api/participant") {
+    if (!authed(req)) return requireAuth(res);
+    readBody(req, (err, body) => {
+      if (err) { res.writeHead(400); res.end("bad request"); return; }
+      let data; try { data = JSON.parse(body || "{}"); } catch (e) { res.writeHead(400); res.end("invalid json"); return; }
+      const test = (data.test || "").toString().trim();
+      const name = (data.participantName || "").toString().trim();
+      if (!test) { res.writeHead(400); res.end("test required"); return; }
+      const taken = new Set(dedupe(loadSessions())
+        .filter((s) => (s.test || "") === test)
+        .map((s) => s.pid || ""));
+      let pid = "";
+      do { pid = "p-" + crypto.randomBytes(3).toString("hex"); } while (taken.has(pid));
+      const stub = {
+        sessionId: "manual-" + pid,
+        pid: pid,
+        participantName: name,
+        test: test,
+        status: "invited",
+        startedAt: new Date().toISOString(),
+        finishedAt: null,
+        tasks: [],
+        survey: {},
+        manual: true,
+      };
+      try { fs.appendFileSync(DATA_FILE, JSON.stringify(stub) + "\n"); }
+      catch (e) { res.writeHead(500); res.end("store error"); return; }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ pid: pid }));
     });
     return;
   }
