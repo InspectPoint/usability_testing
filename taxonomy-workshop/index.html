@@ -166,7 +166,7 @@
         <div class="task">Imagine you're explaining a <b>system you know well</b> to a brand-new technician.
           Build the diagram — everything that gets looked at during an inspection, connected to whatever it
           belongs to. Each ring of the diagram gets its own color.</div>
-        <div class="hint">Use the parts shelf, or type your own. The ×1 counter handles crowds — one box for "Sprinkler heads ×200". Hover a box for + (add inside) and ✕ (remove).</div>
+        <div class="hint">Use the parts shelf, or type your own. One box can stand for many of the same thing — "Sprinkler heads" doesn't need 200 boxes. Every box has ＋ (add something inside it) and ✕ (remove).</div>
       </div>
       <div class="canvas-wrap">
         <div class="board-tools">
@@ -386,12 +386,6 @@ function setName(id, v){
   if (el) el.size = Math.max(6, v.length);
   drawWiresSoon();
 }
-function bumpQty(id, delta){
-  snapshotAll();
-  const n = findNode(id);
-  n.qty = Math.max(1, (n.qty || 1) + delta);
-  render();
-}
 function contains(n, id){
   return n.children.some(c => c.id === id || contains(c, id));
 }
@@ -526,9 +520,6 @@ function branchHTML(n, depth, parentId){
       onfocus="snapshotSystem(${n.id})"
       oninput="setName(${n.id}, this.value)"
       onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">
-    <span class="qty" onclick="event.stopPropagation()">
-      <button onclick="bumpQty(${n.id}, -1)">−</button><b>×${n.qty || 1}</b><button onclick="bumpQty(${n.id}, 1)">+</button>
-    </span>
     <span class="ptools">
       <button title="Add something inside this" onclick="event.stopPropagation(); addNode(${n.id}, '', true)">＋</button>
       <button title="Remove" onclick="event.stopPropagation(); if(confirm('Remove this and everything connected under it?')) deleteNode(${n.id});">✕</button>
