@@ -268,8 +268,13 @@ const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 /* ------------------------------------------------ palette */
 const ALL_SYSTEMS = 'All systems';
 function systemNames(){
-  return Object.keys(PART_SETS).filter(k => k !== 'Blank (no shelf)')
-    .sort((a, b) => a.localeCompare(b));
+  /* entries with "System" in the name list first, everything else after; each half alphabetical */
+  const names = Object.keys(PART_SETS).filter(k => k !== 'Blank (no shelf)');
+  const isSystem = n => /system/i.test(n);
+  return [
+    ...names.filter(isSystem).sort((a, b) => a.localeCompare(b)),
+    ...names.filter(n => !isSystem(n)).sort((a, b) => a.localeCompare(b)),
+  ];
 }
 function initPalette(){
   const names = [ALL_SYSTEMS, ...systemNames(), 'Blank (no shelf)'];
