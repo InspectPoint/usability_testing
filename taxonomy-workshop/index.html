@@ -57,6 +57,10 @@
   .hint{color:var(--soft); font-size:13px; margin-top:6px;}
 
   /* ---------------- diagram ---------------- */
+  .canvas-wrap{position:relative;}
+  .board-tools{position:absolute; top:10px; right:12px; z-index:6; display:flex; gap:8px;}
+  .board-tools .btn{padding:6px 12px; font-size:13px; background:rgba(255,255,255,.96);
+    box-shadow:0 2px 8px rgba(35,35,45,.08);}
   .canvas{background:var(--paper); border:1px solid var(--line); border-radius:12px;
     overflow:auto; min-height:340px; padding:0;}
   #diagram{position:relative; padding:34px; min-width:min-content;}
@@ -160,7 +164,13 @@
           belongs to. Each ring of the diagram gets its own color.</div>
         <div class="hint">Use the parts shelf, or type your own. The ×1 counter handles crowds — one box for "Sprinkler heads ×200". Hover a box for + (add inside) and ✕ (remove).</div>
       </div>
-      <div class="canvas"><div id="diagram" class="lr"><svg id="wires"></svg></div></div>
+      <div class="canvas-wrap">
+        <div class="board-tools">
+          <button class="btn" onclick="undoLast()">↩ Undo</button>
+          <button class="btn" onclick="clearBoard()">Clear</button>
+        </div>
+        <div class="canvas"><div id="diagram" class="lr"><svg id="wires"></svg></div></div>
+      </div>
       <div class="addroot">
         <button class="btn" onclick="addNode(null, '', true)">+ Add another system</button>
       </div>
@@ -330,9 +340,10 @@ function addCustomPart(){
 
 /* ------------------------------------------------ tree ops */
 function addNode(parentId, name, focus){
+  snapshotAll();
   const node = {id: nextId++, name: name || '', qty: 1, children: []};
   if (parentId === null || parentId === undefined || !findNode(parentId)){ nodes.push(node); }
-  else { snapshotSystem(parentId); findNode(parentId).children.push(node); }
+  else { findNode(parentId).children.push(node); }
   if (!name) selectedId = node.id;
   render();
   if (focus || !name) setTimeout(() => { const i = document.getElementById('n-' + node.id); if (i) i.focus(); }, 30);
@@ -353,8 +364,7 @@ function removeNode(id, list){
   return list.some(n => removeNode(id, n.children));
 }
 function deleteNode(id){
-  const root = rootOf(id);
-  if (root && root.id !== id) snapshotSystem(id);
+  snapshotAll();
   removeNode(id);
   /* if the selection was inside the removed branch, clear it and reset the
      shelf back to the starter set */
@@ -372,7 +382,7 @@ function setName(id, v){
   drawWiresSoon();
 }
 function bumpQty(id, delta){
-  snapshotSystem(id);
+  snapshotAll();
   const n = findNode(id);
   n.qty = Math.max(1, (n.qty || 1) + delta);
   render();
@@ -384,33 +394,29 @@ function rootOf(id){
   return nodes.find(n => n.id === id || contains(n, id)) || null;
 }
 
-/* ------------------------------------------------ per-system undo */
-const undoStacks = {};   /* root id -> array of JSON snapshots */
-function snapshotSystem(anyNodeId){
-  const root = rootOf(anyNodeId);
-  if (!root) return;
-  const stack = (undoStacks[root.id] = undoStacks[root.id] || []);
-  stack.push(JSON.stringify(root));
-  if (stack.length > 30) stack.shift();
+/* ------------------------------------------------ board undo */
+const UNDO = [];   /* snapshots of the whole board */
+function snapshotAll(){
+  UNDO.push(JSON.stringify(nodes));
+  if (UNDO.length > 50) UNDO.shift();
 }
-function undoSystem(rootId){
-  const stack = undoStacks[rootId];
-  if (!stack || !stack.length){ toast('Nothing to undo in this system yet'); return; }
-  const restored = JSON.parse(stack.pop());
-  const i = nodes.findIndex(n => n.id === rootId);
-  if (i < 0) return;
-  nodes[i] = restored;
+/* kept as an alias so every call site funnels to the board-level stack */
+function snapshotSystem(){ snapshotAll(); }
+function undoLast(){
+  if (!UNDO.length){ toast('Nothing to undo yet'); return; }
+  nodes = JSON.parse(UNDO.pop());
   if (selectedId !== null && !findNode(selectedId)) selectedId = null;
+  if (selectedId === null){ $('#pal-set').value = ALL_SYSTEMS; renderPalette(); }
   render();
 }
-function clearSystem(rootId){
-  const root = findNode(rootId);
-  if (!root) return;
-  if (!root.children.length){ toast('This system is already empty'); return; }
-  if (!confirm(`Clear everything inside "${root.name || 'this system'}"? You can undo this.`)) return;
-  snapshotSystem(rootId);
-  root.children = [];
-  if (selectedId !== null && !findNode(selectedId)) selectedId = null;
+function clearBoard(){
+  if (!nodes.length){ toast('The board is already empty'); return; }
+  if (!confirm('Clear the whole board? You can undo this.')) return;
+  snapshotAll();
+  nodes = [];
+  selectedId = null;
+  $('#pal-set').value = ALL_SYSTEMS;
+  renderPalette();
   render();
 }
 let toastTimer = null;
@@ -458,9 +464,6 @@ function branchHTML(n, depth, parentId){
     </span>
     <span class="ptools">
       <button title="Add something inside this" onclick="event.stopPropagation(); addNode(${n.id}, '', true)">＋</button>
-      ${depth === 0 ? `
-      <button title="Undo last change in this system" onclick="event.stopPropagation(); undoSystem(${n.id});">↩</button>
-      <button title="Clear everything inside this system" onclick="event.stopPropagation(); clearSystem(${n.id});">clear</button>` : ''}
       <button title="Remove" onclick="event.stopPropagation(); if(confirm('Remove this and everything connected under it?')) deleteNode(${n.id});">✕</button>
     </span>
   </div>`;
