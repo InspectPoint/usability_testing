@@ -438,31 +438,16 @@ function dropOn(ev, targetId){
   draggedId = null;
 }
 function moveNode(srcId, targetId){
-  if (srcId === null || !validDrop(targetId)) return;
+  /* drops must land on a pill — nothing can be dragged to the top (green) level.
+     New systems come only from the shelf or "+ Add another system". */
+  if (srcId === null || targetId === null || !validDrop(targetId)) return;
   const node = findNode(srcId);
   snapshotAll();
   removeNode(srcId);
-  if (targetId === null){ nodes.push(node); }
-  else { findNode(targetId).children.push(node); }
+  findNode(targetId).children.push(node);
   selectedId = node.id;
   render();
 }
-/* dropping on empty canvas makes the node top-level */
-document.addEventListener('DOMContentLoaded', () => {
-  const d = document.getElementById('diagram');
-  d.addEventListener('dragover', ev => {
-    if (ev.target.closest('.pill')) return;
-    if (!validDrop(null)) return;
-    ev.preventDefault();
-    ev.dataTransfer.dropEffect = 'move';
-  });
-  d.addEventListener('drop', ev => {
-    if (ev.target.closest('.pill')) return;
-    ev.preventDefault();
-    moveNode(draggedId, null);
-    draggedId = null;
-  });
-});
 
 /* ------------------------------------------------ board undo */
 const UNDO = [];   /* snapshots of the whole board */
