@@ -266,15 +266,19 @@ const $ = s => document.querySelector(s);
 const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 /* ------------------------------------------------ palette */
-function initPalette(){
-  const names = Object.keys(PART_SETS).filter(k => k !== 'Blank (no shelf)')
+const ALL_SYSTEMS = 'All systems';
+function systemNames(){
+  return Object.keys(PART_SETS).filter(k => k !== 'Blank (no shelf)')
     .sort((a, b) => a.localeCompare(b));
-  names.push('Blank (no shelf)');
+}
+function initPalette(){
+  const names = [ALL_SYSTEMS, ...systemNames(), 'Blank (no shelf)'];
   $('#pal-set').innerHTML = names.map(k => `<option>${esc(k)}</option>`).join('');
   renderPalette();
 }
 function renderPalette(){
-  const set = PART_SETS[$('#pal-set').value] || [];
+  const choice = $('#pal-set').value;
+  const set = choice === ALL_SYSTEMS ? systemNames() : (PART_SETS[choice] || []);
   $('#pal-chips').innerHTML = set.length
     ? set.map(p => `<button onclick="placePart('${esc(p).replace(/'/g,"\\'")}')">${esc(p)}</button>`).join('')
     : '<span style="font-size:13px;color:var(--soft);">No shelf — type parts into the diagram or the box below.</span>';
