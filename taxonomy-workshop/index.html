@@ -508,6 +508,9 @@ function syncPhaseUI(){
   $('#ph2').classList.toggle('on', phase === 2);
   $('#ph3').classList.toggle('on', phase === 3);
   $('#back-btn').style.display = phase === 2 ? '' : 'none';
+  /* phase 3: the send to the dashboard is the save; the button only appears
+     as "Download results" if the send fails */
+  $('#next-btn').style.display = phase === 3 ? 'none' : '';
   $('#next-btn').textContent = phase === 1 ? 'Next: name the levels →'
     : phase === 2 ? 'Finish →' : 'Download results';
   $('#foot-note').textContent = phase === 1 ? 'Phase 1 of 3 — build until it feels complete'
@@ -556,9 +559,12 @@ function submitResults(r){
     body: JSON.stringify(r),
   }).then(resp => {
     if (!resp.ok) throw new Error('server said ' + resp.status);
-    status.textContent = '✓ Sent to the results dashboard. You can also click "Download results" for a local copy.';
+    status.textContent = '✓ Results saved. You’re all set — you can close this tab.';
   }).catch(() => {
-    status.textContent = '⚠ Couldn’t reach the results dashboard. Click "Download results" and send Alana the file.';
+    status.textContent = '⚠ Couldn’t reach the results dashboard. Click "Download results" below and send the file to Alana.';
+    const btn = $('#next-btn');
+    btn.style.display = '';
+    btn.textContent = 'Download results';
   });
 }
 function download(){
