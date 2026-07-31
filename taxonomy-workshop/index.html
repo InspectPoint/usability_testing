@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>System mapping workshop</title>
+<style>
+  :root{
+    --ink:#23232D; --mut:#585870; --soft:#8F8FA8; --line:#DBDBE4; --bg:#F7F7F9;
+    --accent:#1967D2; --green:#017350; --paper:#fff; --wire:#B9BFCE;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); background:var(--bg); font-size:15px; line-height:1.4;}
+  button{font:inherit; cursor:pointer;}
+  input, textarea, select{font:inherit;}
+
+  .app{display:flex; min-height:100vh;}
+
+  /* ---------------- palette ---------------- */
+  .palette{width:246px; flex-shrink:0; background:var(--paper); border-right:1px solid var(--line);
+    padding:18px 16px 120px; position:sticky; top:0; align-self:flex-start; height:100vh; overflow:auto;}
+  .palette h2{font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--soft);}
+  .palette select{width:100%; margin:10px 0 12px; padding:8px 10px; border:1px solid var(--line);
+    border-radius:8px; background:#fff;}
+  .pal-hint{font-size:12.5px; color:var(--soft); margin-bottom:10px; line-height:1.5;}
+  .chiplist{display:flex; flex-wrap:wrap; gap:6px;}
+  .chiplist button{border:1px solid var(--line); background:var(--bg); border-radius:16px;
+    padding:5px 12px; font-size:13px; color:var(--ink);}
+  .chiplist button:hover{border-color:var(--accent); color:var(--accent); background:#fff;}
+  .pal-custom{margin-top:14px; display:flex; gap:6px;}
+  .pal-custom input{flex:1; min-width:0; border:1px solid var(--line); border-radius:8px;
+    padding:7px 10px; outline:none;}
+  .pal-custom input:focus{border-color:var(--accent);}
+  .pal-custom button{border:1px solid var(--line); border-radius:8px; background:#fff; padding:7px 10px;}
+
+  /* ---------------- main ---------------- */
+  .main{flex:1; min-width:0; padding:24px 26px 130px;}
+  header h1{font-size:21px; font-weight:700;}
+  header p{color:var(--mut); margin-top:4px; font-size:14px;}
+  .setup{display:flex; gap:12px; margin:14px 0 4px; flex-wrap:wrap;}
+  .setup label{font-size:11.5px; color:var(--soft); display:block; margin-bottom:3px;
+    text-transform:uppercase; letter-spacing:.05em;}
+  .setup input{border:1px solid var(--line); border-radius:8px; padding:8px 11px; width:200px;
+    background:var(--paper); outline:none;}
+  .setup input:focus{border-color:var(--accent);}
+  .phasebar{display:flex; gap:8px; margin:16px 0 14px; align-items:center;}
+  .phasebar .ph{padding:6px 15px; border-radius:20px; font-size:13px; font-weight:600;
+    border:1px solid var(--line); background:var(--paper); color:var(--soft);}
+  .phasebar .ph.on{background:var(--ink); border-color:var(--ink); color:#fff;}
+  .orient{margin-left:auto; display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .orient button{padding:6px 12px; background:#fff; border:none; color:var(--soft); font-size:13px;}
+  .orient button.on{background:var(--ink); color:#fff; font-weight:600;}
+  .card{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:16px 20px; margin-bottom:12px;}
+  .task{font-size:16px;}
+  .task b{color:var(--accent);}
+  .hint{color:var(--soft); font-size:13px; margin-top:6px;}
+
+  /* ---------------- diagram ---------------- */
+  .canvas{background:var(--paper); border:1px solid var(--line); border-radius:12px;
+    overflow:auto; min-height:340px; padding:0;}
+  #diagram{position:relative; padding:34px; min-width:min-content;}
+  #wires{position:absolute; top:0; left:0; pointer-events:none; z-index:0;}
+  .branch{position:relative; z-index:1;}
+  #diagram.lr .branch{display:flex; align-items:center;}
+  #diagram.lr .subkids{display:flex; flex-direction:column; gap:10px; margin-left:56px;}
+  #diagram.td .branch{display:flex; flex-direction:column; align-items:center;}
+  #diagram.td .subkids{display:flex; flex-direction:row; align-items:flex-start; gap:14px; margin-top:48px;}
+  #diagram.lr > .branch + .branch{margin-top:28px;}
+  #diagram.td{display:flex; gap:40px; align-items:flex-start;}
+
+  .pill{display:inline-flex; align-items:center; gap:6px; border:1.5px solid; border-radius:12px;
+    padding:8px 10px; background:#fff; white-space:nowrap; position:relative; z-index:1;}
+  .pill .nm{border:none; background:transparent; outline:none; font-weight:600; font-size:14px;
+    color:var(--ink); min-width:40px;}
+  .pill .nm::placeholder{color:#A9B2C4; font-weight:400;}
+  .pill.selected{box-shadow:0 0 0 3px rgba(25,103,210,.28);}
+  .qty{display:inline-flex; align-items:center; background:rgba(255,255,255,.75); border:1px solid rgba(0,0,0,.12);
+    border-radius:12px; padding:0 2px; font-size:11.5px; color:var(--mut);}
+  .qty button{border:none; background:none; color:var(--soft); padding:1px 4px; font-size:12px; line-height:1;}
+  .qty button:hover{color:var(--ink);}
+  .qty b{font-weight:700; color:var(--ink); min-width:12px; text-align:center;}
+  .ptools{display:inline-flex; gap:1px; opacity:0; transition:opacity .12s;}
+  .pill:hover .ptools{opacity:.95;}
+  .ptools button{border:none; background:none; color:var(--mut); font-size:11.5px; padding:2px 4px; border-radius:4px;}
+  .ptools button:hover{background:rgba(0,0,0,.08); color:var(--ink);}
+
+  .addroot{margin-top:12px;}
+  .btn{border:1px solid var(--line); background:var(--paper); border-radius:8px;
+    padding:9px 16px; font-size:14px; color:var(--ink);}
+  .btn:hover{background:var(--bg);}
+  .btn.primary{background:var(--ink); color:#fff; border-color:var(--ink); font-weight:600;}
+  .btn.primary:hover{background:#000;}
+
+  /* ---------------- level naming ---------------- */
+  .level{border:1px solid var(--line); border-left-width:6px; border-radius:12px; background:var(--paper);
+    padding:16px 20px; margin-bottom:12px;}
+  .level .depth{font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--mut);
+    display:flex; align-items:center; gap:8px; font-weight:700;}
+  .swatch{display:inline-block; width:30px; height:18px; border-radius:6px; border:1.5px solid;}
+  .level .members{margin:10px 0 12px; display:flex; flex-wrap:wrap; gap:6px;}
+  .level .members span{border:1.5px solid; border-radius:14px; padding:3px 11px; font-size:13px; color:var(--ink);}
+  .level .q{font-size:14px; font-weight:600; margin-bottom:6px;}
+  .level input[type=text]{width:100%; border:1px solid var(--line); border-radius:8px;
+    padding:9px 12px; font-size:15.5px; outline:none;}
+  .level input[type=text]:focus{border-color:var(--accent);}
+  .level textarea{width:100%; border:1px solid var(--line); border-radius:8px; padding:9px 12px;
+    font-size:14px; outline:none; margin-top:8px; resize:vertical; min-height:52px;}
+  .level textarea:focus{border-color:var(--accent);}
+
+  .footerbar{position:fixed; bottom:0; left:0; right:0; background:var(--paper);
+    border-top:1px solid var(--line); padding:13px 24px; display:flex; gap:12px;
+    justify-content:flex-end; align-items:center; z-index:50;}
+  .footerbar .note{margin-right:auto; color:var(--soft); font-size:12.5px;}
+  .done-summary{white-space:pre-wrap; font-family:ui-monospace,Menlo,monospace; font-size:12.5px;
+    background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:14px; margin-top:12px;
+    max-height:320px; overflow:auto;}
+  .ok{color:var(--green); font-weight:600;}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="palette" id="palette">
+    <h2>Parts shelf</h2>
+    <select id="pal-set" onchange="renderPalette()"></select>
+    <div class="pal-hint">Click a part to place it <b>inside whatever's selected</b> (blue glow). Click any box to select it. Rename anything to your own words.</div>
+    <div class="chiplist" id="pal-chips"></div>
+    <div class="pal-custom">
+      <input id="pal-custom-input" placeholder="Something else…"
+        onkeydown="if(event.key==='Enter')addCustomPart()">
+      <button onclick="addCustomPart()">Add</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header>
+      <h1>System mapping workshop</h1>
+      <p>Build the system the way you think about it. No wrong answers — we're learning how you organize and name things, not testing you.</p>
+    </header>
+
+    <div class="setup">
+      <div><label>Your name</label><input id="p-name" placeholder="Name"></div>
+      <div><label>Your role</label><input id="p-role" placeholder="Role or specialty"></div>
+    </div>
+
+    <div class="phasebar">
+      <span class="ph on" id="ph1">1 · Build the system</span>
+      <span class="ph" id="ph2">2 · Name the levels</span>
+      <span class="ph" id="ph3">3 · Done</span>
+      <span class="orient" id="orient-toggle">
+        <button id="or-lr" class="on" onclick="setOrient('lr')">→ Sideways</button>
+        <button id="or-td" onclick="setOrient('td')">↓ Top-down</button>
+      </span>
+    </div>
+
+    <section id="phase-build">
+      <div class="card">
+        <div class="task">Imagine you're explaining a <b>system you know well</b> to a brand-new technician.
+          Build the diagram — everything that gets looked at during an inspection, connected to whatever it
+          belongs to. Each ring of the diagram gets its own color.</div>
+        <div class="hint">Use the parts shelf, or type your own. The ×1 counter handles crowds — one box for "Sprinkler heads ×200". Hover a box for + (add inside) and ✕ (remove).</div>
+      </div>
+      <div class="canvas"><div id="diagram" class="lr"><svg id="wires"></svg></div></div>
+      <div class="addroot">
+        <button class="btn" onclick="addNode(null, '', true)">+ Add another system</button>
+      </div>
+    </section>
+
+    <section id="phase-name" style="display:none;">
+      <div class="card">
+        <div class="task">Here's everything you built, grouped by <b>color — each color is one ring of your diagram</b>.
+          For each one: what would you call the things in this color, as a category?</div>
+        <div class="hint">One or two words is perfect — whatever you'd naturally say on a job site or in the office.</div>
+      </div>
+      <div id="levels"></div>
+    </section>
+
+    <section id="phase-done" style="display:none;">
+      <div class="card">
+        <div class="task ok">Saved. Thank you — this is exactly what we needed.</div>
+        <div class="hint">Facilitator: click "Download results" to save this session's file.</div>
+        <div class="done-summary" id="summary"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="footerbar">
+  <span class="note" id="foot-note">Phase 1 of 3 — build until it feels complete</span>
+  <button class="btn" id="back-btn" style="display:none;" onclick="goBuild()">← Back to building</button>
+  <button class="btn primary" id="next-btn" onclick="nextPhase()">Next: name the levels →</button>
+</div>
+
+<script>
+/* ------------------------------------------------ tier colors (match the FigJam board) */
+const TIERS = [
+  {name:'mint',  bg:'#DFF5EA', border:'#7FCBA6'},
+  {name:'gray',  bg:'#EFEFF3', border:'#AFAFC0'},
+  {name:'cream', bg:'#FCF2D3', border:'#DEC069'},
+  {name:'blue',  bg:'#DCE9FB', border:'#96BDF2'},
+  {name:'pink',  bg:'#F9E3EA', border:'#D998B0'},
+];
+const tier = d => TIERS[Math.min(d, TIERS.length - 1)];
+
+/* ------------------------------------------------ parts shelf
+   One set per GREEN system node on Alana's Inspectable Tree FigJam
+   (figma.com/board/Kuc1z8BIvNXSB1fmI1yegz). Part names copied from the board
+   verbatim. Board is DRAFT pending SME sign-off - shelf is convenience, not gospel. */
+const PART_SETS = {
+  'Sprinkler System': ['Alarm check valve','Retard chamber','Alarm pressure switch','Supply pressure gauge',
+    'System pressure gauge','Ball drip','Waterflow switch (vane)','Dry pipe valve','Air pressure gauge',
+    'Low-air pressure switch','Accelerator / QOD','Air compressor / maint. device','Deluge valve',
+    'Preaction valve','OS&Y valve','Post indicator valve (PIV)','Butterfly valve','Gate valve',
+    'Main drain valve','Tamper switch','Check valves (riser)','Inspector\u2019s test valve & drains',
+    'Fire dept connection (FDC)','Sprinkler heads / head group','Spare-head cabinet / Sprinkler Box',
+    'Antifreeze loop','Nitrogen generator / inerting system'],
+  'Standpipe & Hose': ['Hose valve','Pressure-reducing valve','Pressure gauge','Cap & chain','Gasket',
+    'Fire hose','FDC','Caps & chains','Check valve / clapper'],
+  'Fire Pump': ['Fire pump (elec/diesel)','Pump controller','Jockey pump','Jockey controller',
+    'Suction pressure gauge','Discharge pressure gauge','Casing relief valve','Relief / circulation valve',
+    'Flow meter','Pressure transducer','Diesel engine','Cooling system','Starting batteries + charger',
+    'Fuel tank + level gauge','Block heater','Oil pressure gauge','Coolant / temp sensor',
+    'Automatic transfer switch'],
+  'Private Fire Service Main': ['Underground piping','Sectional valve','Post indicator valve','Check valves',
+    'Main drain valve'],
+  'Water Storage Tank': ['Tank shell','Tank heater','Level sensor','Water level switch','High/low water alarm',
+    'Temp sensor + low-temp alarm','Low temp switch','Pressure gauge'],
+  'Fire Hydrant': ['Barrel','Main valve / stem','Outlet caps & chains','Packing glands','Drain / weep valve',
+    'Handle / lever','Gasket'],
+  'Backflow Preventer': ['Check valves','Relief valve','Test cocks','Shutoff valves','OS&Y valve',
+    'Air-release valve'],
+  'Foam Water System': ['Agent tank','Liquid level / weigh device','Deluge valve','Discharge nozzles',
+    'Pressure gauges','Fire detection system'],
+  'Fire Alarm System': ['Fire Alarm Control Unit (FACU)','Batteries + charger','Primary (AC) power',
+    'Remote annunciator / alarm','Manual pull station','Photoelectric smoke','Ionization smoke',
+    'Fixed-temp heat','Rate-of-rise heat','Duct smoke detector','Beam detector','CO detector',
+    'Air-sampling (VESDA)','Horn / strobe','Speaker / strobe','Bell','Voice-evac speakers',
+    'Monitor Module','Control Module','Relay Module','DACT (phone dialer)','Cellular communicator',
+    'Waterflow switch','Tamper switch','Fire pump running','Fire pump trouble'],
+  'Wet Chemical System': ['Agent tank','Pressure gauge / cartridge','Appliance nozzles','Duct nozzle',
+    'Plenum nozzle','Fusible links','Detection cable / line','Terminal link','Manual pull station',
+    'Gas valve (mech/electric)','Appliance shunt trip','Micro-switch','Regulated release assembly',
+    'Exhaust hood','Ductwork','Grease filters / baffles','Nozzle caps / foil'],
+  'Special Hazard System': ['Releasing control panel','Agent cylinder / container','Cylinder valve',
+    'Valve actuator / solenoid','Pilot cylinder','Selector / directional valves','Discharge nozzles',
+    'Distribution piping','Pressure switch','Low-pressure supervisory switch','Liquid level / weigh device',
+    'Cross-zoned smoke detectors','Cross-zoned heat detectors','Manual release station','Abort switch',
+    'Pre-discharge alarm','Discharge alarm','Warning signs / placards','Releasing Module'],
+  'Smoke Control System': ['Smoke control panel','Smoke dampers','Exhaust / supply fans',
+    'Stair pressurization','Fire command center'],
+  'Emergency Power System': ['Generator','Diesel engine','Automatic transfer switch',
+    'Starting batteries + charger','Fuel tank + level sensor','Block heater','Oil pressure gauge',
+    'Coolant / temp sensor'],
+  'Blank (no shelf)': [],
+};
+
+/* ------------------------------------------------ state */
+let nodes = [];           /* {id, name, qty, children:[]} */
+let nextId = 1;
+let selectedId = null;
+let levelAnswers = {};
+let phase = 1;
+let orient = 'lr';
+
+const $ = s => document.querySelector(s);
+const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ------------------------------------------------ palette */
+function initPalette(){
+  const names = Object.keys(PART_SETS).filter(k => k !== 'Blank (no shelf)')
+    .sort((a, b) => a.localeCompare(b));
+  names.push('Blank (no shelf)');
+  $('#pal-set').innerHTML = names.map(k => `<option>${esc(k)}</option>`).join('');
+  renderPalette();
+}
+function renderPalette(){
+  const set = PART_SETS[$('#pal-set').value] || [];
+  $('#pal-chips').innerHTML = set.length
+    ? set.map(p => `<button onclick="placePart('${esc(p).replace(/'/g,"\\'")}')">${esc(p)}</button>`).join('')
+    : '<span style="font-size:13px;color:var(--soft);">No shelf — type parts into the diagram or the box below.</span>';
+}
+function placePart(name){
+  const target = selectedId ?? (nodes.length ? nodes[nodes.length-1].id : null);
+  addNode(target, name, false);
+}
+function addCustomPart(){
+  const i = $('#pal-custom-input');
+  if (!i.value.trim()) return;
+  placePart(i.value.trim());
+  i.value = '';
+  i.focus();
+}
+
+/* ------------------------------------------------ tree ops */
+function addNode(parentId, name, focus){
+  const node = {id: nextId++, name: name || '', qty: 1, children: []};
+  if (parentId === null || parentId === undefined || !findNode(parentId)){ nodes.push(node); }
+  else { findNode(parentId).children.push(node); }
+  if (!name) selectedId = node.id;
+  render();
+  if (focus || !name) setTimeout(() => { const i = document.getElementById('n-' + node.id); if (i) i.focus(); }, 30);
+}
+function findNode(id, list){
+  list = list || nodes;
+  for (const n of list){
+    if (n.id === id) return n;
+    const f = findNode(id, n.children); if (f) return f;
+  }
+  return null;
+}
+function removeNode(id, list){
+  list = list || nodes;
+  const i = list.findIndex(n => n.id === id);
+  if (i >= 0){ list.splice(i,1); return true; }
+  return list.some(n => removeNode(id, n.children));
+}
+function setName(id, v){
+  findNode(id).name = v;
+  const el = document.getElementById('n-' + id);
+  if (el) el.size = Math.max(6, v.length);
+  drawWiresSoon();
+}
+function bumpQty(id, delta){
+  const n = findNode(id);
+  n.qty = Math.max(1, (n.qty || 1) + delta);
+  render();
+}
+function selectNode(id, ev){
+  ev.stopPropagation();
+  selectedId = (selectedId === id) ? null : id;
+  render();
+}
+
+/* ------------------------------------------------ diagram rendering */
+function branchHTML(n, depth, parentId){
+  const t = tier(depth);
+  const pill = `<div class="pill ${selectedId === n.id ? 'selected' : ''}"
+      style="background:${t.bg}; border-color:${t.border};"
+      data-pill="${n.id}" ${parentId != null ? `data-parent="${parentId}"` : ''}
+      onclick="selectNode(${n.id}, event)">
+    <input class="nm" id="n-${n.id}" value="${esc(n.name)}" placeholder="Name this…"
+      size="${Math.max(6, n.name.length)}"
+      onclick="event.stopPropagation()"
+      oninput="setName(${n.id}, this.value)"
+      onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">
+    <span class="qty" onclick="event.stopPropagation()">
+      <button onclick="bumpQty(${n.id}, -1)">−</button><b>×${n.qty || 1}</b><button onclick="bumpQty(${n.id}, 1)">+</button>
+    </span>
+    <span class="ptools">
+      <button title="Add something inside this" onclick="event.stopPropagation(); addNode(${n.id}, '', true)">＋</button>
+      <button title="Remove" onclick="event.stopPropagation(); if(confirm('Remove this and everything connected under it?')){removeNode(${n.id}); if(selectedId===${n.id})selectedId=null; render();}">✕</button>
+    </span>
+  </div>`;
+  return `<div class="branch">
+    ${pill}
+    ${n.children.length ? `<div class="subkids">${n.children.map(c => branchHTML(c, depth + 1, n.id)).join('')}</div>` : ''}
+  </div>`;
+}
+function render(){
+  const d = $('#diagram');
+  d.className = orient;
+  d.innerHTML = '<svg id="wires"></svg>' + (nodes.map(n => branchHTML(n, 0, null)).join('') ||
+    '<div style="color:var(--soft); padding:8px;">Nothing yet — add your first system below, or click a part on the shelf.</div>');
+  drawWiresSoon();
+}
+let wireTimer = null;
+function drawWiresSoon(){ clearTimeout(wireTimer); wireTimer = setTimeout(drawWires, 30); }
+function drawWires(){
+  const diagram = $('#diagram'); const svg = $('#wires');
+  if (!svg) return;
+  svg.setAttribute('width', diagram.scrollWidth);
+  svg.setAttribute('height', diagram.scrollHeight);
+  const base = diagram.getBoundingClientRect();
+  let paths = '';
+  diagram.querySelectorAll('[data-parent]').forEach(child => {
+    const parent = diagram.querySelector(`[data-pill="${child.dataset.parent}"]`);
+    if (!parent) return;
+    const a = parent.getBoundingClientRect(), b = child.getBoundingClientRect();
+    let d;
+    if (orient === 'lr'){
+      const x1 = a.right - base.left, y1 = a.top + a.height/2 - base.top;
+      const x2 = b.left - base.left,  y2 = b.top + b.height/2 - base.top;
+      const mid = (x1 + x2) / 2;
+      d = `M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2},${y2}`;
+    } else {
+      const x1 = a.left + a.width/2 - base.left, y1 = a.bottom - base.top;
+      const x2 = b.left + b.width/2 - base.left, y2 = b.top - base.top;
+      const mid = (y1 + y2) / 2;
+      d = `M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}`;
+    }
+    paths += `<path d="${d}" fill="none" stroke="var(--wire)" stroke-width="1.5"/>`;
+  });
+  svg.innerHTML = paths;
+}
+function setOrient(o){
+  orient = o;
+  $('#or-lr').classList.toggle('on', o === 'lr');
+  $('#or-td').classList.toggle('on', o === 'td');
+  render();
+}
+window.addEventListener('resize', drawWiresSoon);
+
+/* ------------------------------------------------ levels */
+function collectByDepth(){
+  const byDepth = {};
+  const walk = (list, d) => list.forEach(n => {
+    if (n.name.trim()){
+      (byDepth[d] = byDepth[d] || []).push(n.name.trim() + ((n.qty || 1) > 1 ? ` (×${n.qty})` : ''));
+    }
+    walk(n.children, d + 1);
+  });
+  walk(nodes, 0);
+  return byDepth;
+}
+function renderLevels(){
+  const byDepth = collectByDepth();
+  const depths = Object.keys(byDepth).map(Number).sort((a,b) => a - b);
+  $('#levels').innerHTML = depths.map(d => {
+    const t = tier(d);
+    return `<div class="level" style="border-left-color:${t.border};">
+      <div class="depth">
+        <span class="swatch" style="background:${t.bg}; border-color:${t.border};"></span>
+        The ${t.name} boxes ${d === 0 ? '— the top of your diagram' : `— level ${d + 1}`}
+      </div>
+      <div class="members">${byDepth[d].map(m =>
+        `<span style="background:${t.bg}; border-color:${t.border};">${esc(m)}</span>`).join('')}</div>
+      <div class="q">What would you call the ${t.name} things, as a category?</div>
+      <input type="text" value="${esc(levelAnswers[d]?.label || '')}"
+        oninput="levelAnswers[${d}] = levelAnswers[${d}] || {}; levelAnswers[${d}].label = this.value"
+        placeholder="Your word for the ${t.name} level">
+      <textarea placeholder="What makes something belong at this level, and not the one above it?"
+        oninput="levelAnswers[${d}] = levelAnswers[${d}] || {}; levelAnswers[${d}].rule = this.value">${esc(levelAnswers[d]?.rule || '')}</textarea>
+    </div>`;
+  }).join('');
+}
+
+/* ------------------------------------------------ phases */
+function nextPhase(){
+  if (phase === 1){
+    if (!nodes.some(n => n.name.trim())){ alert('Add at least one named item first.'); return; }
+    phase = 2; renderLevels();
+  } else if (phase === 2){
+    phase = 3; finish();
+  } else { download(); return; }
+  syncPhaseUI();
+}
+function goBuild(){ phase = 1; syncPhaseUI(); render(); }
+function syncPhaseUI(){
+  $('#phase-build').style.display = phase === 1 ? '' : 'none';
+  $('#phase-name').style.display  = phase === 2 ? '' : 'none';
+  $('#phase-done').style.display  = phase === 3 ? '' : 'none';
+  $('#palette').style.display = phase === 1 ? '' : 'none';
+  $('#orient-toggle').style.display = phase === 1 ? '' : 'none';
+  $('#ph1').classList.toggle('on', phase === 1);
+  $('#ph2').classList.toggle('on', phase === 2);
+  $('#ph3').classList.toggle('on', phase === 3);
+  $('#back-btn').style.display = phase === 2 ? '' : 'none';
+  $('#next-btn').textContent = phase === 1 ? 'Next: name the levels →'
+    : phase === 2 ? 'Finish →' : 'Download results';
+  $('#foot-note').textContent = phase === 1 ? 'Phase 1 of 3 — build until it feels complete'
+    : phase === 2 ? 'Phase 2 of 3 — your words, not ours'
+    : 'Phase 3 of 3 — done';
+}
+
+/* ------------------------------------------------ results */
+function resultsObject(){
+  return {
+    participant: $('#p-name').value || '(unnamed)',
+    role: $('#p-role').value || '',
+    shelfUsed: $('#pal-set').value,
+    savedAt: new Date().toISOString(),
+    tree: nodes,
+    levelNames: levelAnswers,
+  };
+}
+function finish(){
+  const r = resultsObject();
+  const byDepth = collectByDepth();
+  let text = `Participant: ${r.participant}${r.role ? ' — ' + r.role : ''}\nShelf: ${r.shelfUsed}\n\nLEVEL NAMES\n`;
+  Object.keys(byDepth).map(Number).sort((a,b) => a - b).forEach(d => {
+    const a = levelAnswers[d] || {};
+    text += `  Level ${d + 1} (${tier(d).name}): "${a.label || '(no name given)'}"${a.rule ? ' — ' + a.rule : ''}\n`;
+    text += `    items: ${byDepth[d].join(', ')}\n`;
+  });
+  text += `\nTREE\n`;
+  const walk = (list, ind) => list.forEach(n => {
+    if (n.name.trim()) text += `${'  '.repeat(ind)}- ${n.name.trim()}${(n.qty||1) > 1 ? ` ×${n.qty}` : ''}\n`;
+    walk(n.children, ind + 1);
+  });
+  walk(nodes, 1);
+  $('#summary').textContent = text;
+}
+function download(){
+  const r = resultsObject();
+  const name = (r.participant || 'session').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const blob = new Blob([JSON.stringify(r, null, 2) + '\n\n/*\n' + $('#summary').textContent + '\n*/'],
+    {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `taxonomy-workshop-${name}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+initPalette();
+addNode(null, '', false);
+</script>
+</body>
+</html>
