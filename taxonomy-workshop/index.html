@@ -350,6 +350,17 @@ function removeNode(id, list){
   if (i >= 0){ list.splice(i,1); return true; }
   return list.some(n => removeNode(id, n.children));
 }
+function deleteNode(id){
+  removeNode(id);
+  /* if the selection was inside the removed branch, clear it and reset the
+     shelf back to the starter set */
+  if (selectedId !== null && !findNode(selectedId)) selectedId = null;
+  if (selectedId === null){
+    $('#pal-set').value = ALL_SYSTEMS;
+    renderPalette();
+  }
+  render();
+}
 function setName(id, v){
   findNode(id).name = v;
   const el = document.getElementById('n-' + id);
@@ -390,7 +401,7 @@ function branchHTML(n, depth, parentId){
     </span>
     <span class="ptools">
       <button title="Add something inside this" onclick="event.stopPropagation(); addNode(${n.id}, '', true)">＋</button>
-      <button title="Remove" onclick="event.stopPropagation(); if(confirm('Remove this and everything connected under it?')){removeNode(${n.id}); if(selectedId===${n.id})selectedId=null; render();}">✕</button>
+      <button title="Remove" onclick="event.stopPropagation(); if(confirm('Remove this and everything connected under it?')) deleteNode(${n.id});">✕</button>
     </span>
   </div>`;
   return `<div class="branch">
