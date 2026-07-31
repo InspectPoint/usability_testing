@@ -302,7 +302,21 @@ function renderPalette(){
 }
 function placePart(name){
   const target = selectedId ?? (nodes.length ? nodes[nodes.length-1].id : null);
-  addNode(target, name, false);
+  const node = addNode(target, name, false);
+  /* placing a system from the starter shelf: remember its set, select it,
+     and swap the shelf to that system's parts */
+  if (PART_SETS[name]){
+    node.shelfSet = name;
+    selectedId = node.id;
+    switchShelf(name);
+    render();
+  }
+}
+function switchShelf(setName){
+  if (PART_SETS[setName] && $('#pal-set').value !== setName){
+    $('#pal-set').value = setName;
+    renderPalette();
+  }
 }
 function addCustomPart(){
   const i = $('#pal-custom-input');
@@ -320,6 +334,7 @@ function addNode(parentId, name, focus){
   if (!name) selectedId = node.id;
   render();
   if (focus || !name) setTimeout(() => { const i = document.getElementById('n-' + node.id); if (i) i.focus(); }, 30);
+  return node;
 }
 function findNode(id, list){
   list = list || nodes;
@@ -349,6 +364,12 @@ function bumpQty(id, delta){
 function selectNode(id, ev){
   ev.stopPropagation();
   selectedId = (selectedId === id) ? null : id;
+  if (selectedId){
+    /* selecting a system node swaps the shelf to that system's parts */
+    const n = findNode(id);
+    const set = n.shelfSet || (PART_SETS[(n.name || '').trim()] ? n.name.trim() : null);
+    if (set) switchShelf(set);
+  }
   render();
 }
 
