@@ -88,6 +88,10 @@
   .pill:hover .ptools{opacity:.95;}
   .ptools button{border:none; background:none; color:var(--mut); font-size:11.5px; padding:2px 4px; border-radius:4px;}
   .ptools button:hover{background:rgba(0,0,0,.08); color:var(--ink);}
+  .grip{cursor:grab; color:rgba(35,35,45,.35); font-size:12px; user-select:none; margin-right:2px;}
+  .grip:active{cursor:grabbing;}
+  .pill.drop-target{outline:2.5px dashed var(--accent); outline-offset:2px;}
+  .pill.dragging{opacity:.45;}
 
   .addroot{margin-top:12px;}
   .btn{border:1px solid var(--line); background:var(--paper); border-radius:8px;
@@ -394,6 +398,72 @@ function rootOf(id){
   return nodes.find(n => n.id === id || contains(n, id)) || null;
 }
 
+/* ------------------------------------------------ drag to re-parent */
+let draggedId = null;
+function dragStart(ev, id){
+  ev.stopPropagation();
+  draggedId = id;
+  ev.dataTransfer.effectAllowed = 'move';
+  ev.dataTransfer.setData('text/plain', String(id));
+  const pill = ev.target.closest('.pill');
+  if (pill) pill.classList.add('dragging');
+}
+function dragEnd(ev){
+  draggedId = null;
+  document.querySelectorAll('.pill.dragging, .pill.drop-target')
+    .forEach(p => p.classList.remove('dragging', 'drop-target'));
+}
+function validDrop(targetId){
+  if (draggedId === null || draggedId === targetId) return false;
+  const dragged = findNode(draggedId);
+  if (!dragged) return false;
+  /* can't drop something into its own subtree */
+  return !(targetId !== null && contains(dragged, targetId));
+}
+function dragOver(ev, targetId){
+  if (!validDrop(targetId)) return;
+  ev.preventDefault();
+  ev.stopPropagation();
+  ev.dataTransfer.dropEffect = 'move';
+  ev.currentTarget.classList.add('drop-target');
+}
+function dragLeave(ev){
+  ev.currentTarget.classList.remove('drop-target');
+}
+function dropOn(ev, targetId){
+  ev.preventDefault();
+  ev.stopPropagation();
+  ev.currentTarget.classList.remove('drop-target');
+  moveNode(draggedId, targetId);
+  draggedId = null;
+}
+function moveNode(srcId, targetId){
+  if (srcId === null || !validDrop(targetId)) return;
+  const node = findNode(srcId);
+  snapshotAll();
+  removeNode(srcId);
+  if (targetId === null){ nodes.push(node); }
+  else { findNode(targetId).children.push(node); }
+  selectedId = node.id;
+  render();
+}
+/* dropping on empty canvas makes the node top-level */
+document.addEventListener('DOMContentLoaded', () => {
+  const d = document.getElementById('diagram');
+  d.addEventListener('dragover', ev => {
+    if (ev.target.closest('.pill')) return;
+    if (!validDrop(null)) return;
+    ev.preventDefault();
+    ev.dataTransfer.dropEffect = 'move';
+  });
+  d.addEventListener('drop', ev => {
+    if (ev.target.closest('.pill')) return;
+    ev.preventDefault();
+    moveNode(draggedId, null);
+    draggedId = null;
+  });
+});
+
 /* ------------------------------------------------ board undo */
 const UNDO = [];   /* snapshots of the whole board */
 function snapshotAll(){
@@ -452,7 +522,10 @@ function branchHTML(n, depth, parentId){
   const pill = `<div class="pill ${selectedId === n.id ? 'selected' : ''}"
       style="background:${t.bg}; border-color:${t.border};"
       data-pill="${n.id}" ${parentId != null ? `data-parent="${parentId}"` : ''}
-      onclick="selectNode(${n.id}, event)">
+      onclick="selectNode(${n.id}, event)"
+      ondragover="dragOver(event, ${n.id})" ondragleave="dragLeave(event)" ondrop="dropOn(event, ${n.id})">
+    <span class="grip" draggable="true" title="Drag to move this (and everything inside it) somewhere else"
+      ondragstart="dragStart(event, ${n.id})" ondragend="dragEnd(event)">⠿</span>
     <input class="nm" id="n-${n.id}" value="${esc(n.name)}" placeholder="Name this…"
       size="${Math.max(6, n.name.length)}"
       onclick="event.stopPropagation()"
