@@ -178,7 +178,7 @@
     <section id="phase-done" style="display:none;">
       <div class="card">
         <div class="task ok">Saved. Thank you — this is exactly what we needed.</div>
-        <div class="hint">Facilitator: click "Download results" to save this session's file.</div>
+        <div class="hint" id="submit-status">Sending to the results dashboard…</div>
         <div class="done-summary" id="summary"></div>
       </div>
     </section>
@@ -510,6 +510,24 @@ function finish(){
   });
   walk(nodes, 1);
   $('#summary').textContent = text;
+  submitResults(r);
+}
+
+/* POST the session to the results dashboard; Download stays as the fallback. */
+const RESULTS_URL = 'https://ip-taxonomy-results.fly.dev/api/results';
+function submitResults(r){
+  const status = $('#submit-status');
+  status.textContent = 'Sending to the results dashboard…';
+  fetch(RESULTS_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(r),
+  }).then(resp => {
+    if (!resp.ok) throw new Error('server said ' + resp.status);
+    status.textContent = '✓ Sent to the results dashboard. You can also click "Download results" for a local copy.';
+  }).catch(() => {
+    status.textContent = '⚠ Couldn’t reach the results dashboard. Click "Download results" and send Alana the file.';
+  });
 }
 function download(){
   const r = resultsObject();
