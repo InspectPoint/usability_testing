@@ -207,13 +207,25 @@ const tier = d => TIERS[Math.min(d, TIERS.length - 1)];
    (figma.com/board/Kuc1z8BIvNXSB1fmI1yegz). Part names copied from the board
    verbatim. Board is DRAFT pending SME sign-off - shelf is convenience, not gospel. */
 const PART_SETS = {
-  'Sprinkler System': ['Alarm check valve','Retard chamber','Alarm pressure switch','Supply pressure gauge',
-    'System pressure gauge','Ball drip','Waterflow switch (vane)','Dry pipe valve','Air pressure gauge',
-    'Low-air pressure switch','Accelerator / QOD','Air compressor / maint. device','Deluge valve',
-    'Preaction valve','OS&Y valve','Post indicator valve (PIV)','Butterfly valve','Gate valve',
-    'Main drain valve','Tamper switch','Check valves (riser)','Inspector\u2019s test valve & drains',
-    'Fire dept connection (FDC)','Sprinkler heads / head group','Spare-head cabinet / Sprinkler Box',
-    'Antifreeze loop','Nitrogen generator / inerting system'],
+  /* Sprinkler common parts shared by all four types (board: "Common to all types") */
+  ...(() => {
+    const COMMON = ['OS&Y valve','Post indicator valve (PIV)','Butterfly valve','Gate valve','Tamper switch',
+      'Main drain valve','Check valves (riser)','Inspector\u2019s test valve & drains','Water pressure gauge',
+      'Fire dept connection (FDC)','Backflow preventer','Sprinkler heads / head group',
+      'Spare-head cabinet / Sprinkler Box'];
+    return {
+      'Sprinkler System (Wet)': ['Alarm check valve','Retard chamber','Alarm pressure switch',
+        'Supply pressure gauge','System pressure gauge','Ball drip','Waterflow switch (vane)',
+        'Antifreeze loop', ...COMMON],
+      'Sprinkler System (Dry)': ['Dry pipe valve','Air pressure gauge','Low-air pressure switch',
+        'Accelerator / QOD','Air compressor / maint. device','Ball drip',
+        'Nitrogen generator / inerting system', ...COMMON],
+      'Sprinkler System (Deluge)': ['Deluge valve','Solenoid / release','Pressure gauges','Manual release',
+        'Fire detection system','Detectors (cross-zoned)','Open nozzles', ...COMMON],
+      'Sprinkler System (Preaction)': ['Preaction valve','Solenoid / release','Pressure gauges',
+        'Fire detection system','Detectors (cross-zoned)', ...COMMON],
+    };
+  })(),
   'Standpipe & Hose': ['Hose valve','Pressure-reducing valve','Pressure gauge','Cap & chain','Gasket',
     'Fire hose','FDC','Caps & chains','Check valve / clapper'],
   'Fire Pump': ['Fire pump (elec/diesel)','Pump controller','Jockey pump','Jockey controller',
