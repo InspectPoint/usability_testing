@@ -372,13 +372,20 @@ function bumpQty(id, delta){
   n.qty = Math.max(1, (n.qty || 1) + delta);
   render();
 }
+function contains(n, id){
+  return n.children.some(c => c.id === id || contains(c, id));
+}
+function rootOf(id){
+  return nodes.find(n => n.id === id || contains(n, id)) || null;
+}
 function selectNode(id, ev){
   ev.stopPropagation();
   selectedId = (selectedId === id) ? null : id;
-  if (selectedId){
-    /* selecting a system node swaps the shelf to that system's parts */
-    const n = findNode(id);
-    const set = n.shelfSet || (PART_SETS[(n.name || '').trim()] ? n.name.trim() : null);
+  if (selectedId !== null){
+    /* selecting any node surfaces the shelf of the system it lives in */
+    const root = rootOf(id);
+    const set = root && (root.shelfSet ||
+      (PART_SETS[(root.name || '').trim()] ? root.name.trim() : null));
     if (set) switchShelf(set);
   }
   render();
