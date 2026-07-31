@@ -317,16 +317,17 @@ function renderPalette(){
     : '<span style="font-size:13px;color:var(--soft);">No shelf — type parts into the diagram or the box below.</span>';
 }
 function placePart(name){
-  const target = selectedId ?? (nodes.length ? nodes[nodes.length-1].id : null);
-  const node = addNode(target, name, false);
-  /* placing a system from the starter shelf: remember its set, select it,
-     and swap the shelf to that system's parts */
+  /* systems always land at the top tier, regardless of what's selected */
   if (PART_SETS[name]){
+    const node = addNode(null, name, false);
     node.shelfSet = name;
     selectedId = node.id;
     switchShelf(name);
     render();
+    return;
   }
+  const target = selectedId ?? (nodes.length ? nodes[nodes.length-1].id : null);
+  addNode(target, name, false);
 }
 function switchShelf(setName){
   if (PART_SETS[setName] && $('#pal-set').value !== setName){
@@ -413,10 +414,18 @@ function dragEnd(ev){
   document.querySelectorAll('.pill.dragging, .pill.drop-target')
     .forEach(p => p.classList.remove('dragging', 'drop-target'));
 }
+function isSystemNode(n){
+  if (!n) return false;
+  if (n.shelfSet) return true;
+  const nm = (n.name || '').trim().toLowerCase();
+  return Object.keys(PART_SETS).some(k => k !== 'Blank (no shelf)' && k.toLowerCase() === nm);
+}
 function validDrop(targetId){
   if (draggedId === null || draggedId === targetId) return false;
   const dragged = findNode(draggedId);
   if (!dragged) return false;
+  /* systems live at the top tier only — they can never become a child */
+  if (isSystemNode(dragged)) return false;
   /* can't drop something into its own subtree */
   return !(targetId !== null && contains(dragged, targetId));
 }
