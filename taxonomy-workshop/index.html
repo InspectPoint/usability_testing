@@ -531,10 +531,18 @@ function branchHTML(n, depth, parentId){
     ${n.children.length ? `<div class="subkids">${n.children.map(c => branchHTML(c, depth + 1, n.id)).join('')}</div>` : ''}
   </div>`;
 }
+/* asset-like top-tier entries (no "System" in their shelf name) render one tier
+   down the color ladder — gray, like devices — so only true systems are mint */
+function rootTierOffset(n){
+  const setName = n.shelfSet ||
+    (Object.keys(PART_SETS).find(k => k !== 'Blank (no shelf)' &&
+      k.toLowerCase() === (n.name || '').trim().toLowerCase()) || null);
+  return (setName && !/system/i.test(setName)) ? 1 : 0;
+}
 function render(){
   const d = $('#diagram');
   d.className = orient;
-  d.innerHTML = '<svg id="wires"></svg>' + (nodes.map(n => branchHTML(n, 0, null)).join('') ||
+  d.innerHTML = '<svg id="wires"></svg>' + (nodes.map(n => branchHTML(n, rootTierOffset(n), null)).join('') ||
     '<div style="color:var(--soft); padding:8px;">Nothing yet — add your first system below, or click a part on the shelf.</div>');
   drawWiresSoon();
 }
@@ -577,6 +585,7 @@ window.addEventListener('resize', drawWiresSoon);
 
 /* ------------------------------------------------ levels */
 function collectByDepth(){
+  /* grouped by COLOR tier, not raw depth — asset-like roots start at gray */
   const byDepth = {};
   const walk = (list, d) => list.forEach(n => {
     if (n.name.trim()){
@@ -584,7 +593,7 @@ function collectByDepth(){
     }
     walk(n.children, d + 1);
   });
-  walk(nodes, 0);
+  nodes.forEach(n => walk([n], rootTierOffset(n)));
   return byDepth;
 }
 function renderLevels(){
