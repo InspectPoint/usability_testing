@@ -585,7 +585,9 @@ window.addEventListener('resize', drawWiresSoon);
 
 /* ------------------------------------------------ levels */
 function collectByDepth(){
-  /* grouped by COLOR tier, not raw depth — asset-like roots start at gray */
+  /* grouped by COLOR tier, not raw depth. Standalone asset-like roots are
+     EXCLUDED here — they get their own naming card — but their parts still
+     land in the color tiers (starting at cream). */
   const byDepth = {};
   const walk = (list, d) => list.forEach(n => {
     if (n.name.trim()){
@@ -593,8 +595,15 @@ function collectByDepth(){
     }
     walk(n.children, d + 1);
   });
-  nodes.forEach(n => walk([n], rootTierOffset(n)));
+  nodes.forEach(n => {
+    const off = rootTierOffset(n);
+    if (off > 0){ walk(n.children, off + 1); }
+    else { walk([n], 0); }
+  });
   return byDepth;
+}
+function collectStandalone(){
+  return nodes.filter(n => rootTierOffset(n) > 0 && n.name.trim()).map(n => n.name.trim());
 }
 function renderLevels(){
   const byDepth = collectByDepth();
@@ -615,7 +624,27 @@ function renderLevels(){
       <textarea placeholder="What makes something belong at this level, and not the one above it?"
         oninput="levelAnswers[${d}] = levelAnswers[${d}] || {}; levelAnswers[${d}].rule = this.value">${esc(levelAnswers[d]?.rule || '')}</textarea>
     </div>`;
-  }).join('');
+  }).join('') + standaloneCardHTML();
+}
+let standaloneAnswer = {label: '', rule: ''};
+function standaloneCardHTML(){
+  const items = collectStandalone();
+  if (!items.length) return '';
+  const t = TIERS[1]; /* gray */
+  return `<div class="level" style="border-left-color:${t.border};">
+    <div class="depth">
+      <span class="swatch" style="background:${t.bg}; border-color:${t.border};"></span>
+      Standing on their own — not part of any system
+    </div>
+    <div class="members">${items.map(m =>
+      `<span style="background:${t.bg}; border-color:${t.border};">${esc(m)}</span>`).join('')}</div>
+    <div class="q">These aren't inside any system. What would you call them, as a category?</div>
+    <input type="text" value="${esc(standaloneAnswer.label)}"
+      oninput="standaloneAnswer.label = this.value"
+      placeholder="Your word for these">
+    <textarea placeholder="Is that the same word you'd use for the gray boxes inside a system, or something different? What makes these different?"
+      oninput="standaloneAnswer.rule = this.value">${esc(standaloneAnswer.rule)}</textarea>
+  </div>`;
 }
 
 /* ------------------------------------------------ phases */
@@ -658,6 +687,7 @@ function resultsObject(){
     savedAt: new Date().toISOString(),
     tree: nodes,
     levelNames: levelAnswers,
+    standalone: {items: collectStandalone(), ...standaloneAnswer},
   };
 }
 function finish(){
@@ -669,6 +699,11 @@ function finish(){
     text += `  Level ${d + 1} (${tier(d).name}): "${a.label || '(no name given)'}"${a.rule ? ' — ' + a.rule : ''}\n`;
     text += `    items: ${byDepth[d].join(', ')}\n`;
   });
+  const sa = collectStandalone();
+  if (sa.length){
+    text += `  Standalone (not in a system): "${standaloneAnswer.label || '(no name given)'}"${standaloneAnswer.rule ? ' — ' + standaloneAnswer.rule : ''}\n`;
+    text += `    items: ${sa.join(', ')}\n`;
+  }
   text += `\nTREE\n`;
   const walk = (list, ind) => list.forEach(n => {
     if (n.name.trim()) text += `${'  '.repeat(ind)}- ${n.name.trim()}${(n.qty||1) > 1 ? ` ×${n.qty}` : ''}\n`;
