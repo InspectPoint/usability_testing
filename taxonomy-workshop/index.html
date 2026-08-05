@@ -639,6 +639,17 @@ function renderLevels(){
   }).join('') + standaloneCardHTML();
 }
 let standaloneAnswer = {label: '', rule: ''};
+let screenNameAnswer = '';
+function screenNameCardHTML(){
+  return `<div class="level" style="border-left-color:#AFAFC0;">
+    <div class="depth">One last question</div>
+    <div class="q">You just built everything at this building. If this whole picture lived on one
+      screen you used every day, what would you call that screen?</div>
+    <input type="text" value="${esc(screenNameAnswer)}"
+      oninput="screenNameAnswer = this.value"
+      placeholder="Your name for it">
+  </div>`;
+}
 function standaloneCardHTML(){
   const items = collectStandalone();
   if (!items.length) return '';
@@ -700,6 +711,7 @@ function resultsObject(){
     tree: nodes,
     levelNames: levelAnswers,
     standalone: {items: collectStandalone(), ...standaloneAnswer},
+    screenName: screenNameAnswer,
   };
 }
 function finish(){
@@ -716,6 +728,7 @@ function finish(){
     text += `  Standalone (not in a system): "${standaloneAnswer.label || '(no name given)'}"${standaloneAnswer.rule ? ' — ' + standaloneAnswer.rule : ''}\n`;
     text += `    items: ${sa.join(', ')}\n`;
   }
+  if (screenNameAnswer.trim()) text += `  Screen name: "${screenNameAnswer.trim()}"\n`;
   text += `\nTREE\n`;
   const walk = (list, ind) => list.forEach(n => {
     if (n.name.trim()) text += `${'  '.repeat(ind)}- ${n.name.trim()}${(n.qty||1) > 1 ? ` ×${n.qty}` : ''}\n`;
