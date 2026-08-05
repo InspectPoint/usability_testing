@@ -636,7 +636,7 @@ function renderLevels(){
       <textarea placeholder="What makes something belong at this level, and not the one above it?"
         oninput="levelAnswers[${d}] = levelAnswers[${d}] || {}; levelAnswers[${d}].rule = this.value">${esc(levelAnswers[d]?.rule || '')}</textarea>
     </div>`;
-  }).join('') + standaloneCardHTML();
+  }).join('') + standaloneCardHTML() + screenNameCardHTML();
 }
 let standaloneAnswer = {label: '', rule: ''};
 let screenNameAnswer = '';
