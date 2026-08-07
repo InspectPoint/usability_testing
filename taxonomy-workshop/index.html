@@ -143,7 +143,7 @@
   <div class="main">
     <header>
       <h1>System mapping workshop</h1>
-      <p>Build the system the way you think about it. No wrong answers — we're learning how you organize and name things, not testing you.</p>
+      <p>Build things the way you think about them. No wrong answers — we're learning how you organize and name things, not testing you.</p>
     </header>
 
     <div class="setup">
@@ -152,7 +152,7 @@
     </div>
 
     <div class="phasebar">
-      <span class="ph on" id="ph1">1 · Build the system</span>
+      <span class="ph on" id="ph1">1 · Build the diagram</span>
       <span class="ph" id="ph2">2 · Name the levels</span>
       <span class="ph" id="ph3">3 · Done</span>
       <span class="orient" id="orient-toggle">
@@ -163,8 +163,8 @@
 
     <section id="phase-build">
       <div class="card">
-        <div class="task">Imagine you're surveying a building and explaining the
-          <b>systems you know well</b> to a brand-new technician. Build the diagrams — everything that
+        <div class="task">Imagine you're surveying a building and explaining <b>what you
+          know best</b> to a brand-new technician. Build the diagrams — everything that
           gets looked at during an inspection, connected to whatever it belongs to. Each ring of the
           diagram gets its own color.</div>
         <div class="hint">Use the parts shelf, or type your own. One box can stand for many of the same thing — "Sprinkler heads" doesn't need 200 boxes. Every box has ＋ (add something inside it) and ✕ (remove).</div>
@@ -177,7 +177,7 @@
         <div class="canvas"><div id="diagram" class="lr"><svg id="wires"></svg></div></div>
       </div>
       <div class="addroot">
-        <button class="btn" onclick="addNode(null, '', true)">+ Add another system</button>
+        <button class="btn" onclick="addNode(null, '', true)">+ Start another diagram</button>
       </div>
     </section>
 
@@ -661,15 +661,15 @@ function standaloneCardHTML(){
   return `<div class="level" style="border-left-color:${t.border};">
     <div class="depth">
       <span class="swatch" style="background:${t.bg}; border-color:${t.border};"></span>
-      Standing on their own — not part of any system
+      Standing on their own — not connected to anything
     </div>
     <div class="members">${items.map(m =>
       `<span style="background:${t.bg}; border-color:${t.border};">${esc(m)}</span>`).join('')}</div>
-    <div class="q">These aren't inside any system. What would you call them, as a category?</div>
+    <div class="q">These are standing on their own, not connected under anything. What would you call them, as a category?</div>
     <input type="text" value="${esc(standaloneAnswer.label)}"
       oninput="standaloneAnswer.label = this.value"
       placeholder="Your word for these">
-    <textarea placeholder="Is that the same word you'd use for the gray boxes inside a system, or something different? What makes these different?"
+    <textarea placeholder="Is that the same word you'd use for the gray boxes that sit under something, or different? What makes these different?"
       oninput="standaloneAnswer.rule = this.value">${esc(standaloneAnswer.rule)}</textarea>
   </div>`;
 }
