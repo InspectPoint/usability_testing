@@ -621,7 +621,7 @@ function collectStandalone(){
 }
 function renderLevels(){
   const byDepth = collectByDepth();
-  const depths = Object.keys(byDepth).map(Number).sort((a,b) => a - b);
+  const depths = Object.keys(byDepth).map(Number).sort((a,b) => a - b).filter(d => d > 0);
   $('#levels').innerHTML = depths.map(d => {
     const t = tier(d);
     return `<div class="level" style="border-left-color:${t.border};">
@@ -722,7 +722,7 @@ function finish(){
   const r = resultsObject();
   const byDepth = collectByDepth();
   let text = `Participant: ${r.participant}${r.role ? ' — ' + r.role : ''}\nShelf: ${r.shelfUsed}\n\nLEVEL NAMES\n`;
-  Object.keys(byDepth).map(Number).sort((a,b) => a - b).forEach(d => {
+  Object.keys(byDepth).map(Number).sort((a,b) => a - b).filter(d => d > 0).forEach(d => {
     const a = levelAnswers[d] || {};
     text += `  Level ${d + 1} (${tier(d).name}): "${a.label || '(no name given)'}"${a.rule ? ' — ' + a.rule : ''}\n`;
     text += `    items: ${byDepth[d].join(', ')}\n`;
