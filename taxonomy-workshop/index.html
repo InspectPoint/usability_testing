@@ -231,20 +231,20 @@ const PART_SETS = {
       'Fire dept connection (FDC)','Backflow preventer','Sprinkler heads / head group',
       'Spare-head cabinet / Sprinkler Box'];
     return {
-      'Sprinkler System (Wet)': ['Alarm check valve','Retard chamber','Alarm pressure switch',
+      'Sprinkler — Wet': ['Alarm check valve','Retard chamber','Alarm pressure switch',
         'Supply pressure gauge','System pressure gauge','Ball drip','Waterflow switch (vane)',
         'Antifreeze loop', ...COMMON],
-      'Sprinkler System (Dry)': ['Dry pipe valve','Air pressure gauge','Low-air pressure switch',
+      'Sprinkler — Dry': ['Dry pipe valve','Air pressure gauge','Low-air pressure switch',
         'Accelerator / QOD','Air compressor / maint. device','Ball drip',
         'Nitrogen generator / inerting system', ...COMMON],
-      'Sprinkler System (Deluge)': ['Deluge valve','Solenoid / release','Releasing control panel',
+      'Sprinkler — Deluge': ['Deluge valve','Solenoid / release','Releasing control panel',
         'Pressure gauges','Manual release','Fire detection system','Detectors (cross-zoned)',
         'Open nozzles', ...COMMON],
-      'Sprinkler System (Preaction)': ['Preaction valve','Solenoid / release','Releasing control panel',
+      'Sprinkler — Preaction': ['Preaction valve','Solenoid / release','Releasing control panel',
         'Pressure gauges','Fire detection system','Detectors (cross-zoned)', ...COMMON],
     };
   })(),
-  'Standpipe & Hose System': ['Hose valve','Pressure-reducing valve','Pressure gauge','Cap & chain','Gasket',
+  'Standpipe & Hose': ['Hose valve','Pressure-reducing valve','Pressure gauge','Cap & chain','Gasket',
     'Fire hose','FDC','Caps & chains','Check valve / clapper'],
   'Fire Pump': ['Fire pump (elec/diesel)','Pump controller','Jockey pump','Jockey controller',
     'Suction pressure gauge','Discharge pressure gauge','Casing relief valve','Relief / circulation valve',
@@ -259,37 +259,37 @@ const PART_SETS = {
     'Handle / lever','Gasket'],
   'Backflow Preventer': ['Check valves','Relief valve','Test cocks','Shutoff valves','OS&Y valve',
     'Air-release valve'],
-  'Foam Water System': ['Agent tank','Liquid level / weigh device','Deluge valve','Discharge nozzles',
+  'Foam Water': ['Agent tank','Liquid level / weigh device','Deluge valve','Discharge nozzles',
     'Pressure gauges','Fire detection system'],
-  'Fire Alarm System': ['Fire Alarm Control Unit (FACU)','Batteries + charger','Primary (AC) power',
+  'Fire Alarm': ['Fire Alarm Control Unit (FACU)','Batteries + charger','Primary (AC) power',
     'Remote annunciator / alarm','Manual pull station','Photoelectric smoke','Ionization smoke',
     'Fixed-temp heat','Rate-of-rise heat','Duct smoke detector','Beam detector','CO detector',
     'Air-sampling (VESDA)','Horn / strobe','Speaker / strobe','Bell','Voice-evac speakers',
     'Monitor Module','Control Module','Relay Module','DACT (phone dialer)','Cellular communicator',
     'Waterflow switch','Tamper switch','Fire pump running','Fire pump trouble'],
-  'Wet Chemical System': ['Agent tank','Pressure gauge / cartridge','Appliance nozzles','Duct nozzle',
+  'Wet Chemical': ['Agent tank','Pressure gauge / cartridge','Appliance nozzles','Duct nozzle',
     'Plenum nozzle','Fusible links','Detection cable / line','Terminal link','Manual pull station',
     'Gas valve (mech/electric)','Appliance shunt trip','Micro-switch','Regulated release assembly',
     'Exhaust hood','Ductwork','Grease filters / baffles','Nozzle caps / foil'],
-  'Clean Agent System': ['Releasing control panel','Releasing Module','Batteries + charger',
+  'Clean Agent': ['Releasing control panel','Releasing Module','Batteries + charger',
     'Agent cylinder / container','Cylinder valve','Valve actuator / solenoid','Pressure gauge',
     'Low-pressure supervisory switch','Discharge nozzles','Distribution piping',
     'Cross-zoned smoke detectors','Manual release station','Abort switch','Pre-discharge alarm',
     'Discharge alarm','Warning signs / placards'],
-  'CO2 Suppression System': ['Releasing control panel','Agent cylinder / container','Pilot cylinder',
+  'CO2 Suppression': ['Releasing control panel','Agent cylinder / container','Pilot cylinder',
     'Cylinder valve','Valve actuator / solenoid','Selector / directional valves','Discharge nozzles',
     'Distribution piping','Pressure switch','Liquid level / weigh device','Cross-zoned smoke detectors',
     'Cross-zoned heat detectors','Manual release station','Lockout valve','Pneumatic time delay',
     'Odorizer','Pre-discharge alarm','Warning signs / placards'],
-  'Dry Chemical System': ['Agent tank / cylinder','Cartridge','Pressure gauge / cartridge',
+  'Dry Chemical': ['Agent tank / cylinder','Cartridge','Pressure gauge / cartridge',
     'Discharge nozzles','Distribution piping','Fusible links','Detection cable / line',
     'Manual pull station','Micro-switch','Regulated release assembly','Warning signs / placards'],
-  'Water Mist System': ['Water mist pump','Water mist valve','Releasing control panel',
+  'Water Mist': ['Water mist pump','Water mist valve','Releasing control panel',
     'Distribution piping','Mist nozzles','Strainers / filters','Pressure gauges','Fire detection system',
     'Cross-zoned detectors'],
-  'Smoke Control System': ['Smoke control panel','Smoke dampers','Exhaust / supply fans',
+  'Smoke Control': ['Smoke control panel','Smoke dampers','Exhaust / supply fans',
     'Stair pressurization','Fire command center'],
-  'Emergency Power System': ['Generator','Diesel engine','Automatic transfer switch',
+  'Emergency Power': ['Generator','Diesel engine','Automatic transfer switch',
     'Starting batteries + charger','Fuel tank + level sensor','Block heater','Oil pressure gauge',
     'Coolant / temp sensor'],
   'Blank (no shelf)': [],
@@ -307,14 +307,16 @@ const $ = s => document.querySelector(s);
 const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 /* ------------------------------------------------ palette */
-const ALL_SYSTEMS = 'All systems';
+const ALL_SYSTEMS = 'Full list';
+/* the five supply-side/standalone entries — everything else on the shelf is a true system.
+   Explicit list so shelf labels never need the word "System" (de-seeded for the naming study). */
+const ASSET_SETS = ['Backflow Preventer','Fire Hydrant','Fire Pump','Private Fire Service Main','Water Storage Tank'];
 function systemNames(){
-  /* entries with "System" in the name list first, everything else after; each half alphabetical */
   const names = Object.keys(PART_SETS).filter(k => k !== 'Blank (no shelf)');
-  const isSystem = n => /system/i.test(n);
+  const isAsset = n => ASSET_SETS.includes(n);
   return [
-    ...names.filter(isSystem).sort((a, b) => a.localeCompare(b)),
-    ...names.filter(n => !isSystem(n)).sort((a, b) => a.localeCompare(b)),
+    ...names.filter(n => !isAsset(n)).sort((a, b) => a.localeCompare(b)),
+    ...names.filter(isAsset).sort((a, b) => a.localeCompare(b)),
   ];
 }
 function initPalette(){
@@ -549,7 +551,7 @@ function rootTierOffset(n){
   const setName = n.shelfSet ||
     (Object.keys(PART_SETS).find(k => k !== 'Blank (no shelf)' &&
       k.toLowerCase() === (n.name || '').trim().toLowerCase()) || null);
-  return (setName && !/system/i.test(setName)) ? 1 : 0;
+  return (setName && ASSET_SETS.includes(setName)) ? 1 : 0;
 }
 function render(){
   const d = $('#diagram');
@@ -629,10 +631,12 @@ function renderLevels(){
       </div>
       <div class="members">${byDepth[d].map(m =>
         `<span style="background:${t.bg}; border-color:${t.border};">${esc(m)}</span>`).join('')}</div>
-      <div class="q">What would you call the ${t.name} things, as a category?</div>
+      <div class="q">${d === 0
+        ? 'This building could also have a fire alarm, kitchen suppression, and a clean agent setup in the server room. A customer asks: \u201cHow many ___ do we have that need inspecting this year?\u201d What word fills the blank?'
+        : `What would you call the ${t.name} things, as a category?`}</div>
       <input type="text" value="${esc(levelAnswers[d]?.label || '')}"
         oninput="levelAnswers[${d}] = levelAnswers[${d}] || {}; levelAnswers[${d}].label = this.value"
-        placeholder="Your word for the ${t.name} level">
+        placeholder="${d === 0 ? 'The word that fills the blank' : `Your word for the ${t.name} level`}">
       <textarea placeholder="What makes something belong at this level, and not the one above it?"
         oninput="levelAnswers[${d}] = levelAnswers[${d}] || {}; levelAnswers[${d}].rule = this.value">${esc(levelAnswers[d]?.rule || '')}</textarea>
     </div>`;
